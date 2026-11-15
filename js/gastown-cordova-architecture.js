@@ -192,45 +192,165 @@
         disc('Vancouver Lookout roof cap',10.6,0.65,133.6,paleStone);
         addBox(group,'Harbour Centre slim antenna mast',cx,142.3,cz,
           0.22,16.6,0.22,mullion);
-        // The pedestrian eye-line in the Station East parking screenshots
-        // looks toward the south side of Cordova. The old small 32m podium
-        // gave Harbour Centre a skyline silhouette but left its extended
-        // civic block facade empty. These skins follow two ACTUAL 2015
-        // building-outline edges and introduce no walkable/collision volume.
+        // 542 W Cordova / Harbour Centre: in the Station East parking QA
+        // screenshots, the 2026-11-15 frontage showed TWO BLANK GREY WALLS.
+        // The old positive local-Z glazing was on the building's back face:
+        // both civic edges actually face the parking lot on NEGATIVE local Z.
+        // Compute the public-facing sign against the lot centre instead of
+        // relying on a fragile edge-winding assumption.
         const civic=world.buildings.find(building=>building.id==='feature-16');
         const coords=civic.footprint;
+        const parking=world.parkingLot&&world.parkingLot.center;
         const toLocal=p=>{
           const dx=p.x-b.x,dz=p.z-b.z;
           return {x:dx*Math.cos(b.yaw)+dz*Math.sin(b.yaw),
             z:-dx*Math.sin(b.yaw)+dz*Math.cos(b.yaw)};
         };
-        for(const [start,end] of [[5,6],[13,14]]){
-          const p=toLocal(coords[start]),q=toLocal(coords[end]);
+        const masonry=new THREE.MeshStandardMaterial({color:0xbab6ab,roughness:0.9});
+        const trim=new THREE.MeshStandardMaterial({color:0xd1c8b7,roughness:0.87});
+        const darkGlazing=new THREE.MeshStandardMaterial({
+          color:0x3d606c,roughness:0.22,metalness:0.18});
+        const doorFrame=new THREE.MeshStandardMaterial({color:0x343e43,roughness:0.55,metalness:0.2});
+        const yellow=new THREE.MeshBasicMaterial({color:0xe9d44f});
+        const shopGreen=new THREE.MeshBasicMaterial({color:0x23613b});
+
+        function shopSign(parent,name,text,x,y,face,width,height,bg,fg) {
+          const z=face*0.52;
+          const backing=addBox(parent,name+' fascia panel',x,y,z,width,height,0.12,
+            bg==='#e9d44f'?yellow:shopGreen);
+          backing.userData={signText:text,facesParkingLot:true};
+          // Procedural lettering keeps this a standalone, locally rendered
+          // original asset. Node's Three.js test stub has no document/canvas.
+          if(typeof document!=='undefined'&&THREE.CanvasTexture&&THREE.PlaneGeometry){
+            const canvas=document.createElement('canvas');
+            canvas.width=1024;canvas.height=128;
+            const ctx=canvas.getContext('2d');
+            if(ctx){
+              ctx.fillStyle=bg;ctx.fillRect(0,0,1024,128);
+              let fontSize=90;
+              ctx.font='bold '+fontSize+'px Arial, sans-serif';
+              while(ctx.measureText(text).width>935 && fontSize>34){
+                fontSize-=4;ctx.font='bold '+fontSize+'px Arial, sans-serif';
+              }
+              ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';
+              ctx.fillText(text,512,65);
+              const tex=new THREE.CanvasTexture(canvas);
+              if(THREE.SRGBColorSpace)tex.colorSpace=THREE.SRGBColorSpace;
+              const lettering=new THREE.Mesh(new THREE.PlaneGeometry(width-0.08,height-0.05),
+                new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
+              lettering.name=name+' legible canvas lettering';
+              lettering.position.set(x,y,face*0.6);
+              lettering.rotation.y=face<0?Math.PI:0;
+              lettering.castShadow=false;lettering.receiveShadow=false;
+              parent.add(lettering);
+            }
+          }
+        }
+        function lotFacingEdge(start,end,label) {
+          const a=coords[start],z=coords[end],p=toLocal(a),q=toLocal(z);
           const dx=q.x-p.x,dz=q.z-p.z,len=Math.hypot(dx,dz);
-          if(len<5)continue;
+          if(len<5)return null;
           const frontage=new THREE.Group();
           frontage.name='Harbour Centre Cordova civic parcel frontage '+start+'-'+end;
           frontage.position.set((p.x+q.x)/2,0,(p.z+q.z)/2);
           frontage.rotation.y=Math.atan2(-dz,dx);
+          const sceneYaw=-b.yaw+frontage.rotation.y;
+          const mx=(a.x+z.x)/2,mz=(a.z+z.z)/2;
+          const toLot=(parking.x-mx)*Math.sin(sceneYaw)
+            +(parking.z-mz)*Math.cos(sceneYaw);
+          const face=toLot>=0?1:-1;
           frontage.userData.civicEdge=[start,end];
+          frontage.userData.parkingFace=face;
           frontage.userData.isScenicFacade=true;
+          frontage.userData.streetLevelRetail=label;
           group.add(frontage);
-          addBox(frontage,'Harbour Centre Cordova parkade concrete streetwall',
-            0,8.4,0,len,16.8,0.28,limestone);
-          // Continuous horizontal recesses with stone mullions read as the
-          // actual parkade side in July 2024 street-level photography.
-          for(const y of [5.3,8.7,12.1])
-            addBox(frontage,'Harbour Centre Cordova continuous recessed window band',
-              0,y,0.19,len-1.6,1.55,0.12,blue);
-          for(let x=-len/2+3.3;x<len/2-1.5;x+=5.5)
-            addBox(frontage,'Harbour Centre Cordova fluted concrete pier',
-              x,8.5,0.27,0.51,16.1,0.24,paleStone);
-          addBox(frontage,'Harbour Centre Cordova ground-level glazing',
-            0,1.85,0.21,len-2.8,3.05,0.14,glassBase);
-          addBox(frontage,'Harbour Centre Cordova heritage parapet cap',
-            0,17,0.07,len+0.45,0.55,0.5,paleStone);
+
+          // Four comparatively low storeys, not a 17-metre opaque slab.
+          // Keep geometry within 0.55m of the existing mapped parcel edge.
+          addBox(frontage,'Harbour Centre articulated stone podium body',
+            0,6.7,0,len,13.4,0.34,masonry);
+          const bayCount=Math.max(3,Math.round(len/5.4)),bayW=len/bayCount;
+          for(const direction of [-1,1]){
+            // Low-cost rhythm on both sides: flights around the scene will
+            // never expose the same blank back of the old single-face mesh.
+            for(const y of [5.85,8.95,11.85]){
+              for(let i=0;i<bayCount;i++){
+                const x=(i+0.5)*bayW-len/2;
+                addBox(frontage,'Harbour Centre individual upper sash window',
+                  x,y,direction*0.225,bayW-0.78,1.68,0.09,darkGlazing);
+              }
+            }
+            for(let i=1;i<bayCount;i++){
+              const x=i*bayW-len/2;
+              addBox(frontage,'Harbour Centre concrete window pier',x,8.9,
+                direction*0.29,0.36,8.9,0.15,trim);
+            }
+          }
+          // Public ground-floor shop bays, glazed below a shallow fascia.
+          for(let i=0;i<bayCount;i++){
+            const x=(i+0.5)*bayW-len/2;
+            addBox(frontage,'Harbour Centre Cordova retail display glass',
+              x,1.72,face*0.26,bayW-0.56,2.95,0.12,glassBase);
+            addBox(frontage,'Harbour Centre Cordova shop mullion',
+              x,1.7,face*0.35,0.11,3.1,0.1,doorFrame);
+          }
+          addBox(frontage,'Harbour Centre narrow ground-floor lintel',
+            0,3.58,face*0.32,len,0.32,0.28,trim);
+          addBox(frontage,'Harbour Centre upper retail fascia',
+            0,4.35,face*0.31,len,0.64,0.20,masonry);
+          addBox(frontage,'Harbour Centre stepped podium cornice',
+            0,13.68,0,len+0.6,0.42,0.8,trim);
+          if(label==='Dollarama'){
+            const entryX=-len*0.16;
+            addBox(frontage,'Dollarama recessed glass door pair',
+              entryX,1.55,face*0.37,2.9,2.9,0.1,darkGlazing);
+            for(const side of [-1,1])
+              addBox(frontage,'Dollarama metal door jamb',
+                entryX+side*1.46,1.6,face*0.43,0.1,3,0.16,doorFrame);
+            addBox(frontage,'Dollarama door meeting stile',
+              entryX,1.6,face*0.45,0.09,2.95,0.1,doorFrame);
+            shopSign(frontage,'Dollarama Cordova storefront','DOLLARAMA',
+              entryX,4.42,face,11.6,0.86,'#e9d44f','#1c6a39');
+          } else {
+            shopSign(frontage,'Harbour Centre Cordova wayfinding','HARBOUR CENTRE',
+              len*0.04,4.42,face,13.4,0.82,'#23613b','#f1f1d9');
+          }
+          return frontage;
+        }
+
+        // The 5–14 edges are one collinear Cordova-facing 79m streetwall,
+        // interrupted only by the small 8m shop/food-court lobby.
+        const westRetail=lotFacingEdge(5,6,'Dollarama');
+        const eastRetail=lotFacingEdge(13,14,'Harbour Centre');
+        const a=coords[6],z=coords[13],pa=toLocal(a),pb=toLocal(z);
+        const deltaX=pb.x-pa.x,deltaZ=pb.z-pa.z;
+        const entryLen=Math.hypot(deltaX,deltaZ);
+        if(westRetail&&eastRetail&&entryLen>5&&entryLen<12){
+          const entry=new THREE.Group();
+          entry.name='Harbour Centre Cordova recessed food court and shops lobby';
+          entry.position.set((pa.x+pb.x)/2,0,(pa.z+pb.z)/2);
+          entry.rotation.y=Math.atan2(-deltaZ,deltaX);
+          const face=westRetail.userData.parkingFace;
+          entry.userData.recessedBetweenCivicEdges=[6,13];
+          entry.userData.parkingFace=face;
+          group.add(entry);
+          addBox(entry,'Harbour Centre shaded lobby interior',
+            0,2.0,-face*0.6,entryLen-0.35,4.0,0.25,doorFrame);
+          addBox(entry,'Harbour Centre food court full-height doors',
+            0,2,face*0.12,entryLen-0.55,3.8,0.1,glassBase);
+          for(const x of [-entryLen*0.31,0,entryLen*0.31])
+            addBox(entry,'Harbour Centre lobby metal door mullion',
+              x,1.9,face*0.19,0.11,3.8,0.11,mullion);
+          shopSign(entry,'Harbour Centre food court and shops','FOOD COURT  |  SHOPS',
+            0,4.33,face,entryLen-0.4,0.77,'#23613b','#f1f1d9');
+          addBox(entry,'Harbour Centre glass lobby upper band',
+            0,9.1,0,entryLen-0.3,8.6,0.32,darkGlazing);
+          addBox(entry,'Harbour Centre recessed lobby roof coping',
+            0,13.65,0,entryLen-0.15,0.38,0.55,trim);
         }
         group.userData.cordovaStreetWallSource='City of Vancouver feature-16 footprint edges';
+        group.userData.cordovaFrontFacesComputedFromLot=true;
+        group.userData.cordovaRetailLandmark='Dollarama / 542 W Cordova (illustrative storefront)';
         group.userData.landmark='Harbour Centre / Spencer Building';
         group.userData.architectureSource='https://harbourcentre.com/';
         group.userData.civicAnchor={lat:49.284697,lon:-123.111935};
