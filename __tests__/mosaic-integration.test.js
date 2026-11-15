@@ -15,7 +15,7 @@ test('MOSAIC WordPress virtual route is self-hosted without GitHub Pages', () =>
   assert.doesNotMatch(page, /github\.io/);
 });
 test('MOSAIC runtime shipped locally alongside WordPress template', () => {
-  for (const asset of ['index.html','styles.css','core.js','effects.js','instruments.js','app.js']) {
+  for (const asset of ['index.html','styles.css','core.js','effects.js','patterns.js','instruments.js','app.js']) {
     assert.ok(fs.existsSync(path.join(__dirname,'../assets/mosaic',asset)),asset);
   }
   const html = read('assets/mosaic/index.html');
@@ -28,7 +28,7 @@ test('MOSAIC runtime shipped locally alongside WordPress template', () => {
 test('Theme manifest and workflow deploy all MOSAIC assets', () => {
   const manifest = read('scripts/theme_deploy_manifest.py');
   const workflow = read('.github/workflows/deploy-production.yml');
-  for (const asset of ['page-mosaic.php', 'assets/mosaic/index.html','assets/mosaic/styles.css','assets/mosaic/core.js','assets/mosaic/effects.js','assets/mosaic/instruments.js','assets/mosaic/app.js']) {
+  for (const asset of ['page-mosaic.php', 'assets/mosaic/index.html','assets/mosaic/styles.css','assets/mosaic/core.js','assets/mosaic/effects.js','assets/mosaic/patterns.js','assets/mosaic/instruments.js','assets/mosaic/app.js']) {
     assert.ok(manifest.includes('"' + asset + '"'),asset);
   }
   assert.ok(manifest.includes('"assets/mosaic/**"'));
@@ -111,4 +111,26 @@ test('SUZY//AI browser instruments are playable, locally layered, and mixed into
   assert.match(app, /hasArrangement\(\)/);
   const layer = {kind:'keys',seconds:2,muted:false,volume:.8,events:[{t:.5,note:60,dur:.4}]};
   assert.deepEqual(instrument.eventsInWindow(layer,0,5).map(event=>event.t), [.5,2.5,4.5]);
+});
+
+
+test('MOSAIC loop library has ready-to-play synth patterns and custom rhythm grid', () => {
+  const patterns = require('../assets/mosaic/patterns.js');
+  const instruments = require('../assets/mosaic/instruments.js');
+  const html = read('assets/mosaic/index.html');
+  assert.deepEqual(patterns.PRESETS.map(p => p.id),
+    ['heartbeat','broken','half-time','sub-walk','glass-circuit','soft-orbit']);
+  assert.match(html, /src="patterns\.js\?v=loops6"/);
+  assert.match(html, /src="instruments\.js\?v=loops6"/);
+  assert.match(html, /id="instrument-loop-preset"/);
+  assert.match(html, /id="instrument-add-rhythm"/);
+  assert.match(html, /id="instrument-step-grid"/);
+  const beat=patterns.buildPreset('heartbeat',120,4);
+  assert.equal(beat.seconds,8);
+  assert.equal(beat.kind,'drums');
+  assert.ok(instruments.normalizeLayer(beat));
+  assert.equal(instruments.eventsInWindow(beat,8,8.2)[0].t,8);
+  const custom=patterns.buildPreset('custom-rhythm',120,2,{kick:[0,8],snare:[4,12],hat:[0,2,4,6,8,10,12,14]});
+  assert.equal(custom.seconds,4);
+  assert.equal(custom.events.filter(e=>e.note===36).length,4);
 });

@@ -56,3 +56,24 @@
 .instrument-layer .instrument-remove{font-size:1.1rem;line-height:1}
 .instrument-layer input[type=range]{flex:0 1 95px;max-width:95px;min-width:35px;margin:0}
 @media(max-width:570px){.instrument-pads{gap:3px}.instrument-pad{min-height:59px;padding:5px 0}.instrument-layer{flex-wrap:wrap}.instrument-layer-title{flex-basis:100%}}
+
+/* v0.5: musician-owned preset phrases and rhythm step builder */
+.instrument-loop-library{margin-top:16px;padding:16px;background:#141725;border:1px solid #454258;border-radius:12px}
+.instrument-loop-library h3{margin:0 0 14px;font-size:1rem;letter-spacing:-.01em}
+.instrument-loop-library .label{margin-bottom:5px}
+.instrument-preset-controls{align-items:end}
+.instrument-preset-controls label{min-width:170px}
+.instrument-preset-controls .instrument-bars-label{flex:0 0 85px;min-width:85px}
+#instrument-add-loop,#instrument-add-rhythm{border:1px solid var(--mint);border-radius:8px;background:#18352d;color:var(--mint);padding:11px 14px;font-size:.75rem;font-weight:800;white-space:nowrap}
+#instrument-add-loop:hover,#instrument-add-rhythm:hover{background:#315c4d}
+.instrument-beat-builder{border-top:1px solid #454258;margin-top:15px;padding-top:13px}
+.instrument-beat-builder summary{cursor:pointer;font:750 .75rem ui-monospace,monospace;letter-spacing:.04em;color:var(--pink)}
+.instrument-beat-builder[open] summary{margin-bottom:12px}
+.instrument-step-grid{display:grid;gap:7px;overflow-x:auto;padding:4px 0 12px}
+.instrument-step-row{display:grid;grid-template-columns:48px repeat(16,minmax(13px,1fr));gap:3px;align-items:center;min-width:440px}
+.instrument-step-label{font:750 .62rem ui-monospace,monospace;color:var(--muted)}
+.instrument-step{height:29px;min-width:0;border:1px solid #4c4959;border-radius:4px;background:#272839;color:#777588;font:700 .58rem ui-monospace,monospace;padding:0;touch-action:manipulation}
+.instrument-step.is-quarter{border-left:2px solid #b7a9cd}
+.instrument-step[aria-pressed="true"]{background:var(--pink);border-color:var(--pink);color:#2b1722}
+.instrument-step:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
+@media(max-width:650px){.instrument-preset-controls{flex-wrap:wrap}.instrument-preset-controls label{flex-basis:100%;min-width:0}.instrument-preset-controls .instrument-bars-label{flex-basis:90px}}

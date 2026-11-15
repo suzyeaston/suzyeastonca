@@ -1,13 +1,13 @@
 # MOSAIC / production deployment on suzyeaston.ca
 
 MOSAIC is a separately maintained [public GitHub repository](https://github.com/suzyeaston/mosaic-studio).
-The WordPress theme keeps a **vendored snapshot** of six source files in `assets/mosaic/`
+The WordPress theme keeps a **vendored snapshot** of seven source files in `assets/mosaic/`
 so users can use the studio at `https://www.suzyeaston.ca/mosaic/` without GitHub Pages, another
 host, or downloading any project zip. The route is rendered through `page-mosaic.php`.
 
 ## Update source files
 1. Review the latest tested `main` revision in `suzyeaston/mosaic-studio`.
-2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `instruments.js`, and `app.js` into `assets/mosaic/`.
+2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `patterns.js`, `instruments.js`, and `app.js` into `assets/mosaic/`.
 3. Run `node --test __tests__/mosaic-integration.test.js`, `php -l page-mosaic.php`,
    and `python3 scripts/theme_deploy_manifest.py validate`; merge the PR only after QA.
 4. Theme deployment copies these assets along with the page. Check that GitHub Actions succeeded
@@ -53,3 +53,12 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - Internal static assets now use `?v=instrument5` to invalidate old CSS/JS caches. Bump this on each release.
 - Source attribution and the original license notes are in the `suzyeaston/mosaic-studio` repository's `NOTICE`.
 - Future Stage 2: audio-reactive visualizer layered over video or video-free graphics. No visualizer or model generation is claimed for this PR.
+
+## Ready-made musical loops and rhythm sequencer (2026-11, v0.5)
+- Original beat-note and instrument-phrase patterns are contained in self-hosted `assets/mosaic/patterns.js`, loaded before `instruments.js`. All sound is synthesized locally in Web Audio; no samples or model weights.
+- Six ready-made loops: three drum rhythms, plus a bassline, key arpeggio and pad harmonic pattern. Each can be created as a standalone 1-, 2-, or 4-bar track from the existing BPM.
+- The collapsible 16-step beat editor toggles kick/snare/hat. Adding its pattern stores and loops it just like an instrument layer.
+- Each new pattern layer keeps the BPM in effect at creation; already committed and previously recorded layers are NOT silently time-stretched when the count-in BPM slider changes. Use a consistent BPM while layering.
+- Patterns loop through the existing instrument bus, which participates in playback, video overdub monitoring, and browser-local MP4/WebM export. Existing stored layers and video takes are preserved.
+- Integration regressions verify preset IDs, bar seconds, beat events, and browser asset references. Manual browser audio QA remains necessary.
+- Cache busting uses `?v=loops6`. Future revisions should increment the query string across the self-hosted assets.

@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#11131f">
   <meta name="description" content="MOSAIC is a free, private-by-default multitrack video studio. Record a little orchestra of yourself in your browser.">
   <title>MOSAIC / multitrack video studio</title>
-  <link rel="stylesheet" href="styles.css?v=instrument5">
-  <script defer src="core.js?v=instrument5"></script>
-  <script defer src="effects.js?v=instrument5"></script>
-  <script defer src="instruments.js?v=instrument5"></script>
-  <script defer src="app.js?v=instrument5"></script>
+  <link rel="stylesheet" href="styles.css?v=loops6">
+  <script defer src="core.js?v=loops6"></script>
+  <script defer src="effects.js?v=loops6"></script>
+  <script defer src="patterns.js?v=loops6"></script>
+  <script defer src="instruments.js?v=loops6"></script>
+  <script defer src="app.js?v=loops6"></script>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -66,6 +67,38 @@
           </div>
           <div id="instrument-pads" class="instrument-pads" role="group" aria-label="Instrument notes C to C; keyboard A S D F G H J K"></div>
           <p class="instrument-tip">Tap notes or use A S D F G H J K. Press Record, play a phrase, then Stop &amp; Keep. Each layer repeats independently with your video. No AI models or cloud audio.</p>
+          <div class="instrument-loop-library" aria-labelledby="loop-library-title">
+            <div class="instrument-head">
+              <div><p class="label">READY-MADE / DROP IN A LOOP</p><h3 id="loop-library-title">Start with something playing</h3></div>
+            </div>
+            <div class="instrument-controls instrument-preset-controls">
+              <label for="instrument-loop-preset">Choose a musical loop
+                <select id="instrument-loop-preset">
+                  <option value="heartbeat">Rhythm · Harbour Pulse</option>
+                  <option value="broken">Rhythm · Broken Machine</option>
+                  <option value="half-time">Rhythm · Half-time / Air</option>
+                  <option value="sub-walk">Bass · Sub Walk</option>
+                  <option value="glass-circuit">Keys · Glass Circuit</option>
+                  <option value="soft-orbit">Pad · Soft Orbit</option>
+                </select>
+              </label>
+              <label for="instrument-loop-bars" class="instrument-bars-label">Length
+                <select id="instrument-loop-bars">
+                  <option value="1">1 bar</option>
+                  <option value="2">2 bars</option>
+                  <option value="4" selected>4 bars</option>
+                </select>
+              </label>
+              <button id="instrument-add-loop" type="button">＋ ADD LOOP</button>
+            </div>
+            <p class="instrument-tip">Original browser-synth patterns, not sampled recordings. Loops are ready to play. They follow the BPM shown in Set Your Tempo when added; existing recorded layers keep their original timing.</p>
+            <details class="instrument-beat-builder">
+              <summary>🥁 BUILD YOUR OWN RHYTHM / 16 STEPS</summary>
+              <p class="instrument-tip">Each row is one 4/4 bar. Toggle kick, snare and hi-hat hits, then add the pattern as an independent loop.</p>
+              <div id="instrument-step-grid" class="instrument-step-grid" role="group" aria-label="16-step drum pattern editor"></div>
+              <button id="instrument-add-rhythm" type="button">＋ ADD MY RHYTHM LOOP</button>
+            </details>
+          </div>
           <div id="instrument-layers" class="instrument-layers" aria-label="Saved instrument layers"></div>
         </section>
       </section>
