@@ -56,6 +56,7 @@ jobs:
               - 'scripts/theme_deploy_manifest.py'
               - 'scripts/build_toaster_social_card.py'
               - 'scripts/build_orchestra_social_card.py'
+              - 'scripts/verify_orchestra_social_preview.py'
               - 'scripts/ensure_wordpress_public_pages.py'
               - 'scripts/wp_ensure_public_pages.php'
             plugin:
