@@ -1,7 +1,8 @@
 (() => {
   'use strict';
   const core = window.MosaicCore;
-  if (!core) return;
+  const effects = window.MosaicEffects;
+  if (!core || !effects) return;
 
   const el = (id) => document.getElementById(id);
   const ui = {
@@ -16,6 +17,9 @@
     levelOutput: el('level-output'), mute: el('mute-btn'), remove: el('remove-btn'),
     downloadTile: el('download-tile-btn'), export: el('export-btn'), clear: el('clear-btn'),
     status: el('status'), layout: [...document.querySelectorAll('[data-grid]')],
+    fxPreview: el('fx-preview'), fxPreset: el('fx-preset'), fxStrength: el('fx-strength'),
+    fxStrengthValue: el('fx-strength-value'), share: el('share-btn'),
+    caption: el('share-caption'), copyCaption: el('copy-caption-btn'),
   };
   const clips = new Map();
   const mediaNodes = new Map();
@@ -36,6 +40,12 @@
   let busy = false;
   let cancelTake = false;
   let exportDestination = null;
+  let fxPreset = 'clean';
+  let fxStrength = 65;
+  let lastExport = null;
+  let scratchCanvas = null;
+  let scratchContext = null;
+  const previewContext = ui.fxPreview.getContext('2d', { alpha: false });
 
   const status = (message, error = false) => {
     ui.status.textContent = message;
@@ -90,7 +100,7 @@
     });
   }
   function savePreferences() {
-    try { localStorage.setItem('mosaic-studio-prefs', JSON.stringify({ gridSize, targetDuration, bpm: Number(ui.bpm.value), camera: ui.camera.checked, clicks: ui.clicks.checked })); } catch { /* private browsing */ }
+    try { localStorage.setItem('mosaic-studio-prefs', JSON.stringify({ gridSize, targetDuration, bpm: Number(ui.bpm.value), camera: ui.camera.checked, clicks: ui.clicks.checked, fxPreset, fxStrength })); } catch { /* private browsing */ }
   }
   function restorePreferences() {
     try {
@@ -101,6 +111,8 @@
       ui.bpm.value = core.clamp(prefs.bpm || 120, 60, 200);
       ui.camera.checked = prefs.camera !== false;
       ui.clicks.checked = prefs.clicks !== false;
+      fxPreset = effects.preset(prefs.fxPreset);
+      fxStrength = effects.strength(prefs.fxStrength ?? 65);
     } catch { /* use defaults */ }
   }
   function setTarget(value) {
@@ -224,6 +236,7 @@
     ui.play.disabled = busy || !anyClips() || playbackMode === 'playing';
     ui.stop.disabled = busy || playbackMode !== 'playing';
     ui.export.disabled = busy || !anyClips();
+    ui.share.disabled = busy || !lastExport;
     ui.clear.disabled = busy || !anyClips();
     ui.downloadTile.disabled = busy || !selectedClip;
     ui.mute.disabled = busy || !selectedClip;
@@ -242,6 +255,9 @@
       btn.setAttribute('aria-pressed', String(Number(btn.dataset.grid) === gridSize));
     }
     ui.bpmValue.textContent = `${ui.bpm.value} BPM`;
+    ui.fxPreset.disabled = busy;
+    ui.fxStrength.disabled = busy;
+    ui.fxStrengthValue.textContent = `${fxStrength}%`;
   }
   async function ensureAudioContext() {
     if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -287,6 +303,7 @@
       video.pause();
       try { video.currentTime = 0; } catch { /* metadata not yet ready */ }
     }
+    ui.fxPreview.hidden = true;
     updateClock(0);
     updateUI();
   }
@@ -296,6 +313,10 @@
       const elapsed = (performance.now() - playbackStarted) / 1000;
       const position = core.expectedPosition(elapsed, sessionDuration);
       updateClock(playbackMode === 'recording' ? (performance.now() - takeStartedAt) / 1000 : position);
+      if (playbackMode === 'playing' && previewContext) {
+        ui.fxPreview.hidden = false;
+        renderFinalFrame(previewContext, 720, 720, elapsed);
+      }
       // Media elements decode independently. Pull obvious stragglers back toward the shared timeline.
       if (Math.floor(elapsed * 2) !== Math.floor((elapsed - 0.05) * 2)) {
         for (const [index, video] of videoElements) {
@@ -328,6 +349,7 @@
     if (results.length && results.every(result => result.status === 'rejected')) throw new Error('Browser blocked playback. Click Play All, and check sound permissions.');
     playbackStarted = performance.now();
     playbackMode = mode;
+    ui.fxPreview.hidden = mode !== 'playing';
     monitorPlayback();
     updateUI();
   }
@@ -380,6 +402,7 @@
       return;
     }
     stopPlayback();
+    lastExport = null;
     busy = true;
     cancelTake = false;
     updateUI();
@@ -496,6 +519,56 @@
       ctx.fillText(`TAKE ${String(i + 1).padStart(2, '0')}${clip?.muted ? ' / MUTED' : ''}`, x + 14, y + cell - 13);
     }
   }
+  // Render once into a clean square, then run the same FX engine for preview and export.
+  // Recording media itself is never filtered or modified.
+  function renderFinalFrame(ctx, width, height, elapsed) {
+    if (!scratchCanvas) {
+      scratchCanvas = document.createElement('canvas');
+      scratchContext = scratchCanvas.getContext('2d', { alpha: false });
+    }
+    if (!scratchContext) throw new Error('Video effect rendering unavailable.');
+    if (scratchCanvas.width !== width || scratchCanvas.height !== height) {
+      scratchCanvas.width = width;
+      scratchCanvas.height = height;
+    }
+    exportFrame(scratchContext, width, height);
+    effects.draw(ctx, scratchCanvas, { preset: fxPreset, strength: fxStrength, seconds: elapsed });
+  }
+  function invalidateExport() {
+    lastExport = null;
+    updateUI();
+  }
+  async function shareVideo() {
+    if (busy || !lastExport) return;
+    const { blob, name } = lastExport;
+    const caption = ui.caption.value.trim();
+    const file = new File([blob], name, { type: blob.type || 'video/webm' });
+    // Native file share requires a real user gesture and can vary by browser/platform.
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'MOSAIC performance', text: caption });
+        status('Shared through your device. Your video was not uploaded by MOSAIC.');
+      } catch (error) {
+        if (error?.name === 'AbortError') status('Share cancelled. Your exported video is still available.');
+        else status('That share destination could not accept the video. Download and upload it manually.', true);
+      }
+      return;
+    }
+    downloadBlob(blob, name);
+    status('Your browser cannot share video files directly. The video was downloaded; attach it to your social post and use Copy Caption.');
+  }
+  async function copyCaption() {
+    const text = ui.caption.value.trim();
+    if (!text) { status('Write a caption first.'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      status('Caption copied. Paste it into your social post. ♡');
+    } catch {
+      ui.caption.focus();
+      ui.caption.select();
+      status('Clipboard permission denied. Caption selected; copy it manually.', true);
+    }
+  }
   async function exportVideo() {
     if (busy || !anyClips()) return;
     if (!HTMLCanvasElement.prototype.captureStream || typeof MediaRecorder === 'undefined') {
@@ -519,7 +592,7 @@
         applyTrackGain(index);
       }
       drawing = true;
-      const draw = () => { if (!drawing) return; exportFrame(ctx, 720, 720); drawId = requestAnimationFrame(draw); };
+      const draw = () => { if (!drawing) return; renderFinalFrame(ctx, 720, 720, performance.now() / 1000); drawId = requestAnimationFrame(draw); };
       draw();
       canvasStream = canvas.captureStream(30);
       outputStream = new MediaStream([...canvasStream.getVideoTracks(), ...exportDestination.stream.getAudioTracks()]);
@@ -537,8 +610,11 @@
       drawing = false; cancelAnimationFrame(drawId);
       if (!chunks.some(chunk => chunk.size)) throw new Error('Export file was empty.');
       const type = rec.mimeType || mime || 'video/webm';
-      downloadBlob(new Blob(chunks, { type }), `mosaic-${dateName()}.${extFor(type)}`);
-      status('Your video grid is ready in Downloads. Everything was composed locally. ♡');
+      const blob = new Blob(chunks, { type });
+      const name = `mosaic-${effects.preset(fxPreset)}-${dateName()}.${extFor(type)}`;
+      lastExport = { blob, name };
+      downloadBlob(blob, name);
+      status('Your effected video was saved locally. Use Share Exported Video or Copy Caption to post it. ♡');
     } catch (error) {
       if (rec?.state === 'recording') rec.stop();
       status(`Export failed: ${error.message || 'unsupported browser'}. Individual tile downloads still work.`, true);
@@ -558,6 +634,7 @@
   async function removeTile() {
     if (busy || !clips.has(selected) || !confirm(`Remove tile ${selected + 1}? You can't undo this.`)) return;
     stopPlayback();
+    invalidateExport();
     releaseClip(clips.get(selected)); clips.delete(selected);
     refreshSessionDuration();
     try { await dbWrite('delete', selected); } catch { status('Tile removed in memory, but storage update failed.', true); }
@@ -567,6 +644,7 @@
   async function clearSession() {
     if (busy || !anyClips() || !confirm('Clear every recorded tile? This cannot be undone.')) return;
     stopPlayback();
+    invalidateExport();
     for (const clip of clips.values()) releaseClip(clip);
     clips.clear();
     refreshSessionDuration();
@@ -577,6 +655,7 @@
   async function toggleMute() {
     const clip = clips.get(selected);
     if (busy || !clip) return;
+    invalidateExport();
     clip.muted = !clip.muted;
     applyTrackGain(selected);
     await saveClip(clip);
@@ -589,6 +668,7 @@
       status('Tiles 5–9 contain recordings. Remove them before switching to a 2 × 2 grid.', true);
       return;
     }
+    invalidateExport();
     gridSize = count;
     if (selected >= count) selected = count - 1;
     savePreferences();
@@ -609,6 +689,20 @@
   ui.play.addEventListener('click', () => startPlayback().then(() => status('Playback running. The tiles are your rhythm section.')).catch(err => status(err.message, true)));
   ui.stop.addEventListener('click', () => { stopPlayback(); status('Playback stopped.'); });
   ui.export.addEventListener('click', exportVideo);
+  ui.share.addEventListener('click', shareVideo);
+  ui.copyCaption.addEventListener('click', copyCaption);
+  ui.fxPreset.addEventListener('change', () => {
+    fxPreset = effects.preset(ui.fxPreset.value);
+    invalidateExport();
+    savePreferences();
+    status('Effect selected. Hit Play All for full-grid preview, then export to include this look.');
+  });
+  ui.fxStrength.addEventListener('input', () => {
+    fxStrength = effects.strength(ui.fxStrength.value);
+    invalidateExport();
+    ui.fxStrengthValue.textContent = `${fxStrength}%`;
+    savePreferences();
+  });
   ui.clear.addEventListener('click', clearSession);
   ui.remove.addEventListener('click', removeTile);
   ui.downloadTile.addEventListener('click', downloadSelected);
@@ -616,6 +710,7 @@
   ui.level.addEventListener('input', () => {
     const clip = clips.get(selected);
     if (!clip || busy) return;
+    invalidateExport();
     clip.volume = Number(ui.level.value) / 100;
     ui.levelOutput.textContent = `${ui.level.value}%`;
     applyTrackGain(selected);
@@ -635,6 +730,8 @@
     if (stored.some(clip => clip.index >= gridSize)) gridSize = 9;
     refreshSessionDuration();
     setTarget(targetDuration);
+    ui.fxPreset.value = fxPreset;
+    ui.fxStrength.value = String(fxStrength);
     renderGrid();
     if (stored.length) status(`${stored.length} saved take${stored.length === 1 ? '' : 's'} restored from this browser. Hit Play All to listen.`);
     else if (!db) status('Private mode / storage unavailable. Recordings will not survive a page reload; download your clips.', true);
