@@ -570,7 +570,7 @@
     root.userData.railCorridorSurveyed = false;
 
     root.userData.nearbyContainers=containerCount;
-    root.userData.tracksAlignedToLotFence=true;
+    root.userData.tracksAlignedToLotFence=false;
     root.userData.railCoordinateFrame='world-eastbound';
     root.userData.railStartBeyondStationEast=true;
     root.userData.openCanadaPlaceSightline=true;
