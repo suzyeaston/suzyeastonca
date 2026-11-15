@@ -122,3 +122,43 @@ The Vancouver Lookout/555 W Hastings anchor, station, raised parking lot,
 service alley, street and traffic remain unchanged. On deployment, QA the
 parking-lot sightline and verify the DOLLARAMA and FOOD COURT / SHOPS signs
 are legible and correctly oriented at pedestrian and flight camera heights.
+
+## November 15 visual QA follow-up: connect Harbour Centre to its civic block
+
+The prior Cordova storefront pass fixed facade normals but left two 34cm-thick
+free-standing street panels. Seen from Suzy's flight camera, the windows and
+signage hovered in front of an empty sky instead of forming the front of a
+real building. Using the user's November 15 screenshots of the simulated
+flight, July 2024 Street View at **540/542 W Cordova**, and the oblique 3D
+aerial of Harbour Centre, the current pass builds a continuous, low-poly
+**physical podium** inside existing civic footprint feature-16:
+
+- Two overlapping solid retail/office volumes follow the slight variation
+  in the West Cordova building-line coordinates rather than extending a
+  generic flat rectangle into the street.
+- The recessed central lobby has an overlapping physical mass behind it.
+  A stepped north wing makes the podium reach the preexisting Spencer
+  Building / Vancouver Lookout tower, with real flat roofs, parapets, and
+  windows on the formerly empty rear and end elevations.
+- The deep rectangular volumes overlap one another and the existing
+  Spencer base. The previous triangulated concave City GIS extrusion is
+  **not** reinstated because it caused visual roof wedges.
+
+### Correct western-to-eastern retail order
+
+From the Waterfront Station / western Cordova approach, the 542 W Cordova
+**FOOD COURT** and **SHOPS** entrances come first, with separate projecting
+canopies and glass doors. The centre connector carries the Harbour Centre
+entry signage. **DOLLARAMA** at 540 W Cordova is farther east, toward the
+Station East parking end of the block. This corrects the previous
+accidental assignment of Dollarama to the west facade and Food Court to
+the short connecting vestibule.
+
+The civic parcel footprint, downtown lookout geocoordinate, raised surface
+parking deck, lower railway alley, pedestrians, roads and traffic systems
+remain unchanged. This is reference-informed illustrative architecture
+rather than a certified architectural survey.
+
+QA after deployment: fly over the parking lot and inspect the main podium's
+roof and return walls, then walk east past Food Court/ Shops to Dollarama.
+Check that the tower no longer hangs behind a floating ribbon of shops.

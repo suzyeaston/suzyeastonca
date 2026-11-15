@@ -159,25 +159,85 @@ test('Cordova-facing Harbour Centre streetwall follows the real civic edges',()=
   assert.match(harbour.userData.cordovaStreetWallSource,/feature-16/);
 });
 
-test('Harbour Centre adds the 542 W Cordova Dollarama and central food court lobby',()=>{
+test('Food Court and Shops precede Dollarama toward the parking lot, by mapped civic frontage',()=>{
   const harbour=model().create(threeStub(),world).children
     .find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
-  const west=harbour.children.find(node=>node.userData?.streetLevelRetail==='Dollarama');
-  const east=harbour.children.find(node=>node.userData?.streetLevelRetail==='Harbour Centre');
+  const west=harbour.children.find(node=>node.userData?.streetLevelRetail==='Food Court / Shops');
+  const east=harbour.children.find(node=>node.userData?.streetLevelRetail==='Dollarama');
   assert.ok(west && east);
-  assert.deepEqual(west.userData.civicEdge,[5,6]);
-  assert.deepEqual(east.userData.civicEdge,[13,14]);
-  assert.ok(west.children.some(node=>node.name==='Dollarama recessed glass door pair'));
-  assert.ok(west.children.some(node=>node.name==='Dollarama Cordova storefront fascia panel'));
-  assert.ok(east.children.some(node=>node.name==='Harbour Centre Cordova wayfinding fascia panel'));
-  assert.equal(west.children.find(node=>node.name==='Dollarama Cordova storefront fascia panel').userData.signText,'DOLLARAMA');
-  const entry=harbour.children.find(node=>node.name==='Harbour Centre Cordova recessed food court and shops lobby');
-  assert.ok(entry && entry.children.some(node=>node.name==='Harbour Centre food court full-height doors'));
+  assert.deepEqual(west.userData.civicEdge,[5,6],'542 W Cordova / Food Court is the western frontage');
+  assert.deepEqual(east.userData.civicEdge,[13,14],'540 W Cordova / Dollarama is the eastern frontage');
+  const parcel=world.buildings.find(b=>b.id==='feature-16');
+  const midpoint=(edge)=>{const [a,b]=edge;return {
+    x:(parcel.footprint[a].x+parcel.footprint[b].x)/2,
+    z:(parcel.footprint[a].z+parcel.footprint[b].z)/2
+  };};
+  assert.ok(midpoint(west.userData.civicEdge).x < midpoint(east.userData.civicEdge).x,
+    'food court comes first when walking east along Cordova, Dollarama is farther toward parking');
+  for(const name of ['Food Court','Shops']){
+    assert.ok(west.children.some(node=>node.name===name+' recessed glass entrance pair'));
+    assert.ok(west.children.some(node=>node.name===name+' projecting entrance awning'));
+    const sign=west.children.find(node=>node.name===name+' Cordova entry fascia panel');
+    assert.ok(sign && sign.userData.signText===name.toUpperCase());
+  }
+  assert.ok(east.children.some(node=>node.name==='Dollarama recessed glass door pair'));
+  assert.equal(east.children.find(node=>node.name==='Dollarama Cordova storefront fascia panel')
+    .userData.signText,'DOLLARAMA');
+  const entry=harbour.children.find(node=>node.name==='Harbour Centre Cordova recessed connecting lobby');
+  assert.ok(entry);
   assert.deepEqual(entry.userData.recessedBetweenCivicEdges,[6,13]);
-  assert.equal(entry.children.find(node=>node.name==='Harbour Centre food court and shops fascia panel').userData.signText,
-    'FOOD COURT  |  SHOPS');
+  assert.ok(entry.children.some(node=>node.name==='Harbour Centre connecting lobby full-height doors'));
+  assert.equal(entry.children.find(node=>node.name==='Harbour Centre Cordova main entrance fascia panel')
+    .userData.signText,'HARBOUR CENTRE');
+  assert.deepEqual(Array.from(harbour.userData.cordovaRetailOrder),
+    ['Food Court','Shops','Harbour Centre','Dollarama']);
   assert.equal(harbour.userData.cordovaFrontFacesComputedFromLot,true);
-  // Preserve the lookout tower's geography and the station/parking route.
-  assert.equal(world.parkingLot.center.x,46);
+});
+
+test('Harbour Centre has one physically connected three-dimensional podium, not free-standing facade slabs',()=>{
+  const harbour=model().create(threeStub(),world).children
+    .find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
+  const linked=harbour.userData.connectedCivicPodium;
+  assert.ok(linked && linked.overlapsSpencerTower,'podium must overlap the tower at civic parcel');
+  assert.ok(linked.backX-linked.frontX>65,'mapped podium must have actual depth');
+  assert.ok(linked.roofY>12 && linked.roofY<15);
+  const names=[
+    'Harbour Centre connected east retail podium',
+    'Harbour Centre connected west civic podium',
+    'Harbour Centre connected central lobby mass',
+    'Harbour Centre connected north retail wing'
+  ];
+  const masses=names.map(name=>harbour.children.find(node=>node.name===name));
+  assert.ok(masses.every(Boolean),'two sides, middle and north wing must all have physical masses');
+  assert.ok(masses.every(node=>node.userData.connectedBuildingMass));
+  assert.ok(masses.every(node=>node.geometry.args[0]>20 && node.geometry.args[2]>6),
+    'connected podium volumes must not be 34cm paper-thin');
+  const east=masses[0],west=masses[1],connector=masses[2];
+  const bounds=(m)=>({minX:m.position.x-m.geometry.args[0]/2,
+    maxX:m.position.x+m.geometry.args[0]/2,
+    minZ:m.position.z-m.geometry.args[2]/2,
+    maxZ:m.position.z+m.geometry.args[2]/2});
+  const e=bounds(east),w=bounds(west),c=bounds(connector);
+  const overlap=(a,b)=>a.minX<b.maxX && b.minX<a.maxX &&
+    a.minZ<b.maxZ && b.minZ<a.maxZ;
+  assert.ok(overlap(e,c) && overlap(w,c),
+    'podium segments must overlap through the connector, not hover separately');
+  const tower=harbour.children.find(node=>node.name==='Harbour Centre concrete gridded 28 storey shaft');
+  assert.ok(tower && e.minX<tower.position.x && e.maxX>tower.position.x);
+  assert.ok(w.minX<tower.position.x && w.maxX>tower.position.x);
+  const local=world.buildings.find(b=>b.id==='feature-16').footprint_local;
+  const averageX=(a,b)=>(local[a].x+local[b].x)/2;
+  assert.ok(Math.abs(linked.westFrontX-averageX(5,6))<0.2);
+  assert.ok(Math.abs(linked.eastFrontX-averageX(13,14))<0.2);
+  for(const name of [
+    'Harbour Centre connected east podium roof',
+    'Harbour Centre connected west podium roof',
+    'Harbour Centre connected central roof',
+    'Harbour Centre connected north wing roof'
+  ]){
+    const roof=harbour.children.find(node=>node.name===name);
+    assert.ok(roof && roof.geometry.args[1]===0.24,'each new solid volume needs a flat roof');
+  }
+  assert.equal(world.parkingLot.center.x,46,'raised parking lot and all movement geometry remain unchanged');
   assert.equal(world.station.x,-22.92);
 });
