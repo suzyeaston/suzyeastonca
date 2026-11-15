@@ -108,6 +108,7 @@ THEME_FILES = [
     "assets/mosaic/index.html",
     "assets/mosaic/styles.css",
     "assets/mosaic/core.js",
+    "assets/mosaic/effects.js",
     "assets/mosaic/app.js",
     "page-loop-lab.php",
     "page-gastown-sim.php",
