@@ -222,8 +222,13 @@
         // real roof, depth, returns and a physical connection to the tower.
         // Intentionally avoid a deeply concave GIS extrude here because
         // that previously created enormous triangular roof/shadow artifacts.
-        const local5=toLocal(coords[5]),local14=toLocal(coords[14]);
-        const frontX=(local5.x+local14.x)/2+0.36;
+        const local5=toLocal(coords[5]),local6=toLocal(coords[6]);
+        const local13=toLocal(coords[13]),local14=toLocal(coords[14]);
+        // The civic streetline bends ~0.4 m across these two edges; align
+        // each built volume with its own facade instead of pushing a giant
+        // rectangle across the display windows.
+        const westFrontX=(local5.x+local6.x)/2+0.12;
+        const eastFrontX=(local13.x+local14.x)/2+0.12;
         const backX=Math.min(cx+37,25.7);
         const southZ=local14.z+0.35;
         const northZ=local5.z-0.35;
@@ -235,21 +240,43 @@
           mesh.userData={connectedBuildingMass:true};
           return mesh;
         }
-        volume('Harbour Centre connected civic podium core',
-          frontX,backX,southZ,mainNorthZ,roofY,masonry);
-        // Step around the genuine NW edge of the civic parcel, rather than
-        // allowing a full rectangular mass to project outside the lot.
+        // One actual three-dimensional civic podium, built as overlapping
+        // rectangular volumes to follow the mapped street-edge setbacks.
+        const eastSouthZ=southZ,eastNorthZ=local13.z+0.6;
+        const westSouthZ=local6.z-0.6,westNorthZ=mainNorthZ;
+        volume('Harbour Centre connected east retail podium',
+          eastFrontX,backX,eastSouthZ,eastNorthZ,roofY,masonry);
+        volume('Harbour Centre connected west civic podium',
+          westFrontX,backX,westSouthZ,westNorthZ,roofY,masonry);
+        // The 8.3m entry sits in front of this *joined* physical connector.
+        volume('Harbour Centre connected central lobby mass',
+          Math.min(westFrontX,eastFrontX)+0.06,backX,
+          local13.z-0.65,local6.z+0.65,roofY,masonry);
         const wingBackX=-5.85;
         volume('Harbour Centre connected north retail wing',
-          frontX,wingBackX,mainNorthZ-0.45,northZ,roofY,masonry);
+          westFrontX,wingBackX,mainNorthZ-0.45,northZ,roofY,masonry);
         const roofMaterial=new THREE.MeshStandardMaterial({
           color:0x777c7d,roughness:0.92,metalness:0.03});
-        addBox(group,'Harbour Centre connected civic podium roof',
-          (frontX+backX)/2,roofY+0.12,(southZ+mainNorthZ)/2,
-          backX-frontX,0.24,mainNorthZ-southZ,roofMaterial);
-        addBox(group,'Harbour Centre connected wing roof',
-          (frontX+wingBackX)/2,roofY+0.12,(mainNorthZ+northZ)/2,
-          wingBackX-frontX,0.24,northZ-mainNorthZ,roofMaterial);
+        function roof(name,x1,x2,z1,z2){
+          addBox(group,name,(x1+x2)/2,roofY+0.12,(z1+z2)/2,
+            x2-x1,0.24,z2-z1,roofMaterial);
+        }
+        roof('Harbour Centre connected east podium roof',
+          eastFrontX,backX,eastSouthZ,eastNorthZ);
+        roof('Harbour Centre connected west podium roof',
+          westFrontX,backX,westSouthZ,westNorthZ);
+        roof('Harbour Centre connected central roof',
+          Math.min(westFrontX,eastFrontX)+0.06,backX,
+          local13.z-0.65,local6.z+0.65);
+        roof('Harbour Centre connected north wing roof',
+          westFrontX,wingBackX,mainNorthZ-0.45,northZ);
+        const frontX=Math.min(westFrontX,eastFrontX);
+        // Source-aligned metadata is used by QA to catch future detached
+        // facades or garage geometry drawn on the wrong side of Cordova.
+        group.userData.connectedCivicPodium={
+          frontX,westFrontX,eastFrontX,backX,southZ,northZ,roofY,wingBackX,
+          overlapsSpencerTower:backX>cx-16 && frontX<cx+16
+        };
         // Side and rear elevations remain readable during suzyfly; no
         // hovering wall with an empty white void behind it.
         for(let x=frontX+3.5;x<backX-2;x+=5.8){
@@ -272,11 +299,6 @@
           addBox(group,'Harbour Centre rooftop end parapet',
             (frontX+backX)/2,roofY+0.60,z,backX-frontX,0.95,0.45,trim);
         }
-        group.userData.connectedCivicPodium={
-          frontX,backX,southZ,northZ,roofY,wingBackX,
-          overlapsSpencerTower:backX>cx-16 && frontX<cx+16
-        };
-
         function shopSign(parent,name,text,x,y,face,width,height,bg,fg) {
           const z=face*0.52;
           const backing=addBox(parent,name+' fascia panel',x,y,z,width,height,0.12,
