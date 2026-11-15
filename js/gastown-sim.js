@@ -3222,7 +3222,10 @@
           bag: commuterVariant % 3 === 0
         })
       : (NPC_ROLE_STYLE[npc.role] || NPC_ROLE_STYLE.pedestrian);
-    const scaleFactor = Math.max(0.72, Math.min(1.15, npc.silhouetteScale || 1));
+    // Suzy's authored avatar is ~2.1 scene metres tall. The previous
+    // 0.72–1.15 clamp made nearby commuters look child-sized beside her.
+    // Preserve individual variation without the artificial 25% shrink.
+    const scaleFactor = Math.max(1.10, Math.min(1.23, (npc.silhouetteScale || 1) * 1.18));
     const root = new THREE.Group();
     const bodyMaterial = new THREE.MeshStandardMaterial({ color: style.color, roughness: 0.8, metalness: 0.1 });
     const skinPalette = [0xe0c7aa, 0xcda581, 0x987257, 0xe9cfb8];
@@ -3779,13 +3782,17 @@
     state.npcs = sourceNpcs.map((npc) => {
       const visual = makeNpcVisual(npc);
       const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
-      visual.position.set(start.x, 0, start.z);
+      // The parking asphalt is still +0.19 while the service alley below is
+      // -3.60. Set feet on the actual public surface, never on the alley.
+      const onRaisedLot = world.parkingLot && isPointInPolygon(start, world.parkingLot.polygon || []);
+      const baseY = onRaisedLot ? 0.19 : 0;
+      visual.position.set(start.x, baseY, start.z);
       worldGroup.add(visual);
       // NPC dialogue remains interactive, without floating speech boxes.
       const swaySeed = deterministicUnit(npc.id + '-sway');
       const startYaw = typeof npc.yaw === 'number' ? npc.yaw : deterministicUnit(npc.id + '-yaw') * Math.PI * 2;
       const npcState = Object.assign({
-        mesh: visual, patrolIndex: 0, direction: 1, baseY: 0, baseYaw: startYaw, currentYaw: startYaw,
+        mesh: visual, patrolIndex: 0, direction: 1, baseY, baseYaw: startYaw, currentYaw: startYaw,
         speed: npc.role === 'pedestrian' || npc.role === 'commuter' || npc.role === 'tourist' || npc.role === 'photographer' ? 0.84 + (deterministicUnit(npc.id) * 0.34) : npc.role === 'guide' ? 0.18 : npc.role === 'skateboarder' ? 2.35 : npc.role === 'cyclist' ? 3.1 : 0,
         pauseUntil: 0, animPhase: swaySeed * Math.PI * 2, swayAmount: 0.012 + (swaySeed * 0.014),
         microEvent: '', interactionTargetId: '', socialRadius: npc.role === 'tourist' || npc.role === 'photographer' ? 3.2 : 2.2,
