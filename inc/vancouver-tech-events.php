@@ -2168,6 +2168,7 @@ function suzy_render_vancouver_tech_events_html( ?array $events = null ): string
         <p class="vancouver-tech-events__kicker pixel-font">yvr calendar</p>
         <h1>Vancouver Tech Events</h1>
         <p>Vancouver tech, maker, security and developer communities. Luma, Meetup, Eventbrite and conferences. Times are Vancouver local time. Check organizers before attending; some sites block automated discovery.</p>
+        <p><a href="<?php echo esc_url( home_url( '/vancouver-events/' ) ); ?>">Browse all Vancouver events across tech, music &amp; culture</a></p>
 
         <?php if ( empty( $events ) ) : ?>
             <p>Nothing upcoming right now. Sources still get checked on the next pass.</p>
