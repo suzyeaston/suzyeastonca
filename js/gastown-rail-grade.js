@@ -180,7 +180,7 @@
     }
     // The lane roadbed is physically below the public lot and street.
     // It must not inherit the street-height ground plane.
-    root.userData.loadingDeckClearance=deckHeight;
+    // Grade metadata is attached below, after all geometry is constructed.
 
     // Compact fenced utility yard, not a second rail-yard surface. It lies
     // immediately NORTH of the real alley and far SOUTH of the CPR rails.
@@ -215,6 +215,7 @@
       elevatedStreetAndLot:true,
       lowerServiceRoad:true,
       gradeSeparationMetres:LOT_LEVEL-LANE_LEVEL,
+      loadingDeckClearance:deckHeight,
       wireFencePostCount:fencePosts+returnPosts,
       railwayTrackCount:0,
       railRoutes:[],
