@@ -134,9 +134,10 @@
     // (67,77) -> (80,80) -> (101,86) in scene metres.
     // The previous invented (82,43) -> (196,27) lane was on the
     // WRONG side of the lot and put chain link across live tracks.
-    const first=mapped[0],last=mapped[mapped.length-1];
+    const last=mapped[mapped.length-1];
+    // Start at the first photographed alley position. Extending west from
+    // it placed a chain-link corner inside the Station East parking polygon.
     const route=[
-      {x:first.x-4.7,z:first.z-1.3},
       ...mapped,
       {x:last.x+18.2,z:last.z+4.5}
     ];
