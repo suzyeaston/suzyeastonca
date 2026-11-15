@@ -103,6 +103,7 @@ THEME_FILES = [
     "page-vancouver-music-culture.php",
     "page-vancouver-events.php",
     "page-afterimage.php",
+    "page-mosaic.php",
     "page-loop-lab.php",
     "page-gastown-sim.php",
     "parts/home-hero-pitch.php",
