@@ -12,10 +12,44 @@
   const OFFSETS=[0,2,4,5,7,9,11,12];
   const KEYBOARD='asdfghjk';
   const MAX_LAYERS=12, MAX_EVENTS=512, STORAGE='mosaic-instrument-layers-v1';
+  const noiseCache=new WeakMap();
+  function percussion(ctx,bus,note,at,volume){
+    const start=Math.max(ctx.currentTime+.006,at),gain=ctx.createGain();
+    gain.connect(bus);
+    const amp=Math.max(.01,Math.min(.5,volume*.22));
+    const g=gain.gain;g.setValueAtTime(.0001,start);
+    if(note===36){
+      const osc=ctx.createOscillator();osc.type='sine';
+      osc.frequency.setValueAtTime(128,start);
+      osc.frequency.exponentialRampToValueAtTime(46,start+.16);
+      g.exponentialRampToValueAtTime(amp,start+.007);
+      g.exponentialRampToValueAtTime(.0001,start+.22);
+      osc.connect(gain);osc.start(start);osc.stop(start+.24);
+      return [osc];
+    }
+    let buffer=noiseCache.get(ctx);
+    if(!buffer){
+      buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*.4),ctx.sampleRate);
+      let seed=0xace1;const arr=buffer.getChannelData(0);
+      for(let i=0;i<arr.length;i++){
+        seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+        arr[i]=(seed/4294967296)*2-1;
+      }
+      noiseCache.set(ctx,buffer);
+    }
+    const src=ctx.createBufferSource();src.buffer=buffer;
+    const high=ctx.createBiquadFilter();high.type='highpass';
+    high.frequency.value=note===42?6300:1250;
+    g.exponentialRampToValueAtTime(note===42?amp*.43:amp,start+.003);
+    g.exponentialRampToValueAtTime(.0001,start+(note===42?.075:.15));
+    src.connect(high);high.connect(gain);
+    src.start(start);src.stop(start+(note===42?.08:.17));
+    return [src];
+  }
   const frequency=midi=>440*Math.pow(2,(midi-69)/12);
   const pitch=(kind,pad)=>(kind==='bass'?48:60)+OFFSETS[pad];
   function normalizeLayer(raw){
-    if(!raw||!KINDS.includes(raw.kind))return null;
+    if(!raw||!(KINDS.includes(raw.kind)||raw.kind==='drums'))return null;
     const seconds=Number(raw.seconds);
     if(!Number.isFinite(seconds)||seconds<.2||seconds>1800)return null;
     const events=(Array.isArray(raw.events)?raw.events:[]).slice(0,MAX_EVENTS).map(e=>{
@@ -23,8 +57,17 @@
       if(!Number.isFinite(t)||t<0||t>=seconds||!Number.isInteger(note)||note<24||note>108||!Number.isFinite(dur)||dur<=0||dur>4)return null;
       return {t,note,dur};
     }).filter(Boolean);
-    return events.length?{id:String(raw.id||'layer').slice(0,64),kind:raw.kind,
-      seconds,events,muted:!!raw.muted,volume:Math.max(0,Math.min(1.5,Number(raw.volume??.8)||0))}:null;
+    if(!events.length)return null;
+    const result={id:String(raw.id||'layer').slice(0,64),kind:raw.kind,
+      seconds,events,muted:!!raw.muted,volume:Math.max(0,Math.min(1.5,Number(raw.volume??.8)||0))};
+    if(raw.source==='preset'||raw.source==='custom-rhythm'){
+      result.source=raw.source;
+      result.name=String(raw.name||raw.kind).slice(0,55);
+      result.bpm=Number.isFinite(raw.bpm)?Math.max(60,Math.min(200,Math.round(raw.bpm))):120;
+      result.bars=[1,2,4].includes(raw.bars)?raw.bars:4;
+      result.presetId=String(raw.presetId||'').slice(0,40);
+    }
+    return result;
   }
   function eventsInWindow(layer,from,to){
     if(!layer||layer.muted||!(to>from)||!layer.seconds)return [];
@@ -40,6 +83,7 @@
     return out.sort((a,b)=>a.t-b.t).slice(0,256);
   }
   function playNote(ctx,bus,kind,note,at,length,volume){
+    if(kind==='drums')return percussion(ctx,bus,note,at,volume);
     const start=Math.max(ctx.currentTime+.006,at);
     const dur=Math.max(.08,Math.min(3,length));
     const gain=ctx.createGain();
@@ -69,6 +113,18 @@
       this.kind=el('instrument-kind');this.recordBtn=el('instrument-record');
       this.pads=el('instrument-pads');this.lanes=el('instrument-layers');
       this.counter=el('instrument-count');
+      this.patterns=host.MosaicPatterns;
+      this.presetSelect=el('instrument-loop-preset');
+      this.barsSelect=el('instrument-loop-bars');
+      this.addLoopButton=el('instrument-add-loop');
+      this.addRhythmButton=el('instrument-add-rhythm');
+      this.stepHost=el('instrument-step-grid');
+      this.stepData={};
+      for(const drum of ['kick','snare','hat'])this.stepData[drum]=[...this.patterns.DEFAULT_RHYTHM[drum]];
+      this.steps=[];
+      this.createStepGrid();
+      this.addLoopButton.addEventListener('click',()=>this.addPreset());
+      this.addRhythmButton.addEventListener('click',()=>this.addCustomRhythm());
       this.layers=[];this.recording=null;this.ctx=null;this.bus=null;this.exportBus=null;
       this.playing=false;this.nextWindow=0;this.voices=new Set();
       try{const items=JSON.parse(host.localStorage.getItem(STORAGE)||'[]');
@@ -87,11 +143,52 @@
       host.addEventListener('keydown',e=>{
         if(e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.isComposing)return;
         const tag=e.target?.tagName?.toLowerCase();
-        if(['input','textarea','select'].includes(tag)||e.target?.isContentEditable)return;
+        if(['input','textarea','select'].includes(tag)||e.target?.isContentEditable || (tag==='button'&&!e.target.classList.contains('instrument-pad')))return;
         const index=KEYBOARD.indexOf(e.key.toLowerCase());
         if(index>=0){e.preventDefault();this.hit(index);}
       });
       this.render();
+    }
+    createStepGrid(){
+      const doc=this.host.document;
+      for(const [instrument,label] of [['kick','KICK'],['snare','SNARE'],['hat','HAT']]){
+        const row=doc.createElement('div');row.className='instrument-step-row';
+        const title=doc.createElement('span');title.className='instrument-step-label';title.textContent=label;
+        row.append(title);
+        for(let i=0;i<16;i++){
+          const b=doc.createElement('button');b.type='button';
+          b.className='instrument-step'+(i%4===0?' is-quarter':'');
+          b.setAttribute('aria-label',label+' step '+(i+1));
+          b.textContent=i%4===0?String(i/4+1):'·';
+          b.setAttribute('aria-pressed',String(this.stepData[instrument].includes(i)));
+          b.addEventListener('click',()=>{
+            const data=this.stepData[instrument],idx=data.indexOf(i);
+            if(idx>=0)data.splice(idx,1);else data.push(i);
+            data.sort((a,b)=>a-b);
+            b.setAttribute('aria-pressed',String(data.includes(i)));
+          });
+          row.append(b);this.steps.push(b);
+        }
+        this.stepHost.append(row);
+      }
+    }
+    addLayer(raw){
+      if(this.layers.length>=MAX_LAYERS)return this.onStatus('The rack has 12 layers. Mute or remove one to make room.',true);
+      const layer=normalizeLayer(raw);
+      if(!layer)return this.onStatus('That pattern is empty or cannot be played. Add some notes first.',true);
+      this.layers.push(layer);this.save();this.onChange();this.render();
+      this.onStatus(layer.name+' is looping at '+layer.bpm+' BPM. Add another part or press Play All. ♡');
+      return layer;
+    }
+    addPreset(){
+      const current=this.patterns.buildPreset(this.presetSelect.value,
+        this.host.document.getElementById('bpm-input').value,this.barsSelect.value);
+      return this.addLayer(current);
+    }
+    addCustomRhythm(){
+      const current=this.patterns.buildPreset('custom-rhythm',
+        this.host.document.getElementById('bpm-input').value,this.barsSelect.value,this.stepData);
+      return this.addLayer(current);
     }
     get hasLayers(){return this.layers.length>0;}
     get duration(){return Math.max(0,...this.layers.map(l=>l.seconds));}
@@ -165,6 +262,11 @@
       this.recordBtn.classList.toggle('is-stop',!!this.recording);
       this.recordBtn.disabled=(busy&&!this.recording)||(!this.recording&&this.layers.length>=MAX_LAYERS);
       this.kind.disabled=busy||!!this.recording;
+      this.presetSelect.disabled=busy;
+      this.barsSelect.disabled=busy;
+      this.addLoopButton.disabled=busy||this.layers.length>=MAX_LAYERS;
+      this.addRhythmButton.disabled=busy||this.layers.length>=MAX_LAYERS;
+      for(const step of this.steps)step.disabled=busy;
       this.counter.textContent=this.layers.length+' / '+MAX_LAYERS+' layers';
       this.lanes.replaceChildren();
       if(!this.layers.length){
@@ -175,7 +277,8 @@
       for(const layer of this.layers){
         const row=this.host.document.createElement('div');row.className='instrument-layer';
         const title=this.host.document.createElement('span');title.className='instrument-layer-title';
-        title.textContent=layer.kind.toUpperCase()+' · '+layer.events.length+' notes / '+layer.seconds.toFixed(1)+'s';
+        title.textContent=(layer.name||layer.kind.toUpperCase())+' · '+layer.events.length+
+          ' hits / '+layer.seconds.toFixed(1)+'s'+(layer.bpm?' · '+layer.bpm+' BPM':'');
         const mute=this.host.document.createElement('button');mute.type='button';
         mute.textContent=layer.muted?'Unmute':'Mute';mute.disabled=busy;
         mute.setAttribute('aria-label',(layer.muted?'Unmute ':'Mute ')+layer.kind+' layer');

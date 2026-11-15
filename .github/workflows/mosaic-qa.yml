@@ -36,6 +36,7 @@ jobs:
         run: |
           node --check assets/mosaic/core.js
           node --check assets/mosaic/effects.js
+          node --check assets/mosaic/patterns.js
           node --check assets/mosaic/instruments.js
           node --check assets/mosaic/app.js
       - name: Integration regression tests
