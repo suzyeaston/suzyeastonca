@@ -1,0 +1,47 @@
+name: MOSAIC integration QA
+
+on:
+  pull_request:
+    paths:
+      - 'assets/mosaic/**'
+      - 'page-mosaic.php'
+      - 'functions.php'
+      - 'page-loop-lab.php'
+      - 'scripts/theme_deploy_manifest.py'
+      - '__tests__/mosaic-integration.test.js'
+      - '.github/workflows/mosaic-qa.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/mosaic/**'
+      - 'page-mosaic.php'
+      - 'functions.php'
+      - 'page-loop-lab.php'
+      - 'scripts/theme_deploy_manifest.py'
+      - '__tests__/mosaic-integration.test.js'
+      - '.github/workflows/mosaic-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser application syntax
+        run: |
+          node --check assets/mosaic/core.js
+          node --check assets/mosaic/app.js
+      - name: Integration regression tests
+        run: node --test __tests__/mosaic-integration.test.js
+      - name: WordPress syntax
+        run: |
+          php -l functions.php
+          php -l page-mosaic.php
+          php -l page-loop-lab.php
+      - name: Production theme manifest
+        run: python3 scripts/theme_deploy_manifest.py validate
