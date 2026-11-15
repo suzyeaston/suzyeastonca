@@ -95,6 +95,12 @@
     lines('Landing railway fence diagonal wire mesh',wires,0xb0bbb5,0.7);
     return posts;
   }
+  function box(THREE,parent,name,x,y,z,w,h,d,material){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+    mesh.name=name;mesh.position.set(x,y,z);
+    mesh.castShadow=false;mesh.receiveShadow=true;
+    parent.add(mesh);return mesh;
+  }
   // User-supplied October 2020 / February 2022 Street View coordinates of
   // the service alley along The Landing. Project them using the SAME
   // tangent-plane origin as the civic/buildings scene.
