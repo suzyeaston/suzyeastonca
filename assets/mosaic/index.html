@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#11131f">
   <meta name="description" content="MOSAIC is a free, private-by-default multitrack video studio. Record a little orchestra of yourself in your browser.">
   <title>MOSAIC / multitrack video studio</title>
-  <link rel="stylesheet" href="styles.css?v=mp4-4">
-  <script defer src="core.js?v=mp4-4"></script>
-  <script defer src="effects.js?v=mp4-4"></script>
-  <script defer src="app.js?v=mp4-4"></script>
+  <link rel="stylesheet" href="styles.css?v=instrument5">
+  <script defer src="core.js?v=instrument5"></script>
+  <script defer src="effects.js?v=instrument5"></script>
+  <script defer src="instruments.js?v=instrument5"></script>
+  <script defer src="app.js?v=instrument5"></script>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -48,6 +49,25 @@
           <div class="time-display" aria-label="Transport clock"><strong id="clock">00:00</strong><span id="duration-label">/ TARGET 00:15</span></div>
           <div class="progress" role="progressbar" aria-label="Loop position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-bar"></div></div>
         </div>
+        <section class="instrument-rack" aria-labelledby="instrument-title">
+          <div class="instrument-head">
+            <div><p class="label">02 / suzy // instrument layers</p><h2 id="instrument-title">Play another part ✳</h2></div>
+            <span id="instrument-count" class="instrument-count">0 / 12 layers</span>
+          </div>
+          <div class="instrument-controls">
+            <label for="instrument-kind">Instrument
+              <select id="instrument-kind">
+                <option value="keys">Keys · glassy triangle</option>
+                <option value="bass">Bass · sub pulse</option>
+                <option value="pad">Pad · slow synth</option>
+              </select>
+            </label>
+            <button id="instrument-record" type="button">● RECORD INSTRUMENT LAYER</button>
+          </div>
+          <div id="instrument-pads" class="instrument-pads" role="group" aria-label="Instrument notes C to C; keyboard A S D F G H J K"></div>
+          <p class="instrument-tip">Tap notes or use A S D F G H J K. Press Record, play a phrase, then Stop &amp; Keep. Each layer repeats independently with your video. No AI models or cloud audio.</p>
+          <div id="instrument-layers" class="instrument-layers" aria-label="Saved instrument layers"></div>
+        </section>
       </section>
       <aside class="sidebar">
         <section class="panel fx-panel" aria-labelledby="fx-title">

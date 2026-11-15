@@ -35,6 +35,8 @@ jobs:
       - name: Browser application syntax
         run: |
           node --check assets/mosaic/core.js
+          node --check assets/mosaic/effects.js
+          node --check assets/mosaic/instruments.js
           node --check assets/mosaic/app.js
       - name: Integration regression tests
         run: node --test __tests__/mosaic-integration.test.js

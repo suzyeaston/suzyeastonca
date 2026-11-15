@@ -1,13 +1,13 @@
 # MOSAIC / production deployment on suzyeaston.ca
 
 MOSAIC is a separately maintained [public GitHub repository](https://github.com/suzyeaston/mosaic-studio).
-The WordPress theme keeps a **vendored snapshot** of five source files in `assets/mosaic/`
+The WordPress theme keeps a **vendored snapshot** of six source files in `assets/mosaic/`
 so users can use the studio at `https://www.suzyeaston.ca/mosaic/` without GitHub Pages, another
 host, or downloading any project zip. The route is rendered through `page-mosaic.php`.
 
 ## Update source files
 1. Review the latest tested `main` revision in `suzyeaston/mosaic-studio`.
-2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, and `app.js` into `assets/mosaic/`.
+2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `instruments.js`, and `app.js` into `assets/mosaic/`.
 3. Run `node --test __tests__/mosaic-integration.test.js`, `php -l page-mosaic.php`,
    and `python3 scripts/theme_deploy_manifest.py validate`; merge the PR only after QA.
 4. Theme deployment copies these assets along with the page. Check that GitHub Actions succeeded
@@ -44,3 +44,12 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - The format note explains whether MP4 is supported, and fallbacks explain how to get a social-ready copy using another current browser or a local conversion.
 - Internal asset URLs bump to `?v=mp4-4` to avoid stale cached JavaScript at the site URL.
 - Test on macOS Chrome and Safari with sound, video playback, and Instagram/YouTube upload. This update does not add server or WebAssembly transcoding; true MP4 availability depends on the visitor's browser encoder.
+
+## SUZY//AI crossover, Stage 1 (2026-11)
+- The self-hosted app now includes `assets/mosaic/instruments.js`. Its Web Audio instrument voices and independent-loop approach adapt from SUZY//AI Film Club browser audio and TOASTER loop-rack design, without Magenta or network APIs.
+- Three playable sounds (Keys, Bass and Pad), an eight-note button/keyboard control surface, and up to 12 separately muted, mixed and removable event layers.
+- Compact note events are saved to browser localStorage. Existing camera/mic takes stay in IndexedDB. The shared Web Audio instrument bus is added to composite export and regular playback; audio-only instrument arrangements export with the unfilled video grid.
+- Browser transport scheduling is best-effort, not DAW sample-accurate. Real-device Chrome/Safari listening and sound-in-MP4 QA are still needed.
+- Internal static assets now use `?v=instrument5` to invalidate old CSS/JS caches. Bump this on each release.
+- Source attribution and the original license notes are in the `suzyeaston/mosaic-studio` repository's `NOTICE`.
+- Future Stage 2: audio-reactive visualizer layered over video or video-free graphics. No visualizer or model generation is claimed for this PR.
