@@ -260,7 +260,7 @@
       const layer=normalizeLayer({id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),
         kind:r.kind,voice:r.voice,seconds,
         events:r.events,muted:false,volume:.8});
-      if(layer){this.layers.push(layer);this.save();this.onChange();}
+      if(layer){this.layers.push(layer);this.save();this.onChange('added',layer);}
       this.render();return layer;
     }
     async hit(pad){
@@ -290,6 +290,15 @@
     }
     stopPlayback(){this.stopPreview();this.playing=false;this.nextWindow=0;
       for(const voice of this.voices)try{voice.stop();}catch{}this.voices.clear();}
+    applyMixSnapshot(snapshot){
+      for(const layer of this.layers){
+        const value=snapshot['instrument:'+layer.id];
+        if(value===undefined)continue;
+        layer.muted=value<=.001;
+        if(value>.001)layer.volume=Math.min(1.5,Math.max(0,value));
+      }
+      this.render();
+    }
     change(id,field,value){
       const layer=this.layers.find(l=>l.id===id);if(!layer)return;
       if(field==='remove')this.layers=this.layers.filter(l=>l.id!==id);

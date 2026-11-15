@@ -18,7 +18,7 @@
     }
     return segments;
   }
-  function makeLanes(video,notes,total){
+  function makeLanes(video,notes,total,audio=[]){
     const duration=Number(total)||0;
     if(duration<=0)return [];
     const takes=Array.from(video||[]).filter(clip=>Number.isInteger(clip.index)).sort((a,b)=>a.index-b.index)
@@ -41,7 +41,15 @@
         .map(e=>({left:clamp(100*e.t/layer.seconds,0,99),top:clamp(80-((e.note||60)%12)*5,8,85)})),
       layerId:layer.id,
     }));
-    return [...takes,...instruments];
+    const overdubs=Array.from(audio||[]).map((layer,i)=>({
+      id:'mic-'+String(layer.id||i),type:'mic',
+      name:String(layer.name||'MIC OVERDUB').slice(0,60),
+      subtitle:'AUDIO-ONLY LOOP',muted:!!layer.muted,
+      seconds:Number(layer.seconds)||0,
+      segments:segments(layer.seconds,duration,24,layer.startAt||0),
+      notes:[],audioLoopId:layer.id,
+    }));
+    return [...takes,...instruments,...overdubs];
   }
   return Object.freeze({segments,makeLanes});
 });

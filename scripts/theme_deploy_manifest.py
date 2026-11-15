@@ -114,6 +114,8 @@ THEME_FILES = [
     "assets/mosaic/soundbank.js",
     "assets/mosaic/instruments.js",
     "assets/mosaic/timeline.js",
+    "assets/mosaic/scenes.js",
+    "assets/mosaic/audio-loops.js",
     "assets/mosaic/app.js",
     "page-loop-lab.php",
     "page-gastown-sim.php",

@@ -40,6 +40,8 @@ jobs:
           node --check assets/mosaic/soundbank.js
           node --check assets/mosaic/instruments.js
           node --check assets/mosaic/timeline.js
+          node --check assets/mosaic/scenes.js
+          node --check assets/mosaic/audio-loops.js
           node --check assets/mosaic/app.js
       - name: Integration regression tests
         run: node --test __tests__/mosaic-integration.test.js

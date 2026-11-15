@@ -1,13 +1,13 @@
 # MOSAIC / production deployment on suzyeaston.ca
 
 MOSAIC is a separately maintained [public GitHub repository](https://github.com/suzyeaston/mosaic-studio).
-The WordPress theme keeps a **vendored snapshot** of nine source files in `assets/mosaic/`
+The WordPress theme keeps a **vendored snapshot** of eleven source files in `assets/mosaic/`
 so users can use the studio at `https://www.suzyeaston.ca/mosaic/` without GitHub Pages, another
 host, or downloading any project zip. The route is rendered through `page-mosaic.php`.
 
 ## Update source files
 1. Review the latest tested `main` revision in `suzyeaston/mosaic-studio`.
-2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `patterns.js`, `soundbank.js`, `instruments.js`, `timeline.js`, and `app.js` into `assets/mosaic/`.
+2. Copy `index.html`, `styles.css`, `core.js`, `effects.js`, `patterns.js`, `soundbank.js`, `instruments.js`, `timeline.js`, `scenes.js`, `audio-loops.js`, and `app.js` into `assets/mosaic/`.
 3. Run `node --test __tests__/mosaic-integration.test.js`, `php -l page-mosaic.php`,
    and `python3 scripts/theme_deploy_manifest.py validate`; merge the PR only after QA.
 4. Theme deployment copies these assets along with the page. Check that GitHub Actions succeeded
@@ -79,3 +79,11 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - The site interface is denser, darker and focused on performance. The video grid occupies less vertical space, live mixer controls are prominent, and the second set of per-layer sound controls is tucked into expandable Sound Mixer details.
 - Internal asset URLs now use `?v=sync8` to avoid stale JS/CSS. All files are still self-hosted and uploaded through the existing theme manifest, with no account, model or cloud audio dependency.
 - **Limitations:** The shared-clock changes reduce typical phase error but cannot guarantee sample-accurate recording across MediaRecorder, browser video codecs and different hardware. Audio/video playback and MP4 export still need real device QA.
+
+## Non-destructive performance scenes and audio overdubs (2026-11, v0.8)
+- The WordPress-hosted studio now includes self-hosted `assets/mosaic/scenes.js` and `assets/mosaic/audio-loops.js`. The first is a saved musician-owned mix snapshot deck with Verse, Chorus and Bridge; the second records independent microphone phrases.
+- A three-scene deck stores mute/volume snapshots of the original video, synthesized notes and microphone lanes. Scenes are cued on the next bar while playing, or selected immediately when stopped. Save Current Mix persists the snapshot locally without re-recording clips.
+- **Video timeline mute no longer rebuilds the grid or stops the live audio**. Existing recordings retain their original blobs.
+- Audio-only overdubs use 1, 2, or 4 bar microphone recordings without occupying a video tile. Saved clips are encoded as MediaRecorder audio, decoded into Web Audio, scheduled per musical bar to avoid independent HTMLAudioElement drift, and mixed into the export destination. A dedicated IndexedDB `audioLoops` store is added via a schema v1 → v2 migration, preserving existing IndexedDB `clips`.
+- Asset cache versions `?v=scenes9`; deploy manifest explicitly includes the two modules. Site integration QA verifies scene cues, stored mic loops and exported audio.
+- Limitations: the scene deck changes live playback but is **not yet a recorded song-arrangement exporter**. The standard video export reflects the active scene/mix, not all live scene switches. Browser microphone latency, decoding and video rendering still require device-level QA.

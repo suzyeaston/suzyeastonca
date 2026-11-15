@@ -15,7 +15,7 @@ test('MOSAIC WordPress virtual route is self-hosted without GitHub Pages', () =>
   assert.doesNotMatch(page, /github\.io/);
 });
 test('MOSAIC runtime shipped locally alongside WordPress template', () => {
-  for (const asset of ['index.html','styles.css','core.js','effects.js','patterns.js','soundbank.js','instruments.js','timeline.js','app.js']) {
+  for (const asset of ['index.html','styles.css','core.js','effects.js','patterns.js','soundbank.js','instruments.js','timeline.js','scenes.js','audio-loops.js','app.js']) {
     assert.ok(fs.existsSync(path.join(__dirname,'../assets/mosaic',asset)),asset);
   }
   const html = read('assets/mosaic/index.html');
@@ -28,7 +28,7 @@ test('MOSAIC runtime shipped locally alongside WordPress template', () => {
 test('Theme manifest and workflow deploy all MOSAIC assets', () => {
   const manifest = read('scripts/theme_deploy_manifest.py');
   const workflow = read('.github/workflows/deploy-production.yml');
-  for (const asset of ['page-mosaic.php', 'assets/mosaic/index.html','assets/mosaic/styles.css','assets/mosaic/core.js','assets/mosaic/effects.js','assets/mosaic/patterns.js','assets/mosaic/soundbank.js','assets/mosaic/instruments.js','assets/mosaic/timeline.js','assets/mosaic/app.js']) {
+  for (const asset of ['page-mosaic.php', 'assets/mosaic/index.html','assets/mosaic/styles.css','assets/mosaic/core.js','assets/mosaic/effects.js','assets/mosaic/patterns.js','assets/mosaic/soundbank.js','assets/mosaic/instruments.js','assets/mosaic/timeline.js','assets/mosaic/scenes.js','assets/mosaic/audio-loops.js','assets/mosaic/app.js']) {
     assert.ok(manifest.includes('"' + asset + '"'),asset);
   }
   assert.ok(manifest.includes('"assets/mosaic/**"'));
@@ -103,7 +103,7 @@ test('SUZY//AI browser instruments are playable, locally layered, and mixed into
   assert.match(html, /src="instruments\.js\?v=[a-z0-9_-]+"/);
   assert.match(html, /id="instrument-record"/);
   assert.match(html, /id="instrument-pads"/);
-  assert.match(app, /instrumentRack\?\.tick\(transportSeconds\(\)\)/);
+  assert.match(app, /instrumentRack\?\.tick\(elapsed\)/);
   assert.match(app, /instrumentRack\?\.startPlayback\(\)/);
   assert.match(app, /instrumentRack\?\.connectExport\(exportDestination\)/);
   assert.match(app, /instrumentRack\?\.disconnectExport\(\)/);
@@ -177,13 +177,13 @@ test('MOSAIC v0.7 synchronizes camera takes, live music loops, and the instrumen
   assert.ok(capture.indexOf("await startPlayback('recording')")<capture.indexOf('activeRecorder.start(250)'));
   assert.match(app,/transportAudioOrigin = audioContext\.currentTime/);
   assert.match(app,/core\.nextBarBoundary\(elapsed,takeSyncBpm\)/);
-  assert.match(app,/setInterval\(\(\) => instrumentRack\?\.tick\(transportSeconds\(\)\), 30\)/);
+  assert.match(app,/audioScheduleId=setInterval\(\(\)=>\{/);
   assert.match(app,/instrumentRack\.begin\(\{clock:transportSeconds,bpm:arrangementBpm\(\)\}\)/);
   assert.match(app,/ui\.loopToggle\?\.addEventListener\('click'/);
   assert.match(html,/id="loop-toggle"/);
   assert.match(html,/id="loop-status"/);
-  assert.match(html,/src="app\.js\?v=sync8"/);
-  assert.match(html,/src="core\.js\?v=sync8"/);
+  assert.match(html,/src="app\.js\?v=[a-z0-9_-]+"/);
+  assert.match(html,/src="core\.js\?v=[a-z0-9_-]+"/);
   assert.match(html,/class="instrument-mixer-details"/);
   const loop=rack.normalizeLayer({id:'x',kind:'bass',seconds:8,startAt:2,events:[{t:0,note:40,dur:.4}]});
   assert.equal(loop.startAt,2);
@@ -199,4 +199,47 @@ test('Live rhythm audition repeats without adding to the saved arrangement',()=>
   assert.match(source,/this\.onChange\('added'\)/);
   assert.match(html,/id="instrument-preview-loop"/);
   assert.match(html,/id="instrument-preview-rhythm"/);
+});
+
+
+test('MOSAIC song scene deck saves non-destructive mix snapshots for Verse, Chorus and Bridge',()=>{
+  const html=read('assets/mosaic/index.html');
+  const app=read('assets/mosaic/app.js');
+  const scenes=require('../assets/mosaic/scenes.js');
+  const host={localStorage:{getItem:()=>null,setItem:()=>{},removeItem:()=>{}}};
+  const deck=new scenes.Deck(host);
+  deck.seed({'video:0':1,'instrument:bass-1':.8});
+  assert.deepEqual(scenes.IDS,['verse','chorus','bridge']);
+  deck.rememberAdded('audio:mic-1',.7);
+  assert.equal(deck.scenes.verse['audio:mic-1'],.7);
+  assert.equal(deck.scenes.chorus['audio:mic-1'],0);
+  const q=deck.queue('chorus',3.4,120);
+  assert.equal(q.at,4);
+  assert.match(html,/data-scene="verse"/);
+  assert.match(html,/data-scene="chorus"/);
+  assert.match(html,/data-scene="bridge"/);
+  assert.match(html,/id="scene-save"/);
+  assert.match(html,/src="scenes\.js\?v=scenes9"/);
+  assert.match(app,/sceneDeck\.capture\(currentMixSnapshot\(\)\)/);
+  assert.match(app,/sceneDeck\?\.tick\(elapsed,applySceneMix\)/);
+  assert.doesNotMatch(app,/await saveClip\(clip\);\s*renderGrid\(\);\s*\}\s*function changeGrid/);
+});
+
+test('Mic-only musical overdubs have their own store, track lanes and export bus',()=>{
+  const html=read('assets/mosaic/index.html'),app=read('assets/mosaic/app.js');
+  const audio=require('../assets/mosaic/audio-loops.js');
+  const timeline=require('../assets/mosaic/timeline.js');
+  assert.match(html,/src="audio-loops\.js\?v=scenes9"/);
+  assert.match(html,/id="audio-loop-record"/);
+  assert.match(html,/id="audio-loop-bars"/);
+  assert.match(html,/id="audio-loop-lanes"/);
+  assert.match(app,/indexedDB\.open\('mosaic-studio-v1', 2\)/);
+  assert.match(app,/createObjectStore\('audioLoops'/);
+  assert.match(app,/audioRack\?\.connectExport\(exportDestination\)/);
+  assert.match(app,/audioRack\?\.disconnectExport\(\)/);
+  assert.match(app,/await audioRack\.restore\(await dbAudioRead\(\)\)/);
+  assert.deepEqual(audio.cycleTimes(4,0,13),[0,4,8,12]);
+  const lane=timeline.makeLanes([],[],8,[{id:'mic1',name:'Mic',seconds:4,muted:false}]);
+  assert.equal(lane[0].type,'mic');
+  assert.equal(lane[0].segments.length,2);
 });
