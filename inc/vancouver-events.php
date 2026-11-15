@@ -128,14 +128,15 @@ function suzy_yvr_events_filters( array $input ): array {
         return isset( $input[ $key ] ) && is_scalar( $input[ $key ] )
             ? trim( (string) $input[ $key ] ) : '';
     };
-    $view = in_array( $read( 'view' ), [ 'upcoming', 'archive' ], true ) ? $read( 'view' ) : 'upcoming';
-    $track = in_array( $read( 'track' ), [ 'all', 'tech', 'culture' ], true ) ? $read( 'track' ) : 'all';
-    $topic = isset( suzy_yvr_events_topics()[ $read( 'topic' ) ] ) ? $read( 'topic' ) : 'all';
-    $period = in_array( $read( 'period' ), [ 'all', '7', '30', '90' ], true ) ? $read( 'period' ) : 'all';
-    $year = preg_match( '/^20\d{2}$/', $read( 'year' ) ) ? $read( 'year' ) : '';
-    $month = preg_match( '/^(?:[1-9]|1[0-2])$/', $read( 'month' ) ) ? $read( 'month' ) : 'all';
-    $q = substr( trim( strip_tags( $read( 'q' ) ) ), 0, 80 );
-    $page = max( 1, min( 500, (int) $read( 'page' ) ) );
+    $view = in_array( $read( 'yve_view' ), [ 'upcoming', 'archive' ], true ) ? $read( 'yve_view' ) : 'upcoming';
+    $track = in_array( $read( 'yve_track' ), [ 'all', 'tech', 'culture' ], true ) ? $read( 'yve_track' ) : 'all';
+    $topic_options = suzy_yvr_events_topics();
+    $topic = isset( $topic_options[ $read( 'yve_topic' ) ] ) ? $read( 'yve_topic' ) : 'all';
+    $period = in_array( $read( 'yve_period' ), [ 'all', '7', '30', '90' ], true ) ? $read( 'yve_period' ) : 'all';
+    $year = preg_match( '/^20\d{2}$/', $read( 'yve_year' ) ) ? $read( 'yve_year' ) : '';
+    $month = preg_match( '/^(?:[1-9]|1[0-2])$/', $read( 'yve_month' ) ) ? $read( 'yve_month' ) : 'all';
+    $q = substr( trim( strip_tags( $read( 'yve_q' ) ) ), 0, 80 );
+    $page = max( 1, min( 500, (int) $read( 'yve_page' ) ) );
     return compact( 'view', 'track', 'topic', 'period', 'year', 'month', 'q', 'page' );
 }
 
