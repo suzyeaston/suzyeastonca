@@ -26,6 +26,7 @@ test("Part II build and live OG validation are enforced in theme deploy workflow
   const live = yml.indexOf("python3 scripts/verify_orchestra_social_preview.py");
   assert.ok(builder > 0 && builder < validate, "Image must be generated before validation");
   assert.ok(validate < deploy && deploy < live, "Verify the deployed thumbnail after upload");
+  assert.ok(yml.includes("- 'scripts/verify_orchestra_social_preview.py'"), "Checker edits trigger the theme verification job");
 });
 
 test("Part II live preview checker targets the published post slug", () => {
