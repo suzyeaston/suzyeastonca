@@ -619,7 +619,7 @@ function se_enqueue_gastown_sim_assets() {
         wp_enqueue_script(
             'se-gastown-sim',
             $uri . $app_path,
-            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-west-coast-express', 'se-gastown-cordova-architecture', 'se-gastown-waterfront-skyline', 'se-gastown-suzy-avatar', 'se-gastown-street-life' ),
+            array( 'three-js', 'howler-js', 'se-gastown-world-loader', 'se-gastown-building-normalizer', 'se-gastown-dialog', 'se-gastown-waterfront-station', 'se-gastown-waterfront-places', 'se-gastown-harbour-vista', 'se-gastown-cordova-architecture', 'se-gastown-waterfront-skyline', 'se-gastown-suzy-avatar', 'se-gastown-street-life', 'se-gastown-west-coast-express' ),
             filemtime( $dir . $app_path ) . '-tone-clock-tourists',
             true
         );
