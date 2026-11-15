@@ -290,12 +290,117 @@
     return {start,stop,update,setWeather};
   }
 
+  // The authored W Cordova route runs SE from Waterfront. Its mapped Spencer
+  // Building/Harbour Centre frontage is on the right-hand (south) sidewalk.
+  // This is a game-world stop, not a claim about today's TransLink service.
+  function makeHarbourCentreStop(THREE,root,segments,world) {
+    if(segments.length<5 || !world || !Array.isArray(world.buildings) ||
+       !world.buildings.some(building=>building.id==='feature-16'))return null;
+    const seg=segments[3],distance=seg.from+seg.length*0.4;
+    const dx=seg.b.x-seg.a.x,dz=seg.b.z-seg.a.z,norm=Math.hypot(dx,dz)||1;
+    const f={x:dx/norm,z:dz/norm},right={x:-dz/norm,z:dx/norm};
+    const bus={x:seg.a.x+dx*0.4,z:seg.a.z+dz*0.4};
+    // Front boarding door: 2.7m forward from bus centre, 1.35m on right.
+    const door={x:bus.x+f.x*2.7+right.x*1.35,z:bus.z+f.z*2.7+right.z*1.35};
+    const curb={x:door.x+right.x*2.05,z:door.z+right.z*2.05};
+    const stopRoot=new THREE.Group();stopRoot.name='Harbour Centre eastbound bus stop';
+    const steel=new THREE.MeshStandardMaterial({color:0x596f7d,roughness:0.75});
+    const blue=new THREE.MeshStandardMaterial({color:0x096fab,roughness:0.63});
+    const skin=new THREE.MeshStandardMaterial({color:0xd3a17e,roughness:0.9});
+    const navy=new THREE.MeshStandardMaterial({color:0x293947,roughness:0.9});
+    const coats=[0x4f7991,0xc28055,0x7c739e,0x66946d,0x9e606c];
+    const yaw=Math.atan2(-dx,-dz);
+    function block(group,name,w,h,d,x,y,z,material){
+      const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      mesh.name=name;mesh.position.set(x,y,z);group.add(mesh);return mesh;
+    }
+    function put(group,x,z){group.position.set(x,0.12,z);}
+    const pole=new THREE.Group();pole.name='Route 3 bus stop sign and pole';
+    put(pole,curb.x-f.x*2.25+right.x*0.55,curb.z-f.z*2.25+right.z*0.55);
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,3.05,7),steel);
+    post.name='Bus stop post';post.position.y=1.53;pole.add(post);
+    block(pole,'Blue BUS STOP sign',0.81,0.94,0.10,0,3.18,0,blue);
+    if(typeof document!=='undefined'&&document.createElement){
+      const cv=document.createElement('canvas');cv.width=256;cv.height=320;
+      const ctx=cv.getContext('2d');
+      if(ctx){
+        ctx.fillStyle='#086eb1';ctx.fillRect(0,0,256,320);
+        ctx.fillStyle='#ffffff';ctx.font='bold 47px sans-serif';
+        ctx.textAlign='center';ctx.fillText('BUS',128,70);
+        ctx.fillText('STOP',128,135);ctx.font='bold 112px sans-serif';
+        ctx.fillText('3',128,268);
+        const texture=new THREE.CanvasTexture(cv);texture.colorSpace=THREE.SRGBColorSpace;
+        const sign=new THREE.Mesh(new THREE.PlaneGeometry(0.82,0.96),
+          new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
+        sign.position.set(0,3.18,0.057);sign.name='BUS STOP 3 route label';
+        pole.add(sign);
+      }
+    }
+    pole.rotation.y=yaw;stopRoot.add(pole);
+    const bench=new THREE.Group();bench.name='Harbour Centre waiting bench';
+    put(bench,curb.x-f.x*5.0+right.x*0.68,curb.z-f.z*5.0+right.z*0.68);
+    bench.rotation.y=yaw;
+    block(bench,'Bus bench seat',0.52,0.12,1.6,0,0.5,0,steel);
+    block(bench,'Bus bench backrest',0.10,0.75,1.6,0.26,0.87,0,blue);
+    stopRoot.add(bench);
+
+    function commuter(i,name) {
+      const person=new THREE.Group();person.name=name;
+      const jacket=new THREE.MeshStandardMaterial({color:coats[i%coats.length],roughness:0.84});
+      block(person,'coat',0.48,0.71,0.31,0,1.03,0,jacket);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.23,8,6),skin);
+      head.position.y=1.63;person.add(head);
+      for(const side of [-1,1]){
+        block(person,'leg',0.18,0.67,0.21,side*0.13,0.35,0,navy);
+        block(person,'arm',0.15,0.61,0.19,side*0.34,0.96,0,jacket);
+      }
+      stopRoot.add(person);return person;
+    }
+    const boarding=Array.from({length:3},(_,i)=>
+      commuter(i,'Harbour Centre boarding commuter '+(i+1)));
+    const alighting=Array.from({length:2},(_,i)=>{
+      const person=commuter(i+3,'Harbour Centre alighting commuter '+(i+1));
+      person.visible=false;return person;
+    });
+    root.add(stopRoot);
+    root.userData.busStop={
+      name:'Harbour Centre eastbound bus stop',direction:'eastbound',
+      curbSide:'right',distance,position:{x:curb.x,z:curb.z}
+    };
+    return {distance,dwellSeconds:8,door,curb,f,right,boarding,alighting};
+  }
+
+  function updateHarbourCentrePassengers(stop,visiting) {
+    if(!stop)return;
+    const {f,right,door,curb}=stop,elapsed=visiting?visiting.elapsed:0;
+    const clamp=value=>Math.max(0,Math.min(1,value));
+    const lerp=(a,b,t)=>a+(b-a)*t;
+    stop.boarding.forEach((person,i)=>{
+      const from={x:curb.x-f.x*(1.75+i*1.15)+right.x*(0.2+(i%2)*0.42),
+        z:curb.z-f.z*(1.75+i*1.15)+right.z*(0.2+(i%2)*0.42)};
+      const t=visiting?clamp((elapsed-2.45-i*1.1)/1.2):0;
+      person.visible=t<0.99;
+      person.position.set(lerp(from.x,door.x,t),0.12,lerp(from.z,door.z,t));
+      person.rotation.y=Math.atan2(from.x-door.x,from.z-door.z);
+      person.userData.boardingProgress=t;
+    });
+    stop.alighting.forEach((person,i)=>{
+      const start=0.45+i*0.95,t=clamp((elapsed-start)/1.5);
+      const dest={x:curb.x+f.x*(2+i*1.3)+right.x*0.8,
+        z:curb.z+f.z*(2+i*1.3)+right.z*0.8};
+      person.visible=!!visiting&&elapsed>=start;
+      person.position.set(lerp(door.x,dest.x,t),0.12,lerp(door.z,dest.z,t));
+      person.rotation.y=Math.atan2(door.x-dest.x,door.z-dest.z);
+      person.userData.alightingProgress=person.visible?t:0;
+    });
+  }
+
   function create(THREE, world) {
     const root = new THREE.Group(); root.name='Station East street life';
     const ambience=makeLocalAmbience();
     // Keep the lot central aisle open: do not generate a marker pillar or lantern.
     const centerline = world && world.route && world.route.centerline;
-    let buses=[], segments=[], total=0, cars=[], lotCar=null;
+    let buses=[], segments=[], total=0, cars=[], lotCar=null, stop=null;
     if(Array.isArray(centerline) && centerline.length>=3) {
       const first=centerline.slice(0,9);
       const points=first.map((pt,i)=>{
@@ -311,6 +416,7 @@
       buses.forEach((bus,i)=>{bus.name+=' / vehicle '+(i+1);root.add(bus);});
       cars=Array.from({length:4},(_,i)=>makeStreetCar(THREE,i));
       cars.forEach(car=>root.add(car));
+      stop=makeHarbourCentreStop(THREE,root,segments,world);
     }
     if(world && world.parkingLot && world.parkingLot.center && world.parkingLot.polygon && world.parkingLot.polygon.length>=2) {
       const lot=world.parkingLot;
@@ -332,12 +438,35 @@
     }
     function update(seconds) {
       // Eastbound trolleys keep right (south side) on W Cordova.
-      buses.forEach((bus,index)=>along(seconds*4.1+20+index*total/2,0,false,bus));
+      let visiting=null;
+      buses.forEach((bus,index)=>{
+        if(!stop){
+          along(seconds*4.1+20+index*total/2,0,false,bus);
+          return;
+        }
+        const speed=4.1,approach=stop.distance/speed;
+        const period=total/speed+stop.dwellSeconds;
+        const phase=((seconds+20/speed+index*period/2)%period+period)%period;
+        const dwelling=phase>=approach&&phase<approach+stop.dwellSeconds;
+        const elapsed=dwelling?phase-approach:0;
+        const distance=phase<approach?phase*speed:
+          dwelling?stop.distance:stop.distance+(phase-approach-stop.dwellSeconds)*speed;
+        along(distance,0,false,bus);
+        const clamp=value=>Math.max(0,Math.min(1,value));
+        const opening=dwelling?Math.min(clamp(elapsed/0.65),
+          clamp((stop.dwellSeconds-elapsed)/0.65)):0;
+        (bus.userData.doorPanels||[]).forEach(panel=>{
+          panel.mesh.position.z=panel.baseZ+panel.slide*opening;
+        });
+        bus.userData.atStop=dwelling;bus.userData.doorOpen=opening;
+        if(dwelling)visiting={bus,elapsed};
+      });
       cars.forEach((car,index)=>{
         // Opposing westbound cars keep right (north side) on W Cordova.
         const distance=seconds*(3.0+index*0.5)+index*total/4;
         along(total-distance,6.4,true,car);
       });
+      updateHarbourCentrePassengers(stop,visiting);
       if(lotCar) {
         const cycle=(seconds*0.115)%2, inbound=cycle<1;
         const t=inbound?cycle:2-cycle;
