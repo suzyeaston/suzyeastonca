@@ -192,6 +192,45 @@
         disc('Vancouver Lookout roof cap',10.6,0.65,133.6,paleStone);
         addBox(group,'Harbour Centre slim antenna mast',cx,142.3,cz,
           0.22,16.6,0.22,mullion);
+        // The pedestrian eye-line in the Station East parking screenshots
+        // looks toward the south side of Cordova. The old small 32m podium
+        // gave Harbour Centre a skyline silhouette but left its extended
+        // civic block facade empty. These skins follow two ACTUAL 2015
+        // building-outline edges and introduce no walkable/collision volume.
+        const civic=world.buildings.find(building=>building.id==='feature-16');
+        const coords=civic.footprint;
+        const toLocal=p=>{
+          const dx=p.x-b.x,dz=p.z-b.z;
+          return {x:dx*Math.cos(b.yaw)+dz*Math.sin(b.yaw),
+            z:-dx*Math.sin(b.yaw)+dz*Math.cos(b.yaw)};
+        };
+        for(const [start,end] of [[5,6],[13,14]]){
+          const p=toLocal(coords[start]),q=toLocal(coords[end]);
+          const dx=q.x-p.x,dz=q.z-p.z,len=Math.hypot(dx,dz);
+          if(len<5)continue;
+          const frontage=new THREE.Group();
+          frontage.name='Harbour Centre Cordova civic parcel frontage '+start+'-'+end;
+          frontage.position.set((p.x+q.x)/2,0,(p.z+q.z)/2);
+          frontage.rotation.y=Math.atan2(-dz,dx);
+          frontage.userData.civicEdge=[start,end];
+          frontage.userData.isScenicFacade=true;
+          group.add(frontage);
+          addBox(frontage,'Harbour Centre Cordova parkade concrete streetwall',
+            0,8.4,0,len,16.8,0.28,limestone);
+          // Continuous horizontal recesses with stone mullions read as the
+          // actual parkade side in July 2024 street-level photography.
+          for(const y of [5.3,8.7,12.1])
+            addBox(frontage,'Harbour Centre Cordova continuous recessed window band',
+              0,y,0.19,len-1.6,1.55,0.12,blue);
+          for(let x=-len/2+3.3;x<len/2-1.5;x+=5.5)
+            addBox(frontage,'Harbour Centre Cordova fluted concrete pier',
+              x,8.5,0.27,0.51,16.1,0.24,paleStone);
+          addBox(frontage,'Harbour Centre Cordova ground-level glazing',
+            0,1.85,0.21,len-2.8,3.05,0.14,glassBase);
+          addBox(frontage,'Harbour Centre Cordova heritage parapet cap',
+            0,17,0.07,len+0.45,0.55,0.5,paleStone);
+        }
+        group.userData.cordovaStreetWallSource='City of Vancouver feature-16 footprint edges';
         group.userData.landmark='Harbour Centre / Spencer Building';
         group.userData.architectureSource='https://harbourcentre.com/';
         group.userData.civicAnchor={lat:49.284697,lon:-123.111935};
