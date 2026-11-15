@@ -170,7 +170,7 @@
     // beyond the parking rail fence. It never covers the playable paved lot.
     horizontalPatch('CPR waterfront continuous land apron (approximate GIS context)',
       [{ x: -660, z: 240 }, { x: 660, z: 240 },
-        ...shore.slice().reverse()], -0.21, 0x525d5d);
+        ...shore.slice().reverse()], -1.85, 0x454844);
     const water = horizontalPatch('Burrard Inlet water',
       [{ x: -660, z: -1040 }, { x: 660, z: -1040 },
         ...shore.slice().reverse()], -0.11, 0x266d91);
@@ -198,8 +198,8 @@
 
     // Keep the shore apron as a narrow land transition rather than another
     // set of perpendicular ghost tracks crossing the visible harbour.
-    box(THREE,root,'Waterfront rail-yard apron',0,0.03,-128,690,0.13,22,
-      standard(THREE,0x555d60));
+    box(THREE,root,'Waterfront rail-yard apron',0,-1.72,-128,690,0.13,22,
+      standard(THREE,0x474a46));
     const waveMaterial=new THREE.MeshBasicMaterial({
       color:0x62bfd0,transparent:true,opacity:0.24,depthWrite:false,fog:false
     });
@@ -322,6 +322,7 @@
     // The placement remains representative, not a surveyed rail alignment.
     const lot=world&&world.parkingLot;
     if(!lot||!Array.isArray(lot.polygon)||lot.polygon.length<7)return;
+    const firstRailSceneChild=root.children.length;
     const pts=[lot.polygon[6],lot.polygon[5],lot.polygon[4],lot.polygon[3],
       {x:116,z:-106},{x:-45,z:-106}];
     const shape=new THREE.Shape();
@@ -556,6 +557,13 @@
     root.userData.nearbyContainers=containerCount;
     root.userData.tracksAlignedToLotFence=true;
     root.userData.openCanadaPlaceSightline=true;
+    // Lower only the scenic rail meshes, preserving the SeaBus, public
+    // station, and overhead transfer structures at their original height.
+    for(const node of root.children.slice(firstRailSceneChild)){
+      if(node.position&&Number.isFinite(node.position.y))node.position.y-=1.35;
+    }
+    root.userData.railGrade=-1.35;
+    root.userData.parkingGrade=0.19;
 
     const stationWhite=standard(THREE,0xe1e5e3,0.76);
     const glass=standard(THREE,0x5f8494,0.38,0.16);
@@ -588,6 +596,7 @@
     // duplicate north/south tracks. These are stationary illustrative cars.
     const freightGroup=new THREE.Group();
     freightGroup.name='Eastbound freight railcars context';
+    freightGroup.position.y=-1.35;
     root.add(freightGroup);
     const steel=standard(THREE,0x28343b,0.83);
     const tones=[0x9a5548,0x486c72,0x8b7b53,0x53635c];
