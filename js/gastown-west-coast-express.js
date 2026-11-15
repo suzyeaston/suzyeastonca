@@ -144,6 +144,10 @@
           }
         }
       }
+      // Distinctive side nameplates make the consist read as WCE, not as
+      // generic bi-level railcars when the camera pans from The Landing.
+      sign(THREE,coach,'WEST COAST EXPRESS',0,1.13,1.685,8.6,0.48);
+      sign(THREE,coach,'WEST COAST EXPRESS',0,1.13,-1.685,8.6,0.48);
       box(THREE,coach,'WCE blue entry door',-9.2,2.12,1.65,1.18,2.15,0.07,blue);
       for(const bogieX of [-6.7,6.7]){
         box(THREE,coach,'WCE wheel bogie',bogieX,0.54,0,3.5,0.76,2.66,wheels);
@@ -160,6 +164,9 @@
       box(THREE,locomotive,'WCE yellow lightning side stripe',
         -0.45,2.25,side*1.765,17.2,0.66,0.04,yellow);
     }
+    // Blue and yellow locomotive should be identifiable from either side.
+    sign(THREE,locomotive,'WEST COAST EXPRESS',-2.2,3.0,1.79,9.2,0.8);
+    sign(THREE,locomotive,'WEST COAST EXPRESS',-2.2,3.0,-1.79,9.2,0.8);
     box(THREE,locomotive,'WCE dark windshield',9.52,3.62,0,0.13,0.88,2.68,glass);
     box(THREE,locomotive,'WCE headlight',9.61,2.78,0,0.14,0.31,0.39,cream);
     for(const x of [-5.5,5.4]){
