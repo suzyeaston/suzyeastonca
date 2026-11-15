@@ -139,7 +139,7 @@
     // coaches and a recognisable blue/yellow F59PH cab for scene performance.
     for(const [index,center] of [-50,-28,-6].entries()){
       const coach=new THREE.Group();coach.name='West Coast Express bi-level coach '+(index+1);
-      coach.position.set(center,0,-56);root.add(coach);
+      coach.position.set(center,0,-18);root.add(coach);
       box(THREE,coach,'Bilevel white passenger body',0,2.64,0,20.8,3.75,3.2,white);
       box(THREE,coach,'Bilevel navy roof',0,4.66,0,20.9,0.3,3.28,navy);
       box(THREE,coach,'Bilevel blue lower skirt',0,0.91,0,20.8,0.38,3.25,blue);
@@ -164,7 +164,7 @@
     }
     const locomotive=new THREE.Group();
     locomotive.name='West Coast Express blue and yellow F59PH locomotive';
-    locomotive.position.set(14,0,-56);root.add(locomotive);
+    locomotive.position.set(14,0,-18);root.add(locomotive);
     box(THREE,locomotive,'WCE navy-blue locomotive body',0,2.44,0,18.5,3.6,3.45,blue);
     box(THREE,locomotive,'WCE white cab',5.35,3.65,0,7.7,2,3.35,white);
     box(THREE,locomotive,'WCE blue roof',0,4.4,0,18.6,0.36,3.45,navy);
