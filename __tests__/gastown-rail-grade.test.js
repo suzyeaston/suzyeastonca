@@ -36,7 +36,10 @@ test('the service alley follows the supplied Google Street View positions',()=>{
  assert.ok(root.children.some(n=>n.name==='Raised Cordova station loading deck underside'));
  assert.equal(root.children.filter(n=>n.name==='Elevated service deck support column').length,2);
  assert.equal(root.userData.railElevation,-1.35);
- assert.ok(root.userData.railElevation<root.userData.laneElevation);
+ assert.ok(root.userData.laneElevation<root.userData.railElevation,
+   'the service road is under the elevated rail and public deck');
+ assert.ok(root.userData.railElevation<root.userData.lotElevation,
+   'passenger tracks remain below the public parking deck');
  assert.equal(root.userData.illustrativeNotSurveyed,true);
  assert.equal(root.userData.serviceLaneNotPublic,true);
  assert.equal(root.userData.mappedStreetViewPoints.length,3);
