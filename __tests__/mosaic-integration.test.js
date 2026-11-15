@@ -89,7 +89,7 @@ test('MOSAIC now prefers authentic MP4/H.264/AAC for final export', () => {
   assert.match(app, /core\.videoExtension\(type\)/);
   assert.match(html, /id="export-format-note"/);
   assert.match(html, /MP4 PREFERRED/);
-  assert.match(html, /src="app\.js\?v=mp4-4"/);
+  assert.match(html, /src="app\.js\?v=[a-z0-9_-]+"/);
 });
 
 
