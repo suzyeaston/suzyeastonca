@@ -78,6 +78,7 @@ THEME_FILES = [
     # ever declares a script handle requiring it.
     "js/gastown-cordova-architecture.js",
     "js/gastown-waterfront-skyline.js",
+    "js/gastown-west-coast-express.js",
     "js/gastown-street-life.js",
     "functions.php",
     "style.css",

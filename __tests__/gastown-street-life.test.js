@@ -55,11 +55,10 @@ test('the authored characters have locally available dialog even without online 
   assert.match(src, /Impark Lot 531 complaint/i);
 });
 
-test('Impark NPC speech bubbles, captions and interactions are review-themed',()=>{
+test('Impark conversations remain usable without floating comic text boxes',()=>{
  const src=read('js/gastown-sim.js');
  const dialogs=JSON.parse(read('assets/dialog/gastown.json'));
- assert.match(src,/still ticketed!/);
- assert.match(src,/one star!/);
+ assert.doesNotMatch(src,/streetLife\.bubble\(THREE/);
  assert.match(src,/npcState.voiceCue \|\| ''/);
  assert.match(dialogs.parking_small_talk.lines.join(' '),/ticketed|ticket/i);
  assert.match(dialogs.parking_high_five.lines.join(' '),/ticket/i);

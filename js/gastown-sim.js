@@ -107,6 +107,7 @@
   const stationModel = window.GastownWaterfrontStation || null;
   const waterfrontPlaces = window.GastownWaterfrontPlaces || null;
   const harbourVista = window.GastownHarbourVista || null;
+  const westCoastExpress = window.GastownWestCoastExpress || null;
   const cordovaArchitecture = window.GastownCordovaArchitecture || null;
   const waterfrontSkyline = window.GastownWaterfrontSkyline || null;
   const streetLife = window.GastownStreetLife || null;
@@ -3779,11 +3780,7 @@
       const start = npc.idleSpot || npc.patrol[0] || { x: 0, z: 0 };
       visual.position.set(start.x, 0, start.z);
       worldGroup.add(visual);
-      if (streetLife && npc.voiceCue && typeof streetLife.bubble === 'function') {
-        const label = npc.voiceCue === 'parking-highfive' ? 'still ticketed!' : 'one star!';
-        const callout = streetLife.bubble(THREE, label);
-        if (callout) visual.add(callout);
-      }
+      // NPC dialogue remains interactive, without floating speech boxes.
       const swaySeed = deterministicUnit(npc.id + '-sway');
       const startYaw = typeof npc.yaw === 'number' ? npc.yaw : deterministicUnit(npc.id + '-yaw') * Math.PI * 2;
       const npcState = Object.assign({
@@ -5099,6 +5096,10 @@
         worldGroup.add(northHarbour);
         state.harbourVistaRoot = northHarbour;
       }
+    }
+    if (westCoastExpress && typeof westCoastExpress.create === 'function') {
+      const commuterRail = safelyCreate('West Coast Express platform', () => westCoastExpress.create(THREE, world));
+      if (commuterRail) worldGroup.add(commuterRail);
     }
     if (waterfrontPlaces) {
       if(typeof waterfrontPlaces.createLandingJourney==='function'){
