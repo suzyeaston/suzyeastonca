@@ -31,12 +31,16 @@ function inside(p,poly){
   }
   return flag;
 }
-test('the station and bi-level train use the historic Waterfront anchor',()=>{
+test('passenger train uses city-grid rails north of the historic Waterfront Station',()=>{
   const root=scene();assert.ok(root);
-  assert.equal(root.position.x,world.station.x);
-  assert.equal(root.position.z,world.station.z);
+  assert.equal(root.position.x,0);
+  assert.equal(root.position.z,0);
   assert.equal(root.position.y,-1.35,'WCE platform below public parking level');
-  assert.equal(root.rotation.y,world.station.yaw);
+  assert.equal(root.rotation.y,0,'station facade yaw must not rotate railway');
+  assert.equal(root.userData.stationAnchor.x,world.station.x);
+  assert.equal(root.userData.stationAnchor.z,world.station.z);
+  assert.equal(root.userData.railCoordinateFrame,'world-eastbound');
+  assert.equal(root.userData.hasIndependentBuildingYaw,true);
   assert.equal(root.userData.stagedTrainNotLive,true);
   assert.equal(root.userData.tracksSurveyed,false);
   assert.equal(root.userData.vehicleCount,4);
@@ -52,20 +56,35 @@ test('the station and bi-level train use the historic Waterfront anchor',()=>{
   }
   const loco=root.children.find(n=>n.name.includes('F59PH locomotive'));
   assert.equal(loco.children.filter(n=>n.name==='WEST COAST EXPRESS').length,2);
+  assert.equal(loco.children.find(n=>n.name==='WEST COAST EXPRESS' &&
+    n.position.z<0).rotation.y,Math.PI,'opposite side branding must not be mirrored');
+  const platform=root.children.find(n=>n.name==='West Coast Express Waterfront boarding platform');
+  assert.ok(platform.position.z<world.station.z,'platform north of station');
+  assert.ok(Math.abs(platform.position.z-loco.position.z)<9,
+    'train and platform belong on opposite sides of the same boarding edge');
 
 });
-test('commuter rail curves around the Station East lot boundary',()=>{
+test('three WCE tracks stay parallel, turn east and miss Station East and The Landing',()=>{
   const root=scene();
-  const theta=world.station.yaw,c=Math.cos(theta),s=Math.sin(theta);
+  assert.equal(root.userData.routeTracks.length,3);
   for(const route of root.userData.routeTracks){
+    assert.ok(route[0].x<route[route.length-1].x);
     for(let k=0;k<route.length-1;k++){
-      for(let i=0;i<=50;i++){
-        const t=i/50,a=route[k],b=route[k+1];
-        const x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;
-        const p={x:world.station.x+c*x+s*z,z:world.station.z-s*x+c*z};
-        assert.equal(inside(p,world.parkingLot.polygon),false,
-          'no mainline tracks through the walkable public lot');
+      const a=route[k],b=route[k+1];
+      assert.ok(b.x>a.x,'eastbound tracks do not double back');
+      assert.ok(b.z<=a.z,'WCE approach does not turn back toward Water Street');
+      for(let i=0;i<=100;i++){
+        const t=i/100,p={x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t};
+        assert.equal(inside(p,world.parkingLot.polygon),false);
+        assert.equal(inside(p,world.landing.footprint),false);
       }
+    }
+  }
+  for(let row=1;row<3;row++){
+    for(let i=0;i<root.userData.routeTracks[row].length;i++){
+      const a=root.userData.routeTracks[row-1][i];
+      const b=root.userData.routeTracks[row][i];
+      assert.ok(Math.abs(a.z-b.z)>=5.7,'distinct tracks cannot overlap');
     }
   }
 });

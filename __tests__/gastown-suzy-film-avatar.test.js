@@ -44,7 +44,7 @@ test('Working harbour is visibly populated behind fence',()=>{
   const harbour=read('js/gastown-harbour-vista.js');
   assert.match(harbour,/Station East visible railcar spine/);
   assert.match(harbour,/Visible Station East freight container/);
-  assert.match(harbour,/root\.userData\.tracksAlignedToLotFence=true/);
+  assert.match(harbour,/root\.userData\.tracksAlignedToLotFence=false/);
 });
 
 test('Front and rear are independent film angles with a visible checkerboard silhouette',()=>{

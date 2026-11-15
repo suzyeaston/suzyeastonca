@@ -166,11 +166,20 @@
       root.add(mesh);
       return mesh;
     };
-    // A below-grade contextual apron fills the previously unrendered space
-    // beyond the parking rail fence. It never covers the playable paved lot.
+    // The previous apron ran from Z=+240 all the way to the harbour.
+    // That enormous polygon produced the screenshot's featureless grey
+    // horizon. End the backfill immediately behind the historic lot and
+    // let the railway occupy only its actual northern corridor.
+    const corridorSouthEdge = [
+      { x: -660, z: -105 }, { x: -240, z: -76 },
+      { x: -90, z: -30 }, { x: 10, z: -13 },
+      { x: 110, z: -34 }, { x: 250, z: -74 },
+      { x: 390, z: -122 }, { x: 660, z: -193 }
+    ];
     horizontalPatch('CPR waterfront continuous land apron (approximate GIS context)',
-      [{ x: -660, z: 240 }, { x: 660, z: 240 },
-        ...shore.slice().reverse()], -1.85, 0x454844);
+      [...corridorSouthEdge, ...shore.slice().reverse()], -1.85, 0x3d4646);
+    root.userData.corridorSouthEdge = corridorSouthEdge;
+    root.userData.southApronNoLongerUnderLot = true;
     const water = horizontalPatch('Burrard Inlet water',
       [{ x: -660, z: -1040 }, { x: 660, z: -1040 },
         ...shore.slice().reverse()], -0.11, 0x266d91);
@@ -198,8 +207,10 @@
 
     // Keep the shore apron as a narrow land transition rather than another
     // set of perpendicular ghost tracks crossing the visible harbour.
-    box(THREE,root,'Waterfront rail-yard apron',0,-1.72,-128,690,0.13,22,
-      standard(THREE,0x474a46));
+    // A short, dark ballast tongue joins the eastbound N-Yard to the pier.
+    // Avoid the former 690m floating slab.
+    box(THREE,root,'Waterfront rail-yard apron',115,-1.72,-128,240,0.13,16,
+      standard(THREE,0x434743));
     const waveMaterial=new THREE.MeshBasicMaterial({
       color:0x62bfd0,transparent:true,opacity:0.24,depthWrite:false,fog:false
     });
@@ -323,27 +334,29 @@
     const lot=world&&world.parkingLot;
     if(!lot||!Array.isArray(lot.polygon)||lot.polygon.length<7)return;
     const firstRailSceneChild=root.children.length;
-    const pts=[lot.polygon[6],lot.polygon[5],lot.polygon[4],lot.polygon[3],
-      {x:116,z:-106},{x:-45,z:-106}];
+    // The old six-point polygon stretched west across the public station
+    // and east across the lot. Restrict this dark cutting to the yard itself.
+    const pts=[
+      {x:57,z:-47},{x:183,z:-79},
+      {x:230,z:-154},{x:40,z:-134}
+    ];
     const shape=new THREE.Shape();
     pts.forEach((p,i)=>i?shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z));
     shape.closePath();
     const surface=new THREE.Mesh(new THREE.ShapeGeometry(shape),
-      new THREE.MeshBasicMaterial({color:0x616562,side:THREE.DoubleSide,fog:false}));
+      new THREE.MeshBasicMaterial({color:0x40433e,side:THREE.DoubleSide,fog:false}));
     surface.name='Fenced waterfront rail service yard (non-walkable)';
     surface.rotation.x=-Math.PI/2;
     surface.position.y=0.075;
     root.add(surface);
 
-    const edgeA=lot.polygon[5],edgeB=lot.polygon[4];
-    const length=Math.hypot(edgeB.x-edgeA.x,edgeB.z-edgeA.z)||1;
-    const dir={x:(edgeB.x-edgeA.x)/length,z:(edgeB.z-edgeA.z)/length};
+    // Single eastbound CPR corridor. Do not derive rail bearing from the
+    // lot's short north fence: that turned the rails toward the street and
+    // forced them through the separate West Coast Express approach tracks.
+    const dir={x:0.969,z:-0.247};
     const outside={x:dir.z,z:-dir.x};
     const yaw=Math.atan2(-dir.z,dir.x);
-    const mid={x:(edgeB.x+edgeA.x)*0.5,z:(edgeB.z+edgeA.z)*0.5};
-    // Move the long rails toward The Landing so a left/right turn from the
-    // public parking aisle reveals several tracks instead of a black wall.
-    const origin={x:mid.x+dir.x*30,z:mid.z+dir.z*30};
+    const origin={x:122,z:-66};
     const trackPoint=(longitudinal,offset)=>({
       x:origin.x+dir.x*longitudinal+outside.x*offset,
       z:origin.z+dir.z*longitudinal+outside.z*offset
@@ -362,7 +375,7 @@
     // single draw call, preserving the fenced 20-track illustrative yard.
     const nearTrackCount = 7;
     const tieSpacingMetres = 0.72;
-    const railLengthMetres = 150;
+    const railLengthMetres = 110;
     const tieStart = -railLengthMetres / 2 + 0.5;
     const tiesPerTrack = Math.floor((railLengthMetres - 1) / tieSpacingMetres) + 1;
     // Test stubs and older minimal Three.js integrations may not expose
@@ -525,8 +538,10 @@
       vertices.push(a.x, y, a.z, b.x, y, b.z);
     }
     for (let row = 0; row < 9; row++) {
-      const begin = { x: 68, z: -86 - row * 5.0 };
-      const end = { x: 490, z: -145 - row * 5.0 };
+      // Continue from the east end of the near-field yard, not through
+      // Waterfront Station and the shorter West Coast Express approaches.
+      const begin = { x: 172, z: -80 - row * 5.0 };
+      const end = { x: 490, z: -144 - row * 5.0 };
       const dx = end.x - begin.x, dz = end.z - begin.z;
       const length = Math.hypot(dx, dz);
       const cross = { x: -dz / length, z: dx / length };
@@ -555,7 +570,9 @@
     root.userData.railCorridorSurveyed = false;
 
     root.userData.nearbyContainers=containerCount;
-    root.userData.tracksAlignedToLotFence=true;
+    root.userData.tracksAlignedToLotFence=false;
+    root.userData.railCoordinateFrame='world-eastbound';
+    root.userData.railStartBeyondStationEast=true;
     root.userData.openCanadaPlaceSightline=true;
     // Lower only the scenic rail meshes, preserving the SeaBus, public
     // station, and overhead transfer structures at their original height.
@@ -603,8 +620,8 @@
     for(let i=0;i<6;i++){
       const row=1+(i%3)*2;
       const t=0.14+(i%3)*0.19;
-      const x=68+(490-68)*t;
-      const z=(-86-row*5.0)+((-145-row*5.0)-(-86-row*5.0))*t;
+      const x=172+(490-172)*t;
+      const z=(-80-row*5.0)+((-144-row*5.0)-(-80-row*5.0))*t;
       const wagon=new THREE.Group();
       wagon.name='Eastbound CPR N-Yard context freight wagon '+(i+1);
       wagon.position.set(x,0,z);

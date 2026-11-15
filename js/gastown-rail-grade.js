@@ -2,8 +2,8 @@
  * Station East / The Landing rail-edge section.
  *
  * Scene coordinates use +X east, +Z south. The lower service lane, chain-link
- * rail boundary, and tracks are non-walkable scenic geometry.
- * They express the documented STATION -> LOT -> RAIL CORRIDOR relationship.
+ * rail boundary and utility yard are non-walkable scenic geometry.
+ * They represent the back-of-Landing alley, not the CPR rail alignment.
  * Lane geometry/grades are illustrative (not an access or railway survey).
  *
  * See TransLink's Waterfront/WCE station maps, Heritage Vancouver 555 Cordova,
@@ -11,7 +11,7 @@
  */
 (function(window){
   'use strict';
-  const RAIL_LEVEL=-1.35, LANE_LEVEL=-0.55, LOT_LEVEL=0.19;
+  const RAIL_LEVEL=-1.35, LANE_LEVEL=0.11, LOT_LEVEL=0.19;
   const REFS={
     railway:'https://vancouver.ca/files/cov/2022-519-release.pdf',
     parking:'https://heritagevancouver.org/top10-watch-list/2021/8-555-west-cordova/',
@@ -95,98 +95,118 @@
     lines('Landing railway fence diagonal wire mesh',wires,0xb0bbb5,0.7);
     return posts;
   }
+  function box(THREE,parent,name,x,y,z,w,h,d,material){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+    mesh.name=name;mesh.position.set(x,y,z);
+    mesh.castShadow=false;mesh.receiveShadow=true;
+    parent.add(mesh);return mesh;
+  }
+  // User-supplied October 2020 / February 2022 Street View coordinates of
+  // the service alley along The Landing. Project them using the SAME
+  // tangent-plane origin as the civic/buildings scene.
+  const SERVICE_REFERENCE=Object.freeze([
+    {lat:49.2851413,lon:-123.1107414},
+    {lat:49.2851168,lon:-123.1105671},
+    {lat:49.2850634,lon:-123.1102798}
+  ]);
+  function streetViewInScene(origin,point){
+    const metresPerDegree=111320;
+    return {
+      x:(point.lon-origin.lon)*metresPerDegree*Math.cos(origin.lat*Math.PI/180),
+      z:(origin.lat-point.lat)*metresPerDegree
+    };
+  }
   function create(THREE,world){
-    const lot=world&&world.parkingLot;
-    if(!lot||!Array.isArray(lot.polygon)||lot.polygon.length<7||!lot.center)return null;
+    const lot=world&&world.parkingLot,landing=world&&world.landing;
+    const origin=world&&world.meta&&world.meta.gis&&world.meta.gis.origin;
+    if(!lot||!landing||!origin||!Array.isArray(lot.polygon))return null;
     const root=new THREE.Group();
-    root.name='Station East lower service alley and chain-link rail boundary';
-    const pavement=standard(THREE,0x54544e,0.97);
-    const verge=standard(THREE,0x75736b,0.96);
-    const concrete=standard(THREE,0x908f85,0.92);
-    const ballast=standard(THREE,0x484741,0.97);
-    const steel=standard(THREE,0xc5bfb2,0.37,0.61);
-    const edgeMat=standard(THREE,0x746f63,0.86);
-    const exposedEdges=[[lot.polygon[5],lot.polygon[4]],
-                        [lot.polygon[4],lot.polygon[3]]];
-    const boundary=[];
-    for(const [a,b] of exposedEdges){
-      const n=outward(a,b,lot.center);
-      const insideA=move(a,n,0.24),insideB=move(b,n,0.24);
-      const outerA=move(a,n,7.6),outerB=move(b,n,7.6);
-      slab(THREE,root,'Lower service alley outside Station East lot',
-        [insideA,insideB,outerB,outerA],LANE_LEVEL,pavement);
-      segment(THREE,root,'Station East grade-step retaining wall',
-        a,b,-0.22,0.48,0.9,concrete);
-      segment(THREE,root,'Service road rough gravel shoulder',
-        outerA,outerB,LANE_LEVEL-0.028,0.8,0.055,verge);
-      // Preserve both outboard corner offsets at the bend. Skipping the
-      // second segment's start draws an accidental diagonal fence shortcut.
-      boundary.push(outerA,outerB);
-    }
-    // Beyond the lot, a narrow back-of-building service corridor reads as
-    // an alley BEFORE the further rail fence. It is outside the playable lot.
-    const landingLane=[
-      {x:82,z:43},{x:132,z:48},{x:196,z:27}
+    root.name='The Landing alley and fenced railway utility compound';
+    const pavement=standard(THREE,0x535754,0.93);
+    const concrete=standard(THREE,0x8b8b82,0.85);
+    const gravel=standard(THREE,0x68665e,0.95);
+    const brick=standard(THREE,0x874f41,0.88);
+    const brickDark=standard(THREE,0x5d352e,0.91);
+    const metal=standard(THREE,0x34474d,0.57,0.32);
+    const yellow=standard(THREE,0xd3b43c,0.9);
+    const mapped=SERVICE_REFERENCE.map(point=>streetViewInScene(origin,point));
+    // Road runs beside The Landing's northern wall, approximately
+    // (67,77) -> (80,80) -> (101,86) in scene metres.
+    // The previous invented (82,43) -> (196,27) lane was on the
+    // WRONG side of the lot and put chain link across live tracks.
+    const last=mapped[mapped.length-1];
+    // Start at the first photographed alley position. Extending west from
+    // it placed a chain-link corner inside the Station East parking polygon.
+    const route=[
+      ...mapped,
+      {x:last.x+18.2,z:last.z+4.5}
     ];
-    const landingRailFence=[
-      {x:86,z:32},{x:135,z:38},{x:198,z:17}
-    ];
-    for(let i=0;i<landingLane.length-1;i++){
-      slab(THREE,root,'The Landing back service alley',
-        [landingLane[i],landingLane[i+1],landingRailFence[i+1],
-          landingRailFence[i]],LANE_LEVEL,pavement);
-      segment(THREE,root,'Landing service lane edge',
-        landingLane[i],landingLane[i+1],LANE_LEVEL+0.02,0.17,0.11,concrete);
+    const north=[],south=[];
+    let roadSegments=0;
+    for(let i=0;i<route.length-1;i++){
+      const a=route[i],b=route[i+1];
+      const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);
+      if(length<0.2)continue;
+      // Along an eastbound lane, the left (-Z) edge bounds the rail
+      // utility compound and the right (+Z) edge faces The Landing.
+      const n={x:-dz/length,z:dx/length};
+      const nearA=move(a,n,-2.6),nearB=move(b,n,-2.6);
+      const farA=move(a,n,2.6),farB=move(b,n,2.6);
+      slab(THREE,root,'The Landing surveyed-view service alley',
+        [nearA,nearB,farB,farA],LANE_LEVEL,pavement);
+      segment(THREE,root,'The Landing back-of-building service curb',
+        farA,farB,LANE_LEVEL+0.045,0.15,0.09,concrete);
+      if(!north.length)north.push(nearA);
+      north.push(nearB);
+      if(!south.length)south.push(farA);
+      south.push(farB);
+      roadSegments++;
     }
-    // The boundary is separate from the existing black parking fence.
-    const poles=addWireFence(THREE,root,boundary.concat(landingRailFence));
-    // Repeating sleepers, ballast, and steel directly beyond the wire,
-    // at the same grade as the lowered CPR N-Yard and WCE platform.
-    const railRoutes=[
-      [{x:52,z:-4},{x:83,z:7},{x:134,z:16},{x:205,z:0}],
-      [{x:51,z:-10},{x:84,z:1},{x:136,z:9},{x:205,z:-7}]
+    // Compact fenced utility yard, not a second rail-yard surface. It lies
+    // immediately NORTH of the real alley and far SOUTH of the CPR rails.
+    const yard=[
+      {x:75,z:69},{x:120,z:83},{x:138,z:49},{x:93,z:38}
     ];
-    const sleeperVertices=[];
-    for(const route of railRoutes){
-      for(let i=0;i<route.length-1;i++){
-        const a=route[i],b=route[i+1],dx=b.x-a.x,dz=b.z-a.z;
-        const len=Math.hypot(dx,dz),nx=-dz/len,nz=dx/len;
-        segment(THREE,root,'Lower railway ballast beside Landing',a,b,
-          RAIL_LEVEL+0.07,3.5,0.16,ballast);
-        for(const side of [-0.76,0.76]){
-          const railA=move(a,{x:nx,z:nz},side);
-          const railB=move(b,{x:nx,z:nz},side);
-          segment(THREE,root,'Landing-side rail head',railA,railB,
-            RAIL_LEVEL+0.25,0.1,0.12,steel);
-          segment(THREE,root,'Landing-side rail web',railA,railB,
-            RAIL_LEVEL+0.15,0.055,0.065,edgeMat);
-        }
-        for(let along=0.6;along<len-0.3;along+=0.82){
-          const centre={x:a.x+dx*along/len,z:a.z+dz*along/len};
-          const q=move(centre,{x:nx,z:nz},-1.35),r=move(centre,{x:nx,z:nz},1.35);
-          sleeperVertices.push(q.x,RAIL_LEVEL+0.15,q.z,r.x,RAIL_LEVEL+0.15,r.z);
-        }
-      }
+    slab(THREE,root,'Fenced rail-serving utility yard gravel',yard,LANE_LEVEL-0.025,gravel);
+    // One straight wire fence along the lane, then a short return on the
+    // yard's east boundary. Neither crosses a passenger/freight rail.
+    const fencePosts=addWireFence(THREE,root,north);
+    const returnPosts=addWireFence(THREE,root,[north[north.length-1],yard[2]]);
+    // The low red-brick utility building and fenced storage area are visible
+    // in the supplied Feb 2022 photography. Scale/details illustrative.
+    const shed=new THREE.Group();
+    shed.name='Low brick railway utility and service building';
+    shed.position.set(111,LANE_LEVEL,57);
+    root.add(shed);
+    box(THREE,shed,'Service utility shed red brick',0,2.45,0,23,4.9,13.7,brick);
+    box(THREE,shed,'Service utility shed flat roof',0,4.97,0,23.4,0.22,14.1,brickDark);
+    box(THREE,shed,'Shed service access green door',0,1.72,6.94,4.0,3.25,0.12,metal);
+    for(const x of [-7.5,7.5]){
+      box(THREE,shed,'Shed mechanical wall louver',x,3.45,6.95,3.2,1.0,0.13,concrete);
     }
-    const geom=new THREE.BufferGeometry();
-    geom.setAttribute('position',new THREE.Float32BufferAttribute(sleeperVertices,3));
-    const sleepers=new THREE.LineSegments(geom,
-      new THREE.LineBasicMaterial({color:0x9d8774,fog:false}));
-    sleepers.name='Landing-side batched railway sleepers';
-    root.add(sleepers);
+    box(THREE,root,'Utility yard storage pallet',88,LANE_LEVEL+0.43,57,3.3,0.8,2.6,concrete);
+    for(const x of [84,91]){
+      box(THREE,root,'Fenced compound yellow bollard',x,LANE_LEVEL+0.6,72,0.20,1.2,0.2,yellow);
+    }
     root.userData={
       lotElevation:LOT_LEVEL,
       laneElevation:LANE_LEVEL,
       railElevation:RAIL_LEVEL,
-      wireFencePostCount:poles,
-      railwayTrackCount:railRoutes.length,
-      railRoutes,
-      fencedBoundary:boundary.concat(landingRailFence),
+      wireFencePostCount:fencePosts+returnPosts,
+      railwayTrackCount:0,
+      railRoutes:[],
+      mappedStreetViewPoints:mapped,
+      alleyCenterline:route,
+      fenceBoundary:north,
+      serviceYardFootprint:yard,
+      roadSegments,
+      duplicateRailGeometryRemoved:true,
+      crossesExistingRailway:false,
       illustrativeNotSurveyed:true,
       serviceLaneNotPublic:true,
       sourceReferences:REFS
     };
     return root;
   }
-  window.GastownRailGrade=Object.freeze({create,outward,reference:REFS});
+  window.GastownRailGrade=Object.freeze({create,outward,streetViewInScene,reference:REFS});
 })(window);

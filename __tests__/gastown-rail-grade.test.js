@@ -24,45 +24,62 @@ function inside(p,poly){
   if((a.z>p.z)!==(b.z>p.z)&&p.x<(b.x-a.x)*(p.z-a.z)/(b.z-a.z)+a.x)odd=!odd;
  }return odd;
 }
-test('grade separation from lot to Landing back alley, mesh fence and rail tracks',()=>{
+test('the service alley follows the supplied Google Street View positions',()=>{
  const root=scene();
  assert.ok(root);
  assert.equal(root.userData.lotElevation,0.19);
- assert.equal(root.userData.laneElevation,-0.55);
+ assert.equal(root.userData.laneElevation,0.11);
  assert.equal(root.userData.railElevation,-1.35);
  assert.ok(root.userData.railElevation<root.userData.laneElevation);
- assert.ok(root.userData.laneElevation<root.userData.lotElevation);
- assert.equal(root.userData.serviceLaneNotPublic,true);
  assert.equal(root.userData.illustrativeNotSurveyed,true);
- assert.ok(root.userData.wireFencePostCount>=25);
- assert.ok(root.children.filter(n=>n.name==='The Landing back service alley').length>=2);
- assert.ok(root.children.some(n=>n.name==='Station East grade-step retaining wall'));
- const wire=root.children.find(n=>n.name==='Landing railway fence diagonal wire mesh');
- assert.ok(wire);
- assert.ok(wire.geometry.position.args[0].length>1000);
- assert.ok(root.children.length<90,'bounded mesh budget for 8GB laptops');
+ assert.equal(root.userData.serviceLaneNotPublic,true);
+ assert.equal(root.userData.mappedStreetViewPoints.length,3);
+ const [west,centre,east]=root.userData.mappedStreetViewPoints;
+ assert.ok(Math.abs(west.x-67.19)<0.5&&Math.abs(west.z-77.04)<0.5);
+ assert.ok(Math.abs(centre.x-79.84)<0.5&&Math.abs(centre.z-79.76)<0.5);
+ assert.ok(Math.abs(east.x-100.70)<0.5&&Math.abs(east.z-85.71)<0.5);
+ assert.equal(root.userData.roadSegments,3);
+ assert.ok(root.children.filter(n=>n.name==='The Landing surveyed-view service alley').length>=3);
 });
-test('two lower near-field rail alignments never invade parking polygon',()=>{
- const root=scene();assert.equal(root.userData.railwayTrackCount,2);
- for(const route of root.userData.railRoutes){
-  for(let k=0;k<route.length-1;k++){
-   for(let i=0;i<=50;i++){
-    const a=route[k],b=route[k+1],t=i/50;
-    assert.equal(inside({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t},
-      world.parkingLot.polygon),false);
-   }
-  }
+test('utility fencing stays beside Landing and never stretches over parking or train tracks',()=>{
+ const root=scene();
+ assert.ok(root.userData.wireFencePostCount>=20);
+ assert.ok(root.children.some(n=>n.name==='Landing railway fence diagonal wire mesh'));
+ assert.ok(root.children.some(n=>n.name==='Fenced rail-serving utility yard gravel'));
+ assert.ok(root.children.some(n=>n.name==='Low brick railway utility and service building'));
+ const rootNodes=[root];for(let i=0;i<rootNodes.length;i++)rootNodes.push(...(rootNodes[i].children||[]));
+ assert.ok(rootNodes.some(n=>n.name==='Service utility shed red brick'));
+ const wires=root.children.filter(n=>n.name==='Landing railway fence diagonal wire mesh');
+ assert.ok(wires.every(n=>n.geometry.position.args[0].length>400));
+ for(const p of root.userData.fenceBoundary){
+   assert.equal(inside(p,world.parkingLot.polygon),false,'wire fence outside public lot');
+   assert.equal(inside(p,world.landing.footprint),false,'wire fence outside the building');
+   assert.ok(p.z>65,'fence stays beside Landing, south of the rail corridor');
  }
- assert.ok(root.children.some(n=>n.name==='Landing-side batched railway sleepers'));
+ for(const p of root.userData.alleyCenterline){
+   assert.equal(inside(p,world.parkingLot.polygon),false,'service road outside lot');
+   assert.equal(inside(p,world.landing.footprint),false,'service road not through building');
+ }
+ assert.ok(root.children.length<90,'batched wire mesh and bounded low-poly details');
 });
-test('CPR rail cars and WCE platform shift together; public areas are unchanged',()=>{
+test('duplicate tracks and false railway fence crossover are absent',()=>{
+ const root=scene();
+ assert.equal(root.userData.railwayTrackCount,0);
+ assert.equal(root.userData.railRoutes.length,0);
+ assert.equal(root.userData.duplicateRailGeometryRemoved,true);
+ assert.equal(root.userData.crossesExistingRailway,false);
+ assert.equal(root.children.filter(n=>/rail head|rail web|railway sleepers/i.test(n.name)).length,0);
+});
+test('harbour and WCE share a lower grade and parking gameplay anchors are unchanged',()=>{
  const harbour=read('js/gastown-harbour-vista.js');
  const wce=read('js/gastown-west-coast-express.js');
  const sim=read('js/gastown-sim.js');
  assert.match(harbour,/firstRailSceneChild=root\.children\.length/);
  assert.match(harbour,/node\.position\.y-=1\.35/);
- assert.match(harbour,/freightGroup\.position\.y=-1\.35/);
- assert.match(wce,/root\.position\.set\(station\.x,-1\.35,station\.z\)/);
+ assert.match(harbour,/railStartBeyondStationEast=true/);
+ assert.match(harbour,/southApronNoLongerUnderLot = true/);
+ assert.match(wce,/root\.position\.set\(0,-1\.35,0\)/);
+ assert.match(wce,/coach\.position\.set\(center,0,-18\)/);
  assert.match(sim,/safelyCreate\('Station East rail-grade transition'/);
  assert.match(read('functions.php'),/'se-gastown-rail-grade'/);
  assert.match(read('scripts/theme_deploy_manifest.py'),/"js\/gastown-rail-grade\.js"/);

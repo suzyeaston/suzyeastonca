@@ -109,7 +109,10 @@ test('City-informed N-Yard fans out to twenty low-profile track alignments witho
   assert.ok(rails&&sleepers,'rail ladder and sleepers should be visible beyond the fence');
   assert.equal(root.userData.yardTrackCount,20);
   assert.equal(root.userData.yardRailFanBatched,true);
-  assert.equal(root.userData.tracksAlignedToLotFence,true);
+  assert.equal(root.userData.tracksAlignedToLotFence,false,
+    'rail bearing must come from the eastbound corridor, not short lot-fence angle');
+  assert.equal(root.userData.railCoordinateFrame,'world-eastbound');
+  assert.equal(root.userData.railStartBeyondStationEast,true);
   assert.equal(root.userData.openCanadaPlaceSightline,true);
   assert.equal(root.userData.hasFreightYard,true);
   assert.equal(rails.geometry.position.args[0].length,13*2*2*2*3,
@@ -124,6 +127,12 @@ test('GIS-informed waterfront ground and rail corridor continue east of Station 
   const nodes=all(root);
   const get=name=>nodes.find(node=>node.name===name);
   assert.ok(root.userData.waterfrontGroundContinuity);
+  assert.equal(root.userData.southApronNoLongerUnderLot,true);
+  assert.ok(root.userData.corridorSouthEdge.every(p=>p.z<0),
+    'harbour apron must not blanket the southern parking lot and Gastown');
+  const apron=get('Waterfront rail-yard apron');
+  assert.ok(apron.geometry.args[0]<300,
+    'no 690m grey rectangle stretching across the visible skyline');
   assert.ok(root.userData.approximateShoreline);
   assert.ok(root.userData.eastboundRailCorridorVisible);
   assert.equal(root.userData.railCorridorSurveyed,false);
