@@ -1,47 +1,70 @@
-# Gastown rail-grade fidelity pass: Station East / The Landing
+# Waterfront rail corridor: single topology, November 2026
 
-## Research and intent
-- Waterfront Station / West Coast Express passenger platforms are west of
-  the Station East lot, with the CP/CPKC N-Yard extending east.
-- City of Vancouver 2022 N-Yard study identifies 20 yard tracks and a
-  mainline dividing into three passenger-platform tracks.
-- Station East Lot 531 at 555 West Cordova lies between historic Waterfront
-  Station and The Landing, 375 Water Street.
-- The user-supplied November 14 2026 views show a featureless grey apron,
-  little height separation, and missing rail-side service lane / wire fence.
+## Why the previous screenshot QA failed
+Three separately-authored rail systems competed for the same territory:
+1. The heritage station's roughly -45 degree yaw was incorrectly applied
+   to the West Coast Express line, turning its coaches and tracks toward
+   the parking lot and across the freight yard.
+2. Seven near-field CPR rails were projected from the short Station East
+   fence's bearing, not the eastbound rail-corridor bearing.
+3. The Landing-side "alley" had ungrounded coordinates (82,43) to
+   (196,27), producing a long diagonal wire fence across the tracks.
+   That module also added two duplicated rail alignments.
+4. A single grey waterfront polygon covered everything from Z=+240
+   (inside Gastown) to the harbour shore.
 
-Sources:
-- https://vancouver.ca/files/cov/2022-519-release.pdf
-- https://www.translink.ca/schedules-and-maps/west-coast-express
-- https://heritagevancouver.org/top10-watch-list/2021/8-555-west-cordova/
-- https://dailyhive.com/vancouver/555-west-cordova-street-vancouver-the-crystal-waterfront-square-station
+## Geographic controls
+City of Vancouver railway hazard study:
+https://vancouver.ca/files/cov/2022-519-release.pdf
 
-## Scene corrections
-- Preserve existing playable surface lot (+0.19 scene metres).
-- Place a non-walkable lower service alley immediately beyond its north
-  boundary and behind The Landing (-0.55).
-- Add independent mesh-chain-link rail fence after the alley, with corner
-  points following the north and east parking lot perimeter.
-- Draw two visible near-Landing rail alignments, ballast and batched
-  sleepers at -1.35.
-- Shift only pre-existing CPR/N-Yard railway objects and WCE passenger
-  platform/train to -1.35, never the SeaBus terminal or bridge.
-- Lower the enormous uniform-grey rail apron to expose the graded
-  rail geometry and retain the harbour backdrop.
+TransLink Waterfront / West Coast Express:
+https://www.translink.ca/schedules-and-maps/west-coast-express
 
-All measurements and road alignment are **illustrative**, not surveyed. They
-are not real-world safe railway access or accessible route information.
-Preserve the public lot, Waterfront building, Landing footprint and elevator,
-flying controls, and the protected harbour scenic subsystem.
+555 W Cordova heritage parking lot:
+https://heritagevancouver.org/top10-watch-list/2021/8-555-west-cordova/
 
-## QA after deployment
-1. From Station East's public fence look toward The Landing. Visible order:
-   parking edge, service alley, wire fence, lower ballast and tracks.
-2. Pan west to the Waterfront Station WCE platforms and verify the
-   train and canopy sit below the public lot.
-3. Check the parking drive aisle and the original NPCs still work.
-4. Walk from Cordova through the station, back to the lot and into
-   The Landing/elevator, and return to the street.
-5. Test SUZYFLY and the third-person camera. Inspect for clipping
-   or grey artifacts and confirm no errors in the browser console.
-6. Inspect the SeaBus/Canada Place sightlines, then run all CI checks.
+User-supplied Google Street View photographs October 2020 and February
+2022 projected through the scene's GIS origin (49.28583333, -123.11166667):
+- 49.2851413, -123.1107414 → x~67.2, z~77.0
+- 49.2851168, -123.1105671 → x~79.8, z~79.8
+- 49.2850634, -123.1102798 → x~100.7, z~85.7
+
+The last three points are inside the real narrow service alley immediately
+along The Landing, NOT in the CPR rail corridor. Chain link should follow
+its northern edge beside the red-brick utility compound. It should never
+cut across the rail yard.
+
+## Authored scene corrections
+- Keep original public parking geometry, parking entrance, Waterfront
+  Station, The Landing footprint, characters and elevator.
+- WCE group now uses global city XY/XZ frame rather than heritage
+  building yaw. Three parallel passenger tracks leave the station east.
+  The low-poly train is centered on the nearest track, alongside its
+  platform. Opposite-side WCE nameplates are no longer mirrored.
+- CPR near-field and distant tracks both proceed east/northeast, beginning
+  east of the station rather than under the lot.
+- The alley module now makes a narrow route from the photographed street
+  positions, a chain-link fence on the rail/utility side and a low brick
+  service building, and makes ZERO duplicated railway tracks.
+- The giant grey apron is confined to the industrial rail band rather
+  than filling the entire city-side foreground.
+- Continue the 20-track illustrative N-Yard without touching harbour
+  and SeaBus components. No physics or gameplay collision changes.
+
+The visual rail grades remain illustrative, with lot +0.19, service alley
++0.11, and rail -1.35 scene metres. These values are NOT surveyed,
+not current rail operations, and do not imply pedestrian access.
+
+## Browser QA acceptance
+1. From Station East fence, look west toward the WCE platform. The train
+   and canopy should be level with one another and BELOW parking grade;
+   the platform should be west of the parking area, not across its centre.
+2. Look toward The Landing from the parking east edge: the wall-side service
+   alley, wire-mesh gate and red-brick utility shed should now be there.
+3. SUZYFLY over the yard: no crisscrossed WCE tracks, no snake-like
+   diagonal fence running through the tracks, and no huge grey slab.
+4. Pan north: the CPR rail yard, SeaBus, Canada Place and cruise ship
+   remain visible without duplicated near-field tracks.
+5. Walk the lot and heritage station, interact with NPCs, then enter and
+   exit The Landing via the lift, checking camera clipping and console.
+6. Confirm Gastown GIS QA and production theme deployment in Actions.
