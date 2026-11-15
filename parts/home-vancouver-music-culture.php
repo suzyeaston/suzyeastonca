@@ -62,6 +62,7 @@ if ( function_exists( 'suzy_vmc_events' ) ) {
                 <?php if ( ! empty( $home_culture_next['time_note'] ) ) : ?><span class="home-culture-spotlight__next-title"><?php echo esc_html( $home_culture_next['time_note'] ); ?></span><?php endif; ?>
             </p>
         <?php endif; ?>
-        <a class="pixel-button home-culture-spotlight__cta" href="<?php echo esc_url( home_url( '/vancouver-music-culture/' ) ); ?>">Explore music &amp; culture</a>
+        <a class="pixel-button home-culture-spotlight__cta" href="<?php echo esc_url( home_url( '/vancouver-events/?yve_track=culture' ) ); ?>">Explore music &amp; culture events</a>
+        <p class="home-culture-spotlight__directory-link"><a href="<?php echo esc_url( home_url( '/vancouver-music-culture/' ) ); ?>">Browse the original venue directory</a></p>
     </div>
 </section>
