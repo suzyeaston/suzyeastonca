@@ -140,7 +140,7 @@ test('Cordova-facing Harbour Centre streetwall follows the real civic edges',()=
     const mass=facade.children.find(node=>node.name==='Harbour Centre articulated stone podium body');
     assert.ok(mass.geometry.args[1] <= 14, 'remove the oversize 17-m blank slab');
     assert.ok(facade.children.every(node=>node.name!=='Harbour Centre Cordova parkade concrete streetwall'));
-    const outwardAngle=-harbour.rotation.y+facade.rotation.y;
+    const outwardAngle=harbour.rotation.y+facade.rotation.y;
     const normal={x:Math.sin(outwardAngle),z:Math.cos(outwardAngle)};
     const towardLot={
       x:world.parkingLot.center.x-center.x,
