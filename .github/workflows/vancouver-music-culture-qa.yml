@@ -19,8 +19,13 @@ on:
       - 'scripts/theme_deploy_manifest.py'
       - 'tests/VancouverMusicCultureTest.php'
       - 'tests/VancouverEventsHubTest.php'
+      - 'tests/WordPressPageProvisionTest.php'
+      - 'scripts/wp_ensure_public_pages.php'
+      - 'scripts/ensure_wordpress_public_pages.py'
+      - '__tests__/wordpress-page-provision.test.js'
+      - '.github/workflows/deploy-production.yml'
       - '__tests__/vancouver-music-culture.test.js'
-      - '__tests__/vancouver-events-hub.test.js'
+      - '__tests__/vancouver-events-hub.test.js __tests__/wordpress-page-provision.test.js'
       - '__tests__/projects-portfolio.test.js'
       - '.github/workflows/vancouver-music-culture-qa.yml'
   push:
@@ -42,6 +47,11 @@ on:
       - 'scripts/theme_deploy_manifest.py'
       - 'tests/VancouverMusicCultureTest.php'
       - 'tests/VancouverEventsHubTest.php'
+      - 'tests/WordPressPageProvisionTest.php'
+      - 'scripts/wp_ensure_public_pages.php'
+      - 'scripts/ensure_wordpress_public_pages.py'
+      - '__tests__/wordpress-page-provision.test.js'
+      - '.github/workflows/deploy-production.yml'
       - '__tests__/vancouver-music-culture.test.js'
       - '__tests__/vancouver-events-hub.test.js'
       - '__tests__/projects-portfolio.test.js'
@@ -72,6 +82,9 @@ jobs:
           php -l page-vancouver-events.php
           php -l inc/vancouver-events.php
           php -l tests/VancouverEventsHubTest.php
+          php -l scripts/wp_ensure_public_pages.php
+          php -l tests/WordPressPageProvisionTest.php
+          python3 -m py_compile scripts/ensure_wordpress_public_pages.py
           php -l page-projects.php
           php -l inc/seo.php
           php -l functions.php
@@ -80,6 +93,8 @@ jobs:
         run: php tests/VancouverMusicCultureTest.php
       - name: Combined events integration regression
         run: php tests/VancouverEventsHubTest.php
+      - name: WordPress Page create/readback/idempotence regression
+        run: php tests/WordPressPageProvisionTest.php
       - name: Theme integration tests
         run: node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js __tests__/projects-portfolio.test.js __tests__/vancouver-events-hub.test.js
       - name: Build deploy-time social images
