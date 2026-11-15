@@ -41,7 +41,7 @@ test("local culture and civic systems are current and provenance-aware", () => {
     assert.ok(page.includes(title), title + " exists");
   }
   assert.match(page, /26 curated venue\/organizer links|Twenty-six curated venue\/organizer links/);
-  assert.match(page, /Four configured automated source adapters/);
+  assert.match(page, /Seven configured automated source adapters/);
   assert.match(page, /captured listings from proof that events occurred/);
   assert.match(page, /source-backed|Source-backed/);
   assert.match(page, /MapLibre/);
