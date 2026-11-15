@@ -25,10 +25,10 @@ $base_args = [
     'yve_q' => $filters['q'],
 ];
 if ( 'archive' === $filters['view'] ) {
-    $base_args['year'] = $filters['year'];
-    $base_args['month'] = $filters['month'];
+    $base_args['yve_year'] = $filters['year'];
+    $base_args['yve_month'] = $filters['month'];
 } else {
-    $base_args['period'] = $filters['period'];
+    $base_args['yve_period'] = $filters['period'];
 }
 $link_for_page = static function ( int $number ) use ( $base_args, $base ): string {
     return add_query_arg( array_merge( $base_args, [ 'yve_page' => $number ] ), $base ) . '#events';
@@ -44,7 +44,9 @@ if ( 'archive' === $filters['view'] ) {
 <main id="main-content" class="yve" role="main">
     <header class="yve__hero">
         <p class="yve__kicker pixel-font">VANCOUVER // ALL FREQUENCIES</p>
+        <div class="yve__hero-hud" aria-hidden="true"><span>● SYSTEM ONLINE / YVR</span><span>PLAYER 01 // FREE ROAM</span></div>
         <h1>Vancouver Events</h1>
+        <div class="yve__hero-subtitle pixel-font" aria-hidden="true">[ EXPLORE ] &nbsp; [ DISCOVER ] &nbsp; [ SAVE ]</div>
         <p class="yve__lead">One city, many signals. Music, AI, poetry, indie gigs, developer meetups, sound art, philosophy, experimental cinema and the conversations between them.</p>
         <p class="yve__sublead">Independent calendars, together. Listings remain linked to their original organizers; this is a discovery index, not proof that an event is happening or was attended.</p>
     </header>
@@ -53,6 +55,26 @@ if ( 'archive' === $filters['view'] ) {
         <a href="<?php echo esc_url( add_query_arg( [ 'yve_view' => 'upcoming', 'yve_track' => $filters['track'], 'yve_topic' => $filters['topic'], 'yve_q' => $filters['q'] ], $base ) . '#events' ); ?>"<?php echo 'upcoming' === $filters['view'] ? ' aria-current="page"' : ''; ?>>Upcoming events</a>
         <a href="<?php echo esc_url( add_query_arg( [ 'yve_view' => 'archive', 'yve_track' => $filters['track'], 'yve_topic' => $filters['topic'], 'yve_q' => $filters['q'] ], $base ) . '#events' ); ?>"<?php echo 'archive' === $filters['view'] ? ' aria-current="page"' : ''; ?>>Historical archive</a>
     </nav>
+
+    <section id="yve-lineup" class="yve__lineup" aria-labelledby="yve-lineup-title">
+        <div class="yve__lineup-top">
+            <div>
+                <p class="yve__slot-label pixel-font">MEMORY CARD // YOUR EVENT LOADOUT</p>
+                <h2 id="yve-lineup-title">My saved lineup <span id="yve-lineup-count" class="yve__lineup-counter" aria-live="polite">0</span></h2>
+                <p>Tap <strong>♡ Save event</strong> on anything interesting. Your picks stay in this browser across visits and filters. No account needed.</p>
+            </div>
+            <div class="yve__lineup-controls">
+                <button type="button" data-yve-export="ics" disabled>↓ Calendar (.ics)</button>
+                <button type="button" data-yve-export="csv" disabled>↓ Spreadsheet (.csv)</button>
+                <button type="button" id="yve-lineup-clear" disabled>Clear lineup</button>
+            </div>
+        </div>
+        <p class="yve__lineup-privacy">Saved only on this device/browser. Use the downloads as a portable copy; saving doesn't reserve a spot or RSVP.</p>
+        <p id="yve-lineup-message" class="yve__lineup-message" role="status" aria-live="polite"></p>
+        <p id="yve-lineup-empty" class="yve__lineup-empty">NO EVENTS SAVED YET // Browse below and collect a few side quests.</p>
+        <ol id="yve-lineup-items" class="yve__saved-items" aria-label="Your saved events"></ol>
+        <noscript><p>Enable JavaScript to save a personal lineup or export your selections. Event browsing works without it.</p></noscript>
+    </section>
 
     <section class="yve__filter-panel" aria-labelledby="yve-filter-heading">
         <div class="yve__filter-heading">
@@ -148,7 +170,8 @@ if ( 'archive' === $filters['view'] ) {
                     $end = (int) $event['end'];
                     $crosses_days = $end > $start && wp_date( 'Y-m-d', $end - 1, suzy_vte_vancouver_timezone( $end - 1 ) ) !== wp_date( 'Y-m-d', $start, $timezone );
                     ?>
-                    <li class="yve__event">
+                    <li class="yve__event<?php echo in_array( 'tech', $event['tracks'], true ) ? ' yve__event--tech' : ' yve__event--culture'; ?>">
+                        <div class="yve__event-cabinet" aria-hidden="true"><span>◈ NEW SIGNAL</span><span>YVR EVENT LIST</span></div>
                         <div class="yve__event-top">
                             <time datetime="<?php echo esc_attr( wp_date( 'c', $start, $timezone ) ); ?>"><?php echo esc_html( wp_date( 'D, M j · g:i a', $start, $timezone ) ); ?> <?php echo $start >= 1772964000 ? 'PCT' : esc_html( wp_date( 'T', $start, $timezone ) ); ?></time>
                             <div class="yve__tags">
@@ -156,6 +179,16 @@ if ( 'archive' === $filters['view'] ) {
                                     <span class="yve__tag yve__tag--<?php echo esc_attr( $track ); ?>"><?php echo 'tech' === $track ? 'Tech' : 'Music & Culture'; ?></span>
                                 <?php endforeach; ?>
                             </div>
+                            <button type="button" class="yve__save" data-yve-save data-yve-event="<?php echo esc_attr( wp_json_encode( [
+                                'id' => $event['id'],
+                                'title' => $event['title'],
+                                'start' => $start,
+                                'end' => $end,
+                                'url' => $event['url'],
+                                'location' => $event['location'],
+                                'source' => $event['source'],
+                                'timeNote' => $event['time_note'],
+                            ] ) ); ?>" aria-pressed="false">♡ Save event</button>
                         </div>
                         <h3><a href="<?php echo esc_url( $event['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $event['title'] ); ?></a></h3>
                         <?php if ( $crosses_days ) : ?>

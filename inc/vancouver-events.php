@@ -207,6 +207,11 @@ add_filter( 'template_include', static function ( $template ) {
 }, 99 );
 add_action( 'wp_enqueue_scripts', static function (): void {
     if ( suzy_yvr_events_is_route() ) {
-        wp_enqueue_style( 'suzy-vancouver-events', get_template_directory_uri() . '/assets/css/vancouver-events.css', [], '1.0.0' );
+        $css = get_template_directory() . '/assets/css/vancouver-events.css';
+        $js = get_template_directory() . '/assets/js/vancouver-events-lineup.js';
+        wp_enqueue_style( 'suzy-vancouver-events', get_template_directory_uri() . '/assets/css/vancouver-events.css', [], is_file( $css ) ? (string) filemtime( $css ) : '1.1.0' );
+        if ( is_file( $js ) ) {
+            wp_enqueue_script( 'suzy-vancouver-events-lineup', get_template_directory_uri() . '/assets/js/vancouver-events-lineup.js', [], (string) filemtime( $js ), true );
+        }
     }
 }, 15 );

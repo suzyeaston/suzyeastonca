@@ -317,3 +317,374 @@
 @media (prefers-reduced-motion: reduce) {
   .yve { scroll-behavior: auto; }
 }
+
+
+/* 2026-11-14 arcade cabinet refresh: source data stays unchanged.
+ * Readable pixel-console typography, neon keyline HUD and interactive loadout.
+ */
+.yve {
+  --yve-ink: #effff6;
+  --yve-muted: #c4d8df;
+  --yve-line: rgba(54, 245, 188, .6);
+  --yve-pink: #ffb6e4;
+  --yve-cyan: #80f5ff;
+  --yve-yellow: #f9e883;
+  --yve-green: #80ffa5;
+  position: relative;
+  z-index: 20;
+  isolation: isolate;
+  font-family: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  letter-spacing: .01em;
+}
+.yve .pixel-font, .yve h1, .yve__filter-heading h2,
+.yve__results-header h2, .yve__event h3, .yve__lineup-top h2,
+.yve__footer h2 {
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-weight: 500;
+}
+.yve__hero {
+  border: 2px solid #6ef7cc;
+  border-radius: 4px;
+  padding: clamp(1.1rem, 3.5vw, 2.7rem);
+  background:
+    repeating-linear-gradient(0deg, transparent 0px, transparent 7px, rgba(112, 255, 215, .035) 8px, transparent 9px),
+    linear-gradient(135deg, rgba(15, 31, 35, .98), rgba(15, 15, 36, .98) 68%, rgba(46, 18, 51, .98));
+  box-shadow: 6px 6px 0 rgba(60, 252, 163, .14), 0 0 28px rgba(60, 252, 163, .12), inset 0 0 0 6px #081119;
+}
+.yve__hero::after {
+  width: 64px; height: 64px;
+  border-radius: 0;
+  border: none;
+  border-right: 4px solid #ffb5df;
+  border-top: 4px solid #ffb5df;
+  box-shadow: none;
+  top: 9px; right: 9px;
+}
+.yve__hero-hud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  margin: 0 0 2rem;
+  color: #caffdf;
+  font-size: .73rem;
+  letter-spacing: .14em;
+}
+.yve__hero-hud span:first-child { color: var(--yve-green); }
+.yve__hero .yve__kicker {
+  margin-bottom: .95rem;
+  color: #e1b5ff !important;
+}
+.yve h1 {
+  max-width: 100%;
+  margin: 0 0 1.1rem;
+  color: #b4ffd3;
+  font-size: clamp(1.12rem, 3.1vw, 2.55rem);
+  line-height: 1.65;
+  letter-spacing: .015em;
+  text-shadow: 3px 3px 0 #1b4a38;
+  overflow-wrap: anywhere;
+}
+.yve__hero-subtitle {
+  margin: .2rem 0 1.3rem;
+  color: #ffb6e4;
+  font-size: clamp(.5rem, .92vw, .66rem);
+  line-height: 1.8;
+}
+.yve__hero .yve__lead {
+  color: #edf9ef !important;
+  max-width: 68ch;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: clamp(.93rem, 1.5vw, 1.1rem);
+}
+.yve__hero .yve__sublead { font-size: .85rem; line-height: 1.75; }
+.yve__modes a {
+  border: 2px solid #71b5c6;
+  border-radius: 3px;
+  background: #09151e;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: .65rem;
+  line-height: 1.7;
+  color: #d9fbff;
+}
+.yve__modes a[aria-current="page"] {
+  border-color: #90fbaa;
+  background: #174032;
+  color: #dbffe5;
+  box-shadow: inset 0 -4px 0 rgba(13, 25, 16, .6);
+}
+.yve__filter-panel {
+  border: 2px solid #67bfea;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0, transparent 4px, rgba(84, 183, 219, .025) 5px),
+    linear-gradient(125deg, #0e1b31, #160f2a);
+  box-shadow: 5px 5px 0 rgba(80, 164, 233, .13);
+}
+.yve__filter-heading h2 {
+  color: #ffe780;
+  font-size: clamp(.77rem, 1.2vw, .9rem);
+  line-height: 1.7;
+}
+.yve__field label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  color: #a7f4ff;
+  text-transform: uppercase;
+  font-size: .72rem;
+  letter-spacing: .08em;
+}
+.yve__field select, .yve__field input {
+  border-radius: 2px;
+  border: 2px solid #4b8aa5;
+  background: #08121e;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+.yve__filter-actions button,
+.yve__lineup-controls button {
+  border-radius: 3px;
+  border-width: 2px;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: .62rem;
+  line-height: 1.75;
+  min-height: 44px;
+}
+.yve__filter-actions button { background: #87ffb7; border-color: #c7ffd7; }
+.yve__filter-actions button:hover { background: #c4ffe0; }
+.yve__filter-actions a { color: #b7fdcc; }
+.yve__results-header h2, .yve__footer h2 {
+  font-size: clamp(.9rem, 1.5vw, 1.3rem);
+  line-height: 1.7;
+  color: #beffe0;
+}
+.yve__event-list { counter-reset: yve-game; }
+.yve__event {
+  --yve-accent: #7aeeed;
+  position: relative;
+  counter-increment: yve-game;
+  z-index: 1;
+  border: 2px solid rgba(117, 229, 228, .6);
+  border-left: 5px solid var(--yve-accent);
+  border-radius: 3px;
+  padding: clamp(.85rem, 2vw, 1.35rem);
+  background:
+    repeating-linear-gradient(0deg, transparent 0px, transparent 5px, rgba(89, 255, 217, .018) 6px),
+    #09151f;
+  box-shadow: 4px 4px 0 rgba(99, 209, 214, .13);
+}
+.yve__event--culture {
+  --yve-accent: #ffb1e4;
+  border-color: rgba(255, 172, 223, .55);
+}
+.yve__event::before {
+  content: "";
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 21px; height: 21px;
+  background: linear-gradient(135deg, transparent 48%, var(--yve-accent) 49% 56%, #08131d 57%);
+  pointer-events: none;
+}
+.yve__event-cabinet {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .25rem .8rem;
+  margin: 0 0 .7rem;
+  color: #b4ffe5;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: .46rem;
+  letter-spacing: .02em;
+  line-height: 1.65;
+  opacity: .85;
+}
+.yve__event--culture .yve__event-cabinet { color: #ffbade; }
+.yve__event h3 {
+  margin: .8rem 0 .5rem;
+  font-size: clamp(.72rem, 1.12vw, .94rem);
+  line-height: 1.8;
+  font-weight: normal;
+}
+.yve__event h3 a { color: #fffaff; }
+.yve__event h3 a:hover { color: #91ffb9; }
+.yve__event time {
+  color: #ffec93;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .83rem;
+  letter-spacing: .04em;
+}
+.yve__tag, .yve__topic-tags span { border-radius: 2px; }
+.yve__tag--tech { color: #b8ffff; }
+.yve__tag--culture { color: #ffe2f3; }
+.yve__event-meta, .yve__provenance, .yve__time-note { line-height: 1.7; }
+.yve__event-top { justify-content: flex-start; }
+.yve__tags { margin-left: auto; }
+.yve__save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 43px;
+  padding: .6rem .8rem;
+  flex: 0 0 auto;
+  border: 2px solid #f2a7d8;
+  border-radius: 3px;
+  background: #2d152e;
+  color: #ffe2f5;
+  cursor: pointer;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.yve__save:hover, .yve__save:focus-visible { background: #643253; color: white; }
+.yve__save[aria-pressed="true"] {
+  background: #fbade2;
+  color: #1c0e21;
+  border-color: #fff0fa;
+}
+.yve__lineup {
+  margin: 1rem 0 1.35rem;
+  padding: clamp(1rem, 2.7vw, 1.5rem);
+  border: 2px solid #f5a5de;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0, transparent 20px, rgba(255, 156, 228, .016) 21px),
+    linear-gradient(135deg, #24132d, #0c1d26);
+  box-shadow: 5px 5px 0 rgba(233, 124, 200, .13);
+  scroll-margin-top: 2.5rem;
+}
+.yve__slot-label {
+  margin: 0 0 .65rem;
+  color: #ffbae9;
+  font-size: clamp(.48rem, .8vw, .61rem);
+  line-height: 1.7;
+}
+.yve__lineup-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.yve__lineup-top > div:first-child { flex: 1 1 300px; }
+.yve__lineup-top h2 {
+  margin: 0 0 .7rem;
+  color: #fff0fb;
+  font-size: clamp(.78rem, 1.3vw, 1.05rem);
+  line-height: 1.75;
+}
+.yve__lineup-top p {
+  max-width: 68ch;
+  margin: 0;
+  color: #e0d6e8;
+  font-size: .84rem;
+  line-height: 1.75;
+}
+.yve__lineup-top p strong { color: #ffc8eb; }
+.yve__lineup-counter {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 .35rem;
+  padding: .25rem .45rem;
+  border: 2px solid #98fbc5;
+  color: #abffd1;
+  background: #10382b;
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-size: .75em;
+}
+.yve__lineup-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  flex: 1 1 310px;
+}
+.yve__lineup-controls button {
+  cursor: pointer;
+  padding: .65rem .8rem;
+  border: 2px solid #fac0e6;
+  background: #f8b4e0;
+  color: #211023;
+}
+.yve__lineup-controls button:hover:not(:disabled) { background: #ffe0f3; }
+.yve__lineup-controls button:disabled {
+  cursor: not-allowed;
+  opacity: .52;
+}
+.yve__lineup-controls #yve-lineup-clear {
+  background: #2b1932;
+  color: #fce2f0;
+}
+.yve__lineup-privacy {
+  margin: .7rem 0;
+  color: #d9b8cf;
+  font-size: .72rem;
+  line-height: 1.7;
+}
+.yve__lineup-message {
+  margin: .35rem 0;
+  color: #a8ffcf;
+  font-size: .78rem;
+}
+.yve__lineup-message:empty { display: none; }
+.yve__lineup-empty {
+  margin: .8rem 0 0;
+  padding: .85rem;
+  border: 1px dashed rgba(255, 193, 230, .48);
+  color: #f3c9e4;
+  font-size: .73rem;
+}
+.yve__lineup [hidden] { display: none !important; }
+.yve__saved-items {
+  display: grid;
+  gap: .55rem;
+  list-style: none;
+  margin: .8rem 0 0;
+  padding: 0;
+}
+.yve__saved-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .8rem;
+  border: 1px solid rgba(255, 171, 230, .38);
+  border-radius: 2px;
+  background: #101623;
+  padding: .75rem .9rem;
+}
+.yve__saved-item a { color: #fff2fc; font-weight: 700; text-decoration: none; }
+.yve__saved-item a:hover { text-decoration: underline; color: #9cf7d4; }
+.yve__saved-item p { color: #c6d1d9; margin: .25rem 0 0; font-size: .75rem; }
+.yve__remove {
+  border: 1px solid #ea8ebd;
+  border-radius: 2px;
+  padding: .55rem .75rem;
+  background: #261528;
+  color: #fce4f0;
+  cursor: pointer;
+  font-size: .78rem;
+}
+.yve__remove:hover { background: #63324b; }
+.yve__pagination a, .yve__sources a {
+  border-radius: 3px;
+  border: 2px solid #75cbdf;
+  color: #c7f5fa;
+  background: #081d2c;
+}
+.yve__histogram {
+  border-radius: 4px;
+  border-width: 2px;
+}
+@media (max-width: 700px) {
+  .yve__hero-hud { font-size: .64rem; margin-bottom: 1.2rem; }
+  .yve__hero .yve__lead { font-size: .88rem; }
+  .yve__event-top { align-items: flex-start; }
+  .yve__tags { margin-left: 0; }
+  .yve__save { width: 100%; order: 3; }
+  .yve__lineup-controls { flex: 1 1 100%; }
+  .yve__lineup-controls button { flex: 1 1 170px; }
+}
+@media (max-width: 420px) {
+  .yve__hero-hud span:last-child { display: none; }
+  .yve h1 { font-size: 1rem; }
+  .yve__event-cabinet { font-size: .41rem; }
+  .yve__lineup-controls button { flex-basis: 100%; }
+}

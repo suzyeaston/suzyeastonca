@@ -12,6 +12,7 @@ on:
       - 'parts/home-vancouver-music-culture.php'
       - 'assets/css/vancouver-music-culture.css'
       - 'assets/css/vancouver-events.css'
+      - 'assets/js/vancouver-events-lineup.js'
       - 'functions.php'
       - 'inc/seo.php'
       - 'page-projects.php'
@@ -25,7 +26,9 @@ on:
       - '__tests__/wordpress-page-provision.test.js'
       - '.github/workflows/deploy-production.yml'
       - '__tests__/vancouver-music-culture.test.js'
-      - '__tests__/vancouver-events-hub.test.js __tests__/wordpress-page-provision.test.js'
+      - '__tests__/vancouver-events-hub.test.js'
+      - '__tests__/vancouver-events-lineup.test.js'
+      - '__tests__/wordpress-page-provision.test.js'
       - '__tests__/projects-portfolio.test.js'
       - '.github/workflows/vancouver-music-culture-qa.yml'
   push:
@@ -40,6 +43,7 @@ on:
       - 'parts/home-vancouver-music-culture.php'
       - 'assets/css/vancouver-music-culture.css'
       - 'assets/css/vancouver-events.css'
+      - 'assets/js/vancouver-events-lineup.js'
       - 'functions.php'
       - 'inc/seo.php'
       - 'page-projects.php'
@@ -96,7 +100,7 @@ jobs:
       - name: WordPress Page create/readback/idempotence regression
         run: php tests/WordPressPageProvisionTest.php
       - name: Theme integration tests
-        run: node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js __tests__/projects-portfolio.test.js __tests__/vancouver-events-hub.test.js
+        run: node --test __tests__/vancouver-music-culture.test.js __tests__/homepage-vancouver-tech-events.test.js __tests__/projects-portfolio.test.js __tests__/vancouver-events-hub.test.js __tests__/vancouver-events-lineup.test.js
       - name: Build deploy-time social images
         run: |
           python3 -m pip install pillow

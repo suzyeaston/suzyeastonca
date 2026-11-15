@@ -51,6 +51,14 @@ test("one accessible page supports browsing scenes, topics, dates, search and ar
   assert.match(page, /<form action="/);
   assert.match(page, /method="get"/);
   assert.match(page, /class="yve__event-list"/);
+  assert.match(page, /id="yve-lineup"/);
+  assert.match(page, /id="yve-lineup-count"/);
+  assert.match(page, /data-yve-save/);
+  assert.match(page, /data-yve-event=/);
+  assert.match(page, /data-yve-export="ics"/);
+  assert.match(page, /data-yve-export="csv"/);
+  assert.match(page, /esc_attr\( wp_json_encode/);
+
   assert.match(page, /role="status"/);
   assert.match(page, /aria-label="Event results pages"/);
   assert.match(page, /yve__histogram/);

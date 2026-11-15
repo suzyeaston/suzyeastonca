@@ -132,6 +132,7 @@ THEME_FILES = [
     "assets/brand/orchestra-in-8gb-social.jpg",
     "assets/css/vancouver-music-culture.css",
     "assets/css/vancouver-events.css",
+    "assets/js/vancouver-events-lineup.js",
     "assets/css/shop.css",
     "assets/css/shop-console.css",
     "assets/js/shop.js",
