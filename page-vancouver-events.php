@@ -19,10 +19,10 @@ $events_shown = array_slice( $events_filtered, ( $page - 1 ) * $per_page, $per_p
 $topics = suzy_yvr_events_topics();
 $base = home_url( '/vancouver-events/' );
 $base_args = [
-    'view' => $filters['view'],
-    'track' => $filters['track'],
-    'topic' => $filters['topic'],
-    'q' => $filters['q'],
+    'yve_view' => $filters['view'],
+    'yve_track' => $filters['track'],
+    'yve_topic' => $filters['topic'],
+    'yve_q' => $filters['q'],
 ];
 if ( 'archive' === $filters['view'] ) {
     $base_args['year'] = $filters['year'];
@@ -31,7 +31,7 @@ if ( 'archive' === $filters['view'] ) {
     $base_args['period'] = $filters['period'];
 }
 $link_for_page = static function ( int $number ) use ( $base_args, $base ): string {
-    return add_query_arg( array_merge( $base_args, [ 'page' => $number ] ), $base ) . '#events';
+    return add_query_arg( array_merge( $base_args, [ 'yve_page' => $number ] ), $base ) . '#events';
 };
 $months = array_fill( 1, 12, 0 );
 if ( 'archive' === $filters['view'] ) {
@@ -50,8 +50,8 @@ if ( 'archive' === $filters['view'] ) {
     </header>
 
     <nav class="yve__modes" aria-label="Browse upcoming or historical events">
-        <a href="<?php echo esc_url( add_query_arg( [ 'view' => 'upcoming', 'track' => $filters['track'], 'topic' => $filters['topic'], 'q' => $filters['q'] ], $base ) . '#events' ); ?>"<?php echo 'upcoming' === $filters['view'] ? ' aria-current="page"' : ''; ?>>Upcoming events</a>
-        <a href="<?php echo esc_url( add_query_arg( [ 'view' => 'archive', 'track' => $filters['track'], 'topic' => $filters['topic'], 'q' => $filters['q'] ], $base ) . '#events' ); ?>"<?php echo 'archive' === $filters['view'] ? ' aria-current="page"' : ''; ?>>Historical archive</a>
+        <a href="<?php echo esc_url( add_query_arg( [ 'yve_view' => 'upcoming', 'yve_track' => $filters['track'], 'yve_topic' => $filters['topic'], 'yve_q' => $filters['q'] ], $base ) . '#events' ); ?>"<?php echo 'upcoming' === $filters['view'] ? ' aria-current="page"' : ''; ?>>Upcoming events</a>
+        <a href="<?php echo esc_url( add_query_arg( [ 'yve_view' => 'archive', 'yve_track' => $filters['track'], 'yve_topic' => $filters['topic'], 'yve_q' => $filters['q'] ], $base ) . '#events' ); ?>"<?php echo 'archive' === $filters['view'] ? ' aria-current="page"' : ''; ?>>Historical archive</a>
     </nav>
 
     <section class="yve__filter-panel" aria-labelledby="yve-filter-heading">
@@ -60,10 +60,10 @@ if ( 'archive' === $filters['view'] ) {
             <p>Find an event by scene, topic, date or venue. Filters combine, and no sign-in is needed.</p>
         </div>
         <form action="<?php echo esc_url( $base ); ?>" class="yve__filters" method="get">
-            <input type="hidden" name="view" value="<?php echo esc_attr( $filters['view'] ); ?>">
+            <input type="hidden" name="yve_view" value="<?php echo esc_attr( $filters['view'] ); ?>">
             <div class="yve__field">
                 <label for="yve-track">Scene</label>
-                <select id="yve-track" name="track">
+                <select id="yve-track" name="yve_track">
                     <?php foreach ( [ 'all' => 'Everything', 'tech' => 'Tech & engineering', 'culture' => 'Music & culture' ] as $value => $label ) : ?>
                         <option value="<?php echo esc_attr( $value ); ?>"<?php echo $filters['track'] === $value ? ' selected' : ''; ?>><?php echo esc_html( $label ); ?></option>
                     <?php endforeach; ?>
@@ -71,7 +71,7 @@ if ( 'archive' === $filters['view'] ) {
             </div>
             <div class="yve__field">
                 <label for="yve-topic">Topic</label>
-                <select id="yve-topic" name="topic">
+                <select id="yve-topic" name="yve_topic">
                     <?php foreach ( $topics as $value => $label ) : ?>
                         <option value="<?php echo esc_attr( $value ); ?>"<?php echo $filters['topic'] === $value ? ' selected' : ''; ?>><?php echo esc_html( $label ); ?></option>
                     <?php endforeach; ?>
@@ -80,7 +80,7 @@ if ( 'archive' === $filters['view'] ) {
             <?php if ( 'archive' === $filters['view'] ) : ?>
                 <div class="yve__field yve__field--small">
                     <label for="yve-year">Year</label>
-                    <select id="yve-year" name="year">
+                    <select id="yve-year" name="yve_year">
                         <?php foreach ( $years as $year ) : ?>
                             <option value="<?php echo esc_attr( $year ); ?>"<?php echo $filters['year'] === $year ? ' selected' : ''; ?>><?php echo esc_html( $year ); ?></option>
                         <?php endforeach; ?>
@@ -88,7 +88,7 @@ if ( 'archive' === $filters['view'] ) {
                 </div>
                 <div class="yve__field yve__field--small">
                     <label for="yve-month">Month</label>
-                    <select id="yve-month" name="month">
+                    <select id="yve-month" name="yve_month">
                         <option value="all">All months</option>
                         <?php foreach ( range( 1, 12 ) as $month ) : ?>
                             <option value="<?php echo (int) $month; ?>"<?php echo (string) $month === $filters['month'] ? ' selected' : ''; ?>><?php echo esc_html( wp_date( 'F', strtotime( sprintf( '2026-%02d-01 12:00 UTC', $month ) ) ) ); ?></option>
@@ -98,7 +98,7 @@ if ( 'archive' === $filters['view'] ) {
             <?php else : ?>
                 <div class="yve__field yve__field--small">
                     <label for="yve-period">When</label>
-                    <select id="yve-period" name="period">
+                    <select id="yve-period" name="yve_period">
                         <?php foreach ( [ 'all' => 'All upcoming', '7' => 'Next 7 days', '30' => 'Next 30 days', '90' => 'Next 90 days' ] as $value => $label ) : ?>
                             <option value="<?php echo esc_attr( $value ); ?>"<?php echo $filters['period'] === (string) $value ? ' selected' : ''; ?>><?php echo esc_html( $label ); ?></option>
                         <?php endforeach; ?>
@@ -107,11 +107,11 @@ if ( 'archive' === $filters['view'] ) {
             <?php endif; ?>
             <div class="yve__field yve__field--search">
                 <label for="yve-search">Search events, venues &amp; organizers</label>
-                <input id="yve-search" name="q" type="search" maxlength="80" value="<?php echo esc_attr( $filters['q'] ); ?>" placeholder="Try: jazz, AI, 8EAST, poetry">
+                <input id="yve-search" name="yve_q" type="search" maxlength="80" value="<?php echo esc_attr( $filters['q'] ); ?>" placeholder="Try: jazz, AI, 8EAST, poetry">
             </div>
             <div class="yve__filter-actions">
                 <button type="submit">Apply filters</button>
-                <a href="<?php echo esc_url( add_query_arg( [ 'view' => $filters['view'] ], $base ) ); ?>">Clear</a>
+                <a href="<?php echo esc_url( add_query_arg( [ 'yve_view' => $filters['view'] ], $base ) ); ?>">Clear</a>
             </div>
         </form>
     </section>
@@ -150,7 +150,7 @@ if ( 'archive' === $filters['view'] ) {
                     ?>
                     <li class="yve__event">
                         <div class="yve__event-top">
-                            <time datetime="<?php echo esc_attr( wp_date( 'c', $start, $timezone ) ); ?>"><?php echo esc_html( wp_date( 'D, M j · g:i a', $start, $timezone ) ); ?> PCT</time>
+                            <time datetime="<?php echo esc_attr( wp_date( 'c', $start, $timezone ) ); ?>"><?php echo esc_html( wp_date( 'D, M j · g:i a', $start, $timezone ) ); ?> <?php echo $start >= 1772964000 ? 'PCT' : esc_html( wp_date( 'T', $start, $timezone ) ); ?></time>
                             <div class="yve__tags">
                                 <?php foreach ( $event['tracks'] as $track ) : ?>
                                     <span class="yve__tag yve__tag--<?php echo esc_attr( $track ); ?>"><?php echo 'tech' === $track ? 'Tech' : 'Music & Culture'; ?></span>
