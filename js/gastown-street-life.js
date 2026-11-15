@@ -75,7 +75,7 @@
     const lamp = new THREE.MeshBasicMaterial({color:0xffecc1});
     function box(w,h,d,x,y,z,material) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
-      m.position.set(x,y,z); root.add(m);
+      m.position.set(x,y,z); root.add(m); return m;
     }
     box(2.55,2.75,10.65,0,1.85,0,grey);
     box(2.59,0.75,10.68,0,0.96,0,blue);
@@ -101,10 +101,17 @@
     }
     // Doors, mirrors, rear markers and low-profile bike rack distinguish the
     // vehicle from the old rectangular Route 50 placeholder.
+    // +X is the right/curb side when the trolley faces local -Z.
+    const doorPanels=[];
     for (const z of [-2.7,2.65]) {
-      box(0.065,1.62,1.14,-1.33,1.82,z,glass);
-      box(0.082,1.64,0.055,-1.38,1.82,z,grey);
+      for (const half of [-1,1]) {
+        const panel=box(0.075,1.64,0.53,1.34,1.82,z+half*0.28,glass);
+        panel.name='Curbside trolley folding passenger door';
+        doorPanels.push({mesh:panel,baseZ:panel.position.z,slide:half*0.50});
+      }
+      box(0.08,1.74,0.055,1.41,1.82,z,grey);
     }
+    root.userData.doorPanels=doorPanels;
     for (const x of [-1.44,1.44]) {
       box(0.32,0.42,0.12,x,2.6,-5.25,steel);
     }
@@ -294,7 +301,7 @@
       const points=first.map((pt,i)=>{
         const before=first[Math.max(i-1,0)],after=first[Math.min(i+1,first.length-1)];
         const dx=after.x-before.x,dz=after.z-before.z,norm=Math.hypot(dx,dz)||1;
-        return {x:pt.x+dz/norm*3.2,z:pt.z-dx/norm*3.2};
+        return {x:pt.x-dz/norm*3.2,z:pt.z+dx/norm*3.2};
       });
       for(let i=1;i<points.length;i++) {
         const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.z-a.z);
@@ -324,13 +331,12 @@
       mesh.rotation.y=Math.atan2(-dx,-dz)+(reverse?Math.PI:0);
     }
     function update(seconds) {
-      // Route #3 trolleys run on the illustrated Cordova-side circuit.
+      // Eastbound trolleys keep right (south side) on W Cordova.
       buses.forEach((bus,index)=>along(seconds*4.1+20+index*total/2,0,false,bus));
       cars.forEach((car,index)=>{
-        // Water Street is westbound through-traffic, not a bidirectional
-        // arcade. Centerline runs from Waterfront east toward Steam Clock.
+        // Opposing westbound cars keep right (north side) on W Cordova.
         const distance=seconds*(3.0+index*0.5)+index*total/4;
-        along(total-distance,-6.4,true,car);
+        along(total-distance,6.4,true,car);
       });
       if(lotCar) {
         const cycle=(seconds*0.115)%2, inbound=cycle<1;
