@@ -42,7 +42,7 @@ test('landmarks are named, sourced, georeferenced and finite',()=>{
     'Royal Bank Tower / Six Seven Five':'royal-bank-675',
     'Sinclair Centre former Post Office':'sinclair-centre',
     '601 West Hastings':'hastings-601',
-    "Woodward's W43 / original W sign":'woodwards-w43',
+    "Woodward's W43 / restored W sign":'woodwards-w43',
     'Dominion Building / 207 West Hastings':'dominion-207'
   };
   for(const g of root.children){
@@ -70,7 +70,7 @@ test('recognizable roofs and heritage details, with a bounded mesh budget',()=>{
   assert.equal(names.filter(name=>name.startsWith('Sinclair Centre clock face /')).length,4);
   assert.ok(names.includes('601 West Hastings sculpted glass office shaft'));
   assert.ok(names.includes("Woodward's W43 glazed residential shaft"));
-  assert.equal(names.filter(name=>name==="Woodward's original red W sign").length,4);
+  assert.equal(names.filter(name=>name==="Woodward's replica red W sign").length,4);
   assert.ok(names.includes("Woodward's heritage brick base"));
   assert.ok(names.includes('Dominion Building green mansard roof'));
   assert.ok(children.length<350,'keep all six skyline models economical on an 8GB laptop');
