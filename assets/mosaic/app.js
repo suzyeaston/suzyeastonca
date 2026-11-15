@@ -170,16 +170,14 @@
     ui.grid.className = `performance-grid cols-${core.columnsFor(gridSize)}`;
     for (let i = 0; i < gridSize; i++) {
       const clip = clips.get(i);
-      const tile = document.createElement('button');
-      tile.type = 'button';
-      tile.className = `tile${clip && clip.muted ? ' is-muted' : ''}${activeStream && selected === i ? ' is-recording' : ''}`;
+      // The tile is a non-interactive container. Its two sibling buttons
+      // make recording and removal independently clickable and accessible.
+      const tile = document.createElement('div');
+      tile.className = `tile${clip && clip.muted ? ' is-muted' : ''}${clip ? ' has-take' : ''}${selected === i ? ' is-selected' : ''}${activeStream && selected === i ? ' is-recording' : ''}`;
       tile.dataset.index = String(i);
-      tile.setAttribute('aria-pressed', String(selected === i));
-      tile.setAttribute('aria-label', `Select tile ${i + 1}${clip ? ', recorded' : ', empty'}${clip && clip.muted ? ', muted' : ''}`);
-      const number = document.createElement('span');
-      number.className = 'tile-number';
-      number.textContent = `${String(i + 1).padStart(2, '0')} / ${String(gridSize).padStart(2, '0')}`;
-      tile.append(number);
+      tile.setAttribute('role', 'group');
+      tile.setAttribute('aria-label', `Tile ${i + 1} of ${gridSize}`);
+
       if ((activeStream && selected === i) || clip) {
         const video = document.createElement('video');
         video.setAttribute('playsinline', '');
@@ -206,20 +204,66 @@
         const art = document.createElement('span');
         art.className = 'empty-art'; art.textContent = '+'; tile.append(art);
       }
-      const bottom = document.createElement('span'); bottom.className = 'tile-bottom';
-      const name = document.createElement('span'); name.textContent = clip ? (clip.audioOnly ? 'AUDIO TAKE' : 'VIDEO TAKE') : 'EMPTY / +';
-      const icon = document.createElement('span'); icon.className = 'tile-icon'; icon.textContent = clip ? (clip.muted ? 'MUTED' : '●') : (selected === i ? 'SELECTED' : '');
-      bottom.append(name, icon); tile.append(number, bottom);
-      tile.addEventListener('click', () => selectTile(i));
+
+      const number = document.createElement('span');
+      number.className = 'tile-number';
+      number.textContent = `${String(i + 1).padStart(2, '0')} / ${String(gridSize).padStart(2, '0')}`;
+      const bottom = document.createElement('span');
+      bottom.className = 'tile-bottom';
+      const name = document.createElement('span');
+      name.textContent = clip ? (clip.audioOnly ? 'AUDIO TAKE' : 'VIDEO TAKE') : 'TAP + TO RECORD';
+      const icon = document.createElement('span');
+      icon.className = 'tile-icon'; icon.textContent = clip ? (clip.muted ? 'MUTED' : '●') : '';
+      bottom.append(name, icon);
+      tile.append(number, bottom);
+
+      // An empty + immediately initiates the existing camera/count-in flow.
+      // During capture, the *same tile* becomes a Stop & Keep button so
+      // performers don't need to scroll down to the sidebar.
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'tile-action';
+      action.dataset.index = String(i);
+      action.setAttribute('aria-pressed', String(selected === i));
+      action.setAttribute('aria-label', clip ? `Select recorded tile ${i + 1}` : `Record a take in tile ${i + 1}`);
+      action.addEventListener('click', () => activateTile(i));
+      tile.append(action);
+
+      const quickAction = document.createElement('span');
+      quickAction.className = 'tile-quick-action';
+      quickAction.setAttribute('aria-hidden', 'true');
+      tile.append(quickAction);
+
+      if (clip) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'tile-remove';
+        remove.textContent = '×';
+        remove.title = `Remove take ${i + 1}`;
+        remove.setAttribute('aria-label', `Remove take ${i + 1}`);
+        remove.addEventListener('click', event => {
+          event.stopPropagation();
+          removeTile(i);
+        });
+        tile.append(remove);
+      }
       ui.grid.append(tile);
     }
     updateUI();
   }
-  function selectTile(i) {
-    if (busy) return;
+  function activateTile(i) {
+    if (busy) {
+      if (activeRecorder?.state === 'recording' && selected === i) stopTake(true);
+      return;
+    }
     selected = i;
-    for (const tile of ui.grid.querySelectorAll('.tile')) tile.setAttribute('aria-pressed', String(Number(tile.dataset.index) === selected));
+    for (const tile of ui.grid.querySelectorAll('.tile')) {
+      const isSelected = Number(tile.dataset.index) === selected;
+      tile.classList.toggle('is-selected', isSelected);
+      tile.querySelector('.tile-action')?.setAttribute('aria-pressed', String(isSelected));
+    }
     updateUI();
+    if (!clips.has(i)) startTake();
   }
   function updateUI() {
     const selectedClip = clips.get(selected);
@@ -231,6 +275,22 @@
     ui.record.disabled = (busy && !recording) || typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia;
     ui.record.textContent = recording ? '■ STOP & KEEP TAKE' : busy ? 'PREPARING…' : (selectedClip ? '● RE-RECORD THIS TILE' : '● RECORD THIS TILE');
     ui.record.classList.toggle('is-stop', !!recording);
+    for (const tile of ui.grid.querySelectorAll('.tile')) {
+      const i = Number(tile.dataset.index);
+      const isCurrentTake = recording && i === selected;
+      const action = tile.querySelector('.tile-action');
+      if (action) {
+        action.disabled = (busy && !isCurrentTake) ||
+          (!clips.has(i) && (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia));
+        action.setAttribute('aria-label', isCurrentTake ? `Stop and keep recording in tile ${i + 1}` :
+          clips.has(i) ? `Select recorded tile ${i + 1}` : `Record a take in tile ${i + 1}`);
+      }
+      const hint = tile.querySelector('.tile-quick-action');
+      if (hint) hint.textContent = isCurrentTake ? '■ STOP & KEEP TAKE' :
+        (busy && activeStream && i === selected ? 'PREPARING…' : '');
+      const remove = tile.querySelector('.tile-remove');
+      if (remove) remove.disabled = busy;
+    }
     ui.cancel.hidden = !busy || playbackMode === 'exporting';
     ui.cancel.disabled = busy && !!activeRecorder && activeRecorder.state !== 'recording';
     ui.play.disabled = busy || !anyClips() || playbackMode === 'playing';
@@ -631,15 +691,22 @@
       updateUI();
     }
   }
-  async function removeTile() {
-    if (busy || !clips.has(selected) || !confirm(`Remove tile ${selected + 1}? You can't undo this.`)) return;
+  async function removeTile(index = selected) {
+    if (busy || !clips.has(index) ||
+        !confirm(`Remove take ${index + 1}? You can't undo this.`)) return;
     stopPlayback();
     invalidateExport();
-    releaseClip(clips.get(selected)); clips.delete(selected);
+    selected = index;
+    releaseClip(clips.get(index));
+    clips.delete(index);
     refreshSessionDuration();
-    try { await dbWrite('delete', selected); } catch { status('Tile removed in memory, but storage update failed.', true); }
+    try {
+      await dbWrite('delete', index);
+    } catch {
+      status('Take removed in memory, but storage update failed.', true);
+    }
     renderGrid();
-    status(`Tile ${selected + 1} removed.`);
+    status(`Take ${index + 1} removed. Tap + in that tile to record again.`);
   }
   async function clearSession() {
     if (busy || !anyClips() || !confirm('Clear every recorded tile? This cannot be undone.')) return;
@@ -704,7 +771,7 @@
     savePreferences();
   });
   ui.clear.addEventListener('click', clearSession);
-  ui.remove.addEventListener('click', removeTile);
+  ui.remove.addEventListener('click', () => removeTile(selected));
   ui.downloadTile.addEventListener('click', downloadSelected);
   ui.mute.addEventListener('click', toggleMute);
   ui.level.addEventListener('input', () => {

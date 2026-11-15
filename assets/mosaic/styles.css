@@ -12,3 +12,22 @@
 #share-caption{display:block;width:100%;min-height:86px;padding:12px;border:1px solid #595669;border-radius:8px;background:#10121c;color:var(--text);font:inherit;resize:vertical}
 .copy-caption-btn{display:block;margin-top:9px;padding:9px 12px;background:#343448;border:1px solid #595669;border-radius:8px;color:var(--text);font-size:.75rem}
 .share-note{font-size:.76rem;line-height:1.55;color:var(--muted);margin:12px 0 15px}
+
+/* One-tap grid interactions: the + starts a take, the × removes only that take. */
+.tile{cursor:default}
+.tile.is-selected{border-color:var(--pink);box-shadow:0 0 0 2px #f9a4be4b}
+.tile-action{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;margin:0;border:0;border-radius:inherit;background:transparent;color:inherit;cursor:pointer}
+.tile-action:disabled{cursor:default}
+.tile-action:focus-visible{outline:3px solid var(--mint);outline-offset:-4px}
+.tile .tile-remove{position:absolute;top:8px;left:8px;z-index:5;display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid #e7a0be9c;border-radius:8px;background:#10121be0;color:#ffe2eb;font-size:1.55rem;font-weight:400;line-height:1;cursor:pointer;box-shadow:0 3px 12px #0008}
+.tile .tile-remove:hover:not(:disabled),.tile .tile-remove:focus-visible{background:#f8a6c1;color:#24131e}
+.tile.has-take .tile-number{left:52px}
+.tile .tile-quick-action:not(:empty){position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);display:block;min-width:72%;padding:11px 10px;border:1px solid var(--mint);border-radius:8px;background:#132520e8;color:var(--mint);text-align:center;font:800 .82rem ui-monospace,monospace;letter-spacing:.02em;pointer-events:none}
+.tile .tile-quick-action:empty{display:none}
+.tile.is-recording .tile-action{z-index:4}
+@media(max-width:570px){
+  .tile .tile-remove{top:5px;left:5px;width:30px;height:30px;border-radius:6px;font-size:1.4rem}
+  .tile.has-take .tile-number{left:40px}
+  .tile .tile-quick-action:not(:empty){font-size:.58rem;padding:8px 3px;min-width:80%}
+  .tile .tile-bottom{line-height:1.1}
+}

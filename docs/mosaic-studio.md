@@ -30,3 +30,10 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - Social sharing uses a user-initiated browser-native file share when available. Otherwise the exported video is downloaded and the user manually uploads it. No social OAuth tokens or remote media uploads.
 - Saving edits/FX changes clears any previous export's share-ready state so stale media isn't shared by mistake.
 - The `mosaic-studio` repo remains the source of truth, with this WordPress theme serving the published snapshot.
+
+## Fast grid controls (2026-11)
+- Click an empty tile's + to select and start the normal camera/microphone/optional count-in flow immediately.
+- Tap the actively recording tile to Stop & Keep without scrolling; sidebar controls still work.
+- Every saved take has an × in its top-left. It is a separate button (not nested inside another button), confirming and deleting only the indexed take and its IndexedDB record.
+- Internal assets use `?v=tiles3` to invalidate caches. Future vendor updates should increment the version.
+- QA: macOS Chrome/Safari; confirm × does not trigger the recording button and works for 2×2 and 3×3 layouts. Ensure short takes still loop as before.

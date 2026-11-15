@@ -56,3 +56,20 @@ test('MOSAIC live global FX preview shares renderer with export and falls back f
   assert.match(html, /id="share-btn"/);
   assert.match(html, /id="share-caption"/);
 });
+
+test('One-tap tile grid allows recording, active-take stop and independent removal', () => {
+  const app = read('assets/mosaic/app.js');
+  const html = read('assets/mosaic/index.html');
+  const css = read('assets/mosaic/styles.css');
+  assert.match(app, /const tile = document\.createElement\('div'\)/);
+  assert.match(app, /const action = document\.createElement\('button'\)/);
+  assert.match(app, /const remove = document\.createElement\('button'\)/);
+  assert.match(app, /action\.addEventListener\('click', \(\) => activateTile\(i\)\)/);
+  assert.match(app, /if \(!clips\.has\(i\)\) startTake\(\)/);
+  assert.match(app, /selected === i\) stopTake\(true\)/);
+  assert.match(app, /event\.stopPropagation\(\);\s*removeTile\(i\);/);
+  assert.match(app, /async function removeTile\(index = selected\)/);
+  assert.match(app, /await dbWrite\('delete', index\)/);
+  assert.match(css, /\.tile \.tile-remove/);
+  assert.match(html, /Tap <strong>\+<\/strong> in an empty tile/);
+});

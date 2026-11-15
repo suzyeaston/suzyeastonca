@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#11131f">
   <meta name="description" content="MOSAIC is a free, private-by-default multitrack video studio. Record a little orchestra of yourself in your browser.">
   <title>MOSAIC / multitrack video studio</title>
-  <link rel="stylesheet" href="styles.css?v=fx2">
-  <script defer src="core.js?v=fx2"></script>
-  <script defer src="effects.js?v=fx2"></script>
-  <script defer src="app.js?v=fx2"></script>
+  <link rel="stylesheet" href="styles.css?v=tiles3">
+  <script defer src="core.js?v=tiles3"></script>
+  <script defer src="effects.js?v=tiles3"></script>
+  <script defer src="app.js?v=tiles3"></script>
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -41,7 +41,7 @@
           <div id="countdown-overlay" class="countdown-overlay" hidden aria-live="assertive"><span id="countdown-value">4</span><small>COUNT IN</small></div>
           <canvas id="fx-preview" class="fx-preview" width="720" height="720" hidden aria-label="Full-grid effect preview"></canvas>
         </div>
-        <p class="grid-hint" id="grid-hint">Select a tile, then record. Use headphones so earlier takes don't bleed into your mic.</p>
+        <p class="grid-hint" id="grid-hint">Tap <strong>+</strong> in an empty tile to record. Tap <strong>×</strong> on a finished take to remove it. While recording, tap your active tile to <strong>Stop &amp; Keep</strong>. Wear headphones for overdubs.</p>
         <div class="transport" role="group" aria-label="Transport controls">
           <button id="play-btn" type="button" class="transport-btn" disabled>▶ PLAY ALL</button>
           <button id="stop-btn" type="button" class="transport-btn" disabled>■ STOP</button>
