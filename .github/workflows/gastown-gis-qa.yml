@@ -15,6 +15,7 @@ on:
       - 'js/gastown-waterfront-places.js'
       - 'js/gastown-suzy-avatar.js'
       - 'js/gastown-harbour-vista.js'
+      - 'js/gastown-west-coast-express.js'
       - 'js/gastown-cordova-architecture.js'
       - 'js/gastown-waterfront-skyline.js'
       - 'page-gastown-sim.php'
@@ -41,6 +42,7 @@ on:
       - 'js/gastown-waterfront-places.js'
       - 'js/gastown-suzy-avatar.js'
       - 'js/gastown-harbour-vista.js'
+      - 'js/gastown-west-coast-express.js'
       - 'js/gastown-cordova-architecture.js'
       - 'js/gastown-waterfront-skyline.js'
       - 'page-gastown-sim.php'
@@ -70,6 +72,7 @@ jobs:
           node --check js/gastown-waterfront-station.js
           node --check js/gastown-sim.js
           node --check js/gastown-harbour-vista.js
+          node --check js/gastown-west-coast-express.js
           node --check js/gastown-cordova-architecture.js
           node --check js/gastown-waterfront-skyline.js
           node --check js/gastown-waterfront-places.js
@@ -80,6 +83,7 @@ jobs:
           node --test __tests__/gastown-gis-alignment.test.js
           node --test __tests__/gastown-waterfront-public-realm.test.js
           node --test __tests__/gastown-harbour-vista.test.js
+          node --test __tests__/gastown-west-coast-express.test.js
           node --test __tests__/gastown-harbour-v3-regression.test.js
           node --test __tests__/gastown-parking-lookout.test.js
           node --test __tests__/gastown-waterfront-render-regression.test.js
