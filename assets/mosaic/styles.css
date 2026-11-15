@@ -240,3 +240,36 @@ h1{font-size:clamp(3.1rem,7vw,6.2rem);letter-spacing:-.07em}
   .instrument-pad{min-height:46px}
 }
 @media(prefers-reduced-motion:reduce){.live-loop-btn.is-playing{animation:none}}
+
+/* v0.8: Performance scenes and independent audio overdubs */
+.scene-deck,.mic-overdub{border:1px solid #5a436e;border-radius:10px;padding:12px;margin-top:12px;background:linear-gradient(125deg,#1d152d,#141726 67%);box-shadow:inset 0 0 24px #a05bf10d}
+.scene-deck-top,.mic-overdub-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.scene-deck h2,.mic-overdub h2{font-size:.97rem;margin:0 0 8px}
+.scene-status,.audio-loop-status{font:800 .63rem ui-monospace,monospace;color:#dbb5ff;letter-spacing:.045em}
+.scene-buttons{display:flex;align-items:stretch;flex-wrap:wrap;gap:6px}
+.scene-button{flex:1 1 103px;min-width:92px;display:flex;gap:8px;align-items:center;justify-content:center;padding:11px 10px;font:850 .7rem ui-monospace,monospace;letter-spacing:.055em;border:1px solid #675479;border-radius:7px;background:#242038;color:#cfbce0;transition:background .12s,border-color .12s}
+.scene-button span{color:#aaa0bf;font-size:.58rem}
+.scene-button:hover:not(:disabled){border-color:#dca8ff;background:#392448}
+.scene-button.is-active{background:linear-gradient(125deg,#bd9afa,#8253cc);color:#1e0c2b;border-color:#e5d0ff;box-shadow:0 0 15px #a66bf44b}
+.scene-button.is-active span{color:#332044}
+.scene-button.is-queued{border-color:#a8ffdf;color:#a8ffdf;box-shadow:inset 0 0 0 1px #a8ffdf70}
+.scene-save{flex:1 1 150px;padding:10px;border:1px solid #91efcc;background:#19342f;color:#a9ffdb;border-radius:7px;font:850 .68rem ui-monospace,monospace}
+.scene-save:hover:not(:disabled){background:#255548}
+.scene-hint{font-size:.66rem;color:#b6abc5;line-height:1.45;margin:9px 0 0}
+.mic-overdub{background:linear-gradient(125deg,#16292e,#161623 65%);border-color:#4b7e78}
+.audio-loop-status{color:#a8ffdf}
+.mic-overdub-controls{display:flex;align-items:end;flex-wrap:wrap;gap:9px;margin:4px 0 8px}
+.mic-overdub-controls label{font-size:.67rem;color:#c5c1d1;min-width:90px}
+.mic-overdub-controls select{display:block;margin-top:4px;padding:8px 9px;min-width:105px;background:#111827;border:1px solid #54867b;color:#e5fff9;border-radius:6px;font-size:.7rem}
+#audio-loop-record{padding:10px 14px;border:1px solid #9bf4d9;border-radius:7px;background:#22574e;color:#d5fff4;font:850 .73rem ui-monospace,monospace;letter-spacing:.03em}
+#audio-loop-record.is-recording{color:#25101d;background:#ff9fbd;border-color:#ff9fbd}
+.mic-overdub-help{flex:1 1 230px;color:#9bb7b4;font-size:.65rem;line-height:1.35}
+.audio-loop-lanes{display:grid;gap:5px}
+.audio-loop-row{display:flex;align-items:center;gap:7px;background:#121d24;border:1px solid #3e6969;border-radius:6px;padding:6px 8px}
+.audio-loop-row strong{flex:1;font-size:.69rem;min-width:90px}
+.audio-loop-row button{border:1px solid #558c86;color:#e5fef8;background:#2b4242;border-radius:5px;padding:6px 9px;font-size:.64rem}
+.audio-loop-row input[type=range]{flex:0 1 120px;max-width:120px;min-width:45px;margin:0;accent-color:#b9ffdf}
+.mosaic-timeline-row[data-kind="mic"] .timeline-clip{background:#306f72}
+.mosaic-timeline-row[data-kind="mic"] .timeline-clip.is-repeat{background:#265b61}
+@media(max-width:560px){.scene-deck,.mic-overdub{padding:9px}.scene-button{min-width:80px;flex-basis:76px;padding:9px 7px;font-size:.62rem}.scene-save{flex-basis:100%}.audio-loop-row{flex-wrap:wrap}.audio-loop-row strong{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){.scene-button{transition:none}}

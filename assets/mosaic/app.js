@@ -2,7 +2,7 @@
   'use strict';
   const core = window.MosaicCore;
   const effects = window.MosaicEffects;
-  if (!core || !effects || !window.MosaicInstruments || !window.MosaicTimeline) return;
+  if (!core || !effects || !window.MosaicInstruments || !window.MosaicTimeline || !window.MosaicScenes || !window.MosaicAudioLoops) return;
 
   const el = (id) => document.getElementById(id);
   const ui = {
@@ -25,9 +25,13 @@
     timelineDuration: el('mosaic-arrangement-duration'),
     loopToggle: el('loop-toggle'), loopStatus: el('loop-status'),
     compactMode: el('compact-mode'),
+    sceneButtons: [...document.querySelectorAll('[data-scene]')],
+    sceneSave: el('scene-save'), sceneStatus: el('scene-status'),
   };
   let instrumentRack = null;
-  const hasArrangement = () => clips.size > 0 || !!instrumentRack?.hasLayers;
+  let audioRack = null;
+  let sceneDeck = null;
+  const hasArrangement = () => clips.size > 0 || !!instrumentRack?.hasLayers || !!audioRack?.hasLayers;
   const clips = new Map();
   const mediaNodes = new Map();
   const videoElements = new Map();
@@ -80,9 +84,10 @@
     if (!('indexedDB' in window)) return Promise.resolve(null);
     return new Promise(resolve => {
       try {
-        const request = indexedDB.open('mosaic-studio-v1', 1);
+        const request = indexedDB.open('mosaic-studio-v1', 2);
         request.onupgradeneeded = () => {
           if (!request.result.objectStoreNames.contains('clips')) request.result.createObjectStore('clips', { keyPath: 'index' });
+          if (!request.result.objectStoreNames.contains('audioLoops')) request.result.createObjectStore('audioLoops', { keyPath: 'id' });
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => resolve(null);
@@ -115,6 +120,27 @@
       } catch { resolve([]); }
     });
   }
+  function dbAudioWrite(type, record) {
+    if(!db)return Promise.resolve();
+    return new Promise((resolve,reject)=>{
+      try{
+        const tx=db.transaction('audioLoops','readwrite'),store=tx.objectStore('audioLoops');
+        if(type==='put')store.put(record);
+        if(type==='delete')store.delete(record);
+        if(type==='clear')store.clear();
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+      }catch(error){reject(error);}
+    });
+  }
+  function dbAudioRead(){
+    if(!db)return Promise.resolve([]);
+    return new Promise(resolve=>{
+      try{
+        const req=db.transaction('audioLoops','readonly').objectStore('audioLoops').getAll();
+        req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>resolve([]);
+      }catch{resolve([]);}
+    });
+  }
   function savePreferences() {
     try { localStorage.setItem('mosaic-studio-prefs', JSON.stringify({ gridSize, targetDuration, bpm: Number(ui.bpm.value), camera: ui.camera.checked, clicks: ui.clicks.checked, fxPreset, fxStrength })); } catch { /* private browsing */ }
   }
@@ -138,13 +164,13 @@
     savePreferences();
   }
   function refreshSessionDuration() {
-    sessionDuration = Math.max(core.sessionSeconds(clips.values()), instrumentRack?.duration || 0);
+    sessionDuration = Math.max(core.sessionSeconds(clips.values()), instrumentRack?.duration || 0, audioRack?.duration || 0);
     renderTimeline();
   }
   function renderTimeline() {
     if (!ui.timelineTracks) return;
     ui.timelineTracks.replaceChildren();
-    const lanes = window.MosaicTimeline.makeLanes(clips.values(), instrumentRack?.layers || [], sessionDuration);
+    const lanes = window.MosaicTimeline.makeLanes(clips.values(), instrumentRack?.layers || [], sessionDuration, audioRack?.layers || []);
     ui.timelineDuration.textContent = sessionDuration ? core.formatTime(sessionDuration) : 'NO CLIPS';
     if (!lanes.length) {
       const empty = document.createElement('p');empty.className = 'timeline-empty';
@@ -188,18 +214,20 @@
       mute.setAttribute('aria-label',(lane.muted?'Unmute ':'Mute ')+lane.name);
       mute.addEventListener('click',()=>{
         if(busy)return;
-        if(lane.layerId){
-          instrumentRack.change(lane.layerId,'mute');
-        }else{
-          selected=lane.index;toggleMute();
-        }
+        if(lane.layerId)instrumentRack.change(lane.layerId,'mute');
+        else if(lane.audioLoopId)audioRack.change(lane.audioLoopId,'mute');
+        else {selected=lane.index;toggleMute();}
       });
       controls.append(mute);
-      if(lane.layerId){
+      if(lane.layerId||lane.audioLoopId){
         const remove=document.createElement('button');remove.type='button';
         remove.textContent='×';remove.title='Remove '+lane.name;
         remove.setAttribute('aria-label','Remove '+lane.name);remove.disabled=busy;
-        remove.addEventListener('click',()=>{if(!busy)instrumentRack.change(lane.layerId,'remove');});
+        remove.addEventListener('click',()=>{
+          if(busy)return;
+          if(lane.audioLoopId)audioRack.change(lane.audioLoopId,'remove');
+          else instrumentRack.change(lane.layerId,'remove');
+        });
         controls.append(remove);
       }
       row.append(heading,rail,controls);ui.timelineTracks.append(row);
@@ -209,6 +237,55 @@
     if(!ui.timeline)return;
     ui.timeline.style.setProperty('--playhead',
       (sessionDuration?Math.min(100,Math.max(0,seconds/sessionDuration*100)):0)+'%');
+  }
+  function currentMixSnapshot(){
+    const mix={};
+    for(const clip of clips.values())mix['video:'+clip.index]=clip.muted?0:clip.volume;
+    for(const layer of instrumentRack?.layers||[])
+      mix['instrument:'+layer.id]=layer.muted?0:layer.volume;
+    for(const layer of audioRack?.layers||[])
+      mix['audio:'+layer.id]=layer.muted?0:layer.volume;
+    return mix;
+  }
+  function renderSceneDeck(){
+    if(!sceneDeck)return;
+    for(const button of ui.sceneButtons){
+      const id=button.dataset.scene;
+      const isActive=sceneDeck.active===id,isPending=sceneDeck.pending?.id===id;
+      button.classList.toggle('is-active',isActive);
+      button.classList.toggle('is-queued',isPending);
+      button.setAttribute('aria-pressed',String(isActive));
+      button.textContent=(id==='verse'?'01':id==='chorus'?'02':'03')+' / '+id.toUpperCase()+(isPending?' · NEXT':'');
+      button.disabled=playbackMode==='exporting';
+    }
+    ui.sceneSave.disabled=playbackMode==='exporting';
+    ui.sceneStatus.textContent=sceneDeck.pending
+      ?'ARMED / '+sceneDeck.pending.id.toUpperCase()+' · NEXT BAR'
+      :sceneDeck.active.toUpperCase()+' / LIVE MIX';
+  }
+  function applySceneMix(id,mix){
+    for(const clip of clips.values()){
+      const level=mix['video:'+clip.index];
+      if(level===undefined)continue;
+      clip.muted=level<=.001;
+      if(level>.001)clip.volume=level;
+      applyTrackGain(clip.index);
+      ui.grid.querySelector('.tile[data-index="'+clip.index+'"]')?.classList.toggle('is-muted',clip.muted);
+    }
+    instrumentRack?.applyMixSnapshot(mix);
+    audioRack?.applyMixSnapshot(mix);
+    lastExport=null;
+    renderTimeline();updateUI();
+    status(id.toUpperCase()+' scene engaged. Your recordings are unchanged. ✳');
+  }
+  function chooseScene(id){
+    if(!sceneDeck||playbackMode==='exporting')return;
+    if(playbackMode!=='stopped'&&audioContext){
+      const pending=sceneDeck.queue(id,transportSeconds(),arrangementBpm());
+      if(pending)status(id.toUpperCase()+' queued for the next bar. Keep playing.');
+      else status('Already in '+id.toUpperCase()+'.');
+    }else sceneDeck.selectNow(id,applySceneMix);
+    renderSceneDeck();
   }
   function releaseClip(clip) {
     if (clip && clip.url) URL.revokeObjectURL(clip.url);
@@ -380,12 +457,13 @@
     }
     ui.cancel.hidden = !busy || playbackMode === 'exporting';
     ui.cancel.disabled = busy && !!activeRecorder && activeRecorder.state !== 'recording';
-    ui.play.disabled = busy || !hasArrangement() || playbackMode === 'playing';
-    ui.play.textContent = '▶ PLAY / LOOP';
-    ui.stop.disabled = busy || playbackMode !== 'playing';
+    const transportActive=playbackMode!=='stopped'&&playbackMode!=='exporting';
+    ui.play.disabled=busy||!!audioRack?.isRecording||!hasArrangement()||transportActive;
+    ui.play.textContent='▶ PLAY / LOOP';
+    ui.stop.disabled=busy||!!audioRack?.isRecording||!transportActive;
     if (ui.loopToggle) {
-      const isPlaying = playbackMode === 'playing';
-      ui.loopToggle.disabled = busy || !hasArrangement();
+      const isPlaying = transportActive;
+      ui.loopToggle.disabled = busy || !!audioRack?.isRecording || !hasArrangement();
       ui.loopToggle.textContent = isPlaying ? '■ STOP LOOPS' : '▶ LOOP MUSIC';
       ui.loopToggle.setAttribute('aria-pressed',String(isPlaying));
       ui.loopToggle.classList.toggle('is-playing',isPlaying);
@@ -395,6 +473,7 @@
     ui.export.disabled = busy || !hasArrangement();
     ui.share.disabled = busy || !lastExport;
     ui.clear.disabled = busy || !hasArrangement();
+    renderSceneDeck();
     ui.downloadTile.disabled = busy || !selectedClip;
     ui.mute.disabled = busy || !selectedClip;
     ui.mute.textContent = selectedClip && selectedClip.muted ? 'Unmute tile' : 'Mute tile';
@@ -416,10 +495,14 @@
     ui.fxStrength.disabled = busy;
     ui.fxStrengthValue.textContent = `${fxStrength}%`;
     instrumentRack?.render(busy);
+    if(audioRack){
+      const btn=audioRack.recordButton;
+      btn.disabled=(busy&&!audioRack.isRecording)||(!audioRack.isRecording&&audioRack.layers.length>=12);
+    }
   }
-  async function ensureAudioContext() {
-    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioContext.state === 'suspended') await audioContext.resume();
+  async function ensureAudioContext(resume=true) {
+    if(!audioContext)audioContext=new (window.AudioContext||window.webkitAudioContext)();
+    if(resume&&audioContext.state==='suspended')await audioContext.resume();
     return audioContext;
   }
   function ensureMediaNode(i, video) {
@@ -459,6 +542,8 @@
     playbackFrame = 0;
     playbackMode = 'stopped';
     instrumentRack?.stopPlayback();
+    audioRack?.stopPlayback();
+    if(sceneDeck?.pending){sceneDeck.pending=null;renderSceneDeck();}
     for (const video of videoElements.values()) {
       video.pause();
       try { video.currentTime = 0; } catch { /* metadata not yet ready */ }
@@ -497,8 +582,8 @@
     };
     playbackFrame = requestAnimationFrame(step);
   }
-  async function startPlayback(mode = 'playing') {
-    if (!hasArrangement()) return;
+  async function startPlayback(mode = 'playing',allowEmpty=false) {
+    if(!hasArrangement()&&!allowEmpty)return;
     stopPlayback();
     await ensureAudioContext();
     for (const [i, video] of videoElements) {
@@ -515,9 +600,16 @@
     transportAudioOrigin = audioContext.currentTime;
     playbackStarted = performance.now();
     instrumentRack?.ensureBus(audioContext);
+    audioRack?.ensureBus(audioContext);
     instrumentRack?.startPlayback();
+    audioRack?.startPlayback();
     playbackMode = mode;
-    audioScheduleId = setInterval(() => instrumentRack?.tick(transportSeconds()), 30);
+    audioScheduleId=setInterval(()=>{
+      const elapsed=transportSeconds();
+      sceneDeck?.tick(elapsed,applySceneMix);
+      instrumentRack?.tick(elapsed);
+      audioRack?.tick(elapsed);
+    },30);
     ui.fxPreview.hidden = mode !== 'playing';
     monitorPlayback();
     updateUI();
@@ -629,7 +721,9 @@
           index: selectedAtStart, blob, audioOnly: input.audioOnly, muted: false, volume: 1,
           seconds: takeLoopSeconds || Math.max(0.1, ((takeStoppedAt || performance.now()) - takeStartedAt) / 1000),
         };
+        const wasFilled=clips.has(selectedAtStart);
         installClip(clip);
+        if(!wasFilled)sceneDeck?.rememberAdded('video:'+selectedAtStart,clip.volume);
         refreshSessionDuration();
         await saveClip(clip);
         status(`Tile ${selectedAtStart + 1} captured (${core.formatTime(clip.seconds)}). Choose another tile to overdub, or Play All.`);
@@ -821,7 +915,9 @@
         applyTrackGain(index);
       }
       instrumentRack?.ensureBus(audioContext);
+      audioRack?.ensureBus(audioContext);
       instrumentRack?.connectExport(exportDestination);
+      audioRack?.connectExport(exportDestination);
       drawing = true;
       const draw = () => { if (!drawing) return; renderFinalFrame(ctx, 720, 720, performance.now() / 1000); drawId = requestAnimationFrame(draw); };
       draw();
@@ -863,6 +959,7 @@
         if (exportDestination) try { node.gain.disconnect(exportDestination); } catch { /* noop */ }
       }
       instrumentRack?.disconnectExport();
+      audioRack?.disconnectExport();
       if (outputStream) for (const track of outputStream.getTracks()) track.stop();
       if (canvasStream) for (const track of canvasStream.getTracks()) track.stop();
       exportDestination = null;
@@ -894,8 +991,11 @@
     for (const clip of clips.values()) releaseClip(clip);
     clips.clear();
     instrumentRack?.clear();
+    audioRack?.clear();
+    sceneDeck?.clear();
     refreshSessionDuration();
-    try { await dbWrite('clear'); } catch { status('Session cleared in memory. Browser storage may still contain old clips.', true); }
+    try { await Promise.all([dbWrite('clear'),dbAudioWrite('clear')]); }
+    catch { status('Session cleared in memory. Browser storage may still contain old clips.', true); }
     renderGrid();
     status('Clean slate. Your next arrangement starts here.');
   }
@@ -906,7 +1006,10 @@
     clip.muted = !clip.muted;
     applyTrackGain(selected);
     await saveClip(clip);
-    renderGrid();
+    // Never rebuild the video grid when a performer mutes a lane.
+    // renderGrid() stops the transport and destroys active media elements.
+    ui.grid.querySelector('.tile[data-index="'+selected+'"]')?.classList.toggle('is-muted',clip.muted);
+    updateUI();renderTimeline();
   }
   function changeGrid(value) {
     if (busy) return;
@@ -959,6 +1062,12 @@
     if (busy || !clip) return;
     downloadBlob(clip.blob, `mosaic-take-${selected + 1}-${dateName()}.${extFor(clip.blob.type)}`);
   }
+  ui.sceneButtons.forEach(btn=>btn.addEventListener('click',()=>chooseScene(btn.dataset.scene)));
+  ui.sceneSave.addEventListener('click',()=>{
+    if(!sceneDeck||playbackMode==='exporting')return;
+    const id=sceneDeck.capture(currentMixSnapshot());
+    status('Saved your current video, instrument and mic balance as '+id.toUpperCase()+'. ♡');
+  });
   ui.layout.forEach(btn => btn.addEventListener('click', () => changeGrid(btn.dataset.grid)));
   ui.duration.addEventListener('change', () => { if (!busy) setTarget(ui.duration.value); });
   ui.bpm.addEventListener('input', () => { ui.bpmValue.textContent = `${ui.bpm.value} BPM`; savePreferences(); });
@@ -968,8 +1077,8 @@
   ui.cancel.addEventListener('click', cancelRecording);
   ui.play.addEventListener('click', () => startPlayback().then(() => status('Playing the arrangement. Looping continues until you press Stop.')).catch(err => status(err.message, true)));
   ui.loopToggle?.addEventListener('click', () => {
-    if(busy)return;
-    if(playbackMode==='playing'){
+    if(busy||audioRack?.isRecording)return;
+    if(playbackMode!=='stopped'){
       stopPlayback();status('Loops stopped. Your layers are still here.');
     }else startPlayback('playing').then(()=>status('Live loop mixer running. Add parts, record or mute lanes.'))
       .catch(error=>status('Cannot play loops: '+error.message,true));
@@ -1010,11 +1119,16 @@
   window.addEventListener('pagehide', () => { stopInput(); stopPlayback(); });
 
   async function init() {
+    sceneDeck=new window.MosaicScenes.Deck(window,renderSceneDeck);
     instrumentRack = new window.MosaicInstruments.Rack({
       host:window,ensureAudioContext,onRecord:toggleInstrumentRecording,
       getTransportPosition:transportSeconds,
-      onChange:(reason)=>{
+      onChange:(reason,layer)=>{
         lastExport=null;refreshSessionDuration();updateUI();
+        if(reason==='added'){
+          const latest=layer||instrumentRack.layers[instrumentRack.layers.length-1];
+          if(latest)sceneDeck?.rememberAdded('instrument:'+latest.id,latest.volume);
+        }
         if(reason==='added'&&!busy&&playbackMode==='stopped'){
           startPlayback('playing').then(()=>status('Loop added. Live mixer is running. ✳'))
             .catch(error=>status('Loop added, but playback failed: '+error.message,true));
@@ -1022,10 +1136,34 @@
       },onStatus:status,
       onPreviewStart:()=>{if(playbackMode!=='stopped')stopPlayback();},
     });
+    audioRack=new window.MosaicAudioLoops.Rack({
+      host:window,ensureAudioContext,onStatus:status,
+      getPosition:transportSeconds,getBpm:arrangementBpm,
+      onMicStart:()=>status('Mic input armed. Keep headphones on to prevent backing bleed.'),
+      onFinish:()=>{if(playbackMode==='audio-recording'){playbackMode='playing';updateUI();}},
+      onPlay:async()=>{
+        if(playbackMode!=='stopped')return true;
+        await startPlayback('audio-recording',true);
+        return playbackMode!=='stopped';
+      },
+      onChange:(reason,clip)=>{
+        if(clip){
+          const record={id:clip.id,blob:clip.blob,name:clip.name,
+            seconds:clip.seconds,bpm:clip.bpm,muted:clip.muted,volume:clip.volume,startAt:clip.startAt};
+          if(reason==='remove')dbAudioWrite('delete',clip.id).catch(()=>status('Could not delete saved audio loop.',true));
+          else dbAudioWrite('put',record).catch(()=>status('Audio loop storage unavailable. Export before closing.',true));
+          if(reason==='added')sceneDeck?.rememberAdded('audio:'+clip.id,clip.volume);
+        }
+        lastExport=null;refreshSessionDuration();updateUI();
+      },
+    });
     restorePreferences();
-    db = await openDatabase();
-    const stored = await loadDatabase();
-    for (const record of stored) installClip(record);
+    db=await openDatabase();
+    const stored=await loadDatabase();
+    for(const record of stored)installClip(record);
+    await audioRack.restore(await dbAudioRead());
+    sceneDeck.seed(currentMixSnapshot());
+    sceneDeck.selectNow(sceneDeck.active,applySceneMix);
     if (stored.some(clip => clip.index >= gridSize)) gridSize = 9;
     refreshSessionDuration();
     setTarget(targetDuration);
@@ -1033,7 +1171,8 @@
     ui.fxStrength.value = String(fxStrength);
     showExportFormat();
     renderGrid();
-    if (stored.length) status(`${stored.length} saved take${stored.length === 1 ? '' : 's'} restored from this browser. Hit Play All to listen.`);
+    if(stored.length)status(`${stored.length} video takes restored. Use the scene deck to build new sections without losing them.`);
+    else if(audioRack.hasLayers)status(`${audioRack.layers.length} audio loops restored. Cue a scene or add a new part.`);
     else if (!db) status('Private mode / storage unavailable. Recordings will not survive a page reload; download your clips.', true);
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) status('Camera and microphone require HTTPS or localhost. Use the included Mac launcher.', true);
     if (typeof MediaRecorder === 'undefined') status('This browser does not support MediaRecorder. Try current Chrome, Edge, or Safari.', true);
