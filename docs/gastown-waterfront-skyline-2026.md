@@ -96,3 +96,29 @@ partially hidden by nearer buildings from the natural walking route.
    should appear beyond the route, not next to the clock or station.
 4. Confirm no new collision blockers, no shadow wedges, no missing street
    paving, and no interference with elevated parking, WCE, or the Landing.
+
+## November 15 follow-up: Harbour Centre / Dollarama storefront
+
+Screenshot QA after PR #794 showed that the two thin concrete frontage
+planes looked like opaque floating walls when viewed from the elevated
+Station East parking lot. The modeled window ribbons were placed on local
+positive Z, while the parking lot faces the **opposite side** of the real
+GIS parcel's two Cordova edges. New rendering determines the street-facing
+side by dotting each wall normal against the existing lot centre.
+
+The correction replaces the 16.8m high blank concrete panels with more
+articulated, approximately 13.4m tall shopfront/podium geometry that has
+individual sash windows on both sides and public-facing retail glazing.
+The two existing civic outline edges [5,6] and [13,14] remain mapped to
+feature-16. Their 8.3m interstitial collinear section [6,13] now contains
+a recessed Food Court / Shops entry. On the western edge a recognizable
+**Dollarama / 542 West Cordova** sign and glass entry appear, as shown in
+the user's July 2024 Google Street View reference. This is an illustrative
+storefront, not a live business-tenancy feed.
+
+The building and signage remain noncollidable low-poly meshes, with canvas
+text rendered locally (no copied imagery and no network font dependency).
+The Vancouver Lookout/555 W Hastings anchor, station, raised parking lot,
+service alley, street and traffic remain unchanged. On deployment, QA the
+parking-lot sightline and verify the DOLLARAMA and FOOD COURT / SHOPS signs
+are legible and correctly oriented at pedestrian and flight camera heights.
