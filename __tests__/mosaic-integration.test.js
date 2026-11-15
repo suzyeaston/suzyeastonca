@@ -103,7 +103,7 @@ test('SUZY//AI browser instruments are playable, locally layered, and mixed into
   assert.match(html, /src="instruments\.js\?v=[a-z0-9_-]+"/);
   assert.match(html, /id="instrument-record"/);
   assert.match(html, /id="instrument-pads"/);
-  assert.match(app, /instrumentRack\?\.tick\(elapsed\)/);
+  assert.match(app, /instrumentRack\?\.tick\(transportSeconds\(\)\)/);
   assert.match(app, /instrumentRack\?\.startPlayback\(\)/);
   assert.match(app, /instrumentRack\?\.connectExport\(exportDestination\)/);
   assert.match(app, /instrumentRack\?\.disconnectExport\(\)/);
@@ -146,8 +146,8 @@ test('MOSAIC sound bank can audition music without committing and arranges actua
   assert.equal(bank.defaultVoice('pad'),'pad-silk');
   assert.equal(bank.soundFor('pad','pad-air').label,'Air pad · light');
   assert.equal(instruments.normalizeLayer({kind:'pad',seconds:2,events:[{t:0,note:64,dur:.5}]}).voice,'pad-silk');
-  assert.match(html, /src="soundbank\.js\?v=sound7"/);
-  assert.match(html, /src="timeline\.js\?v=sound7"/);
+  assert.match(html, /src="soundbank\.js\?v=[a-z0-9_-]+"/);
+  assert.match(html, /src="timeline\.js\?v=[a-z0-9_-]+"/);
   assert.match(html, /id="instrument-preview-loop"/);
   assert.match(html, /id="instrument-preview-rhythm"/);
   assert.match(html, /id="instrument-loop-voice"/);
@@ -161,4 +161,42 @@ test('MOSAIC sound bank can audition music without committing and arranges actua
   assert.equal(layers.length,2);
   assert.equal(layers[1].segments.length,3);
   assert.equal(layers[1].notes[0].left,25);
+});
+
+
+test('MOSAIC v0.7 synchronizes camera takes, live music loops, and the instrument rack', () => {
+  const app=read('assets/mosaic/app.js');
+  const core=require('../assets/mosaic/core.js');
+  const rack=require('../assets/mosaic/instruments.js');
+  const timeline=require('../assets/mosaic/timeline.js');
+  const html=read('assets/mosaic/index.html');
+  assert.equal(core.barSeconds(120),2);
+  assert.equal(core.nextBarBoundary(14.8,120),16);
+  const capture=app.slice(app.indexOf('async function startTake()'),app.indexOf('function stopTake(keep)'));
+  assert.ok(capture.indexOf("await startPlayback('recording')")>=0);
+  assert.ok(capture.indexOf("await startPlayback('recording')")<capture.indexOf('activeRecorder.start(250)'));
+  assert.match(app,/transportAudioOrigin = audioContext\.currentTime/);
+  assert.match(app,/core\.nextBarBoundary\(elapsed,takeSyncBpm\)/);
+  assert.match(app,/setInterval\(\(\) => instrumentRack\?\.tick\(transportSeconds\(\)\), 30\)/);
+  assert.match(app,/instrumentRack\.begin\(\{clock:transportSeconds,bpm:arrangementBpm\(\)\}\)/);
+  assert.match(app,/ui\.loopToggle\?\.addEventListener\('click'/);
+  assert.match(html,/id="loop-toggle"/);
+  assert.match(html,/id="loop-status"/);
+  assert.match(html,/src="app\.js\?v=sync8"/);
+  assert.match(html,/src="core\.js\?v=sync8"/);
+  assert.match(html,/class="instrument-mixer-details"/);
+  const loop=rack.normalizeLayer({id:'x',kind:'bass',seconds:8,startAt:2,events:[{t:0,note:40,dur:.4}]});
+  assert.equal(loop.startAt,2);
+  assert.equal(rack.eventsInWindow(loop,1.9,2.1)[0].t,2);
+  assert.equal(timeline.makeLanes([], [loop],10)[0].segments[0].start,2);
+});
+
+test('Live rhythm audition repeats without adding to the saved arrangement',()=>{
+  const source=read('assets/mosaic/instruments.js');
+  const html=read('assets/mosaic/index.html');
+  assert.match(source,/this\.previewTimer=this\.host\.setInterval\(schedule,30\)/);
+  assert.match(source,/this\.host\.clearInterval\(this\.previewTimer\)/);
+  assert.match(source,/this\.onChange\('added'\)/);
+  assert.match(html,/id="instrument-preview-loop"/);
+  assert.match(html,/id="instrument-preview-rhythm"/);
 });

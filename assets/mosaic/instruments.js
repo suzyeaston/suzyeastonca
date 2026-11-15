@@ -28,7 +28,7 @@
     if(!events.length)return null;
     const result={id:String(raw.id||'layer').slice(0,64),kind:raw.kind,
       voice:soundFor(raw.kind,raw.voice)?.id||defaultVoice(raw.kind),
-      seconds,events,muted:!!raw.muted,volume:Math.max(0,Math.min(1.5,Number(raw.volume??.8)||0))};
+      seconds,events,startAt:Number.isFinite(raw.startAt)?Math.max(0,Math.min(1800,raw.startAt)):0,muted:!!raw.muted,volume:Math.max(0,Math.min(1.5,Number(raw.volume??.8)||0))};
     if(raw.source==='preset'||raw.source==='custom-rhythm'){
       result.source=raw.source;
       result.name=String(raw.name||raw.kind).slice(0,55);
@@ -41,10 +41,11 @@
   function eventsInWindow(layer,from,to){
     if(!layer||layer.muted||!(to>from)||!layer.seconds)return [];
     const out=[];
+    const startAt=Number.isFinite(layer.startAt)?Math.max(0,layer.startAt):0;
     for(const e of layer.events){
-      let n=Math.max(0,Math.ceil((from-e.t-.000001)/layer.seconds));
+      let n=Math.max(0,Math.ceil((from-e.t-startAt-.000001)/layer.seconds));
       for(;n<=Math.ceil(to/layer.seconds);n++){
-        const t=e.t+n*layer.seconds;
+        const t=startAt+e.t+n*layer.seconds;
         if(t>=to)break;
         if(t>=from-.000001)out.push({...e,t,kind:layer.kind,volume:layer.volume,voice:layer.voice});
       }
@@ -52,9 +53,10 @@
     return out.sort((a,b)=>a.t-b.t).slice(0,256);
   }
   class Rack {
-    constructor({host,ensureAudioContext,onRecord,onChange,onStatus,onPreviewStart}){
+    constructor({host,ensureAudioContext,onRecord,onChange,onStatus,onPreviewStart,getTransportPosition}){
       this.host=host;this.ensureAudioContext=ensureAudioContext;
       this.onPreviewStart=onPreviewStart;
+      this.getTransportPosition=getTransportPosition;
       this.onRecord=onRecord;this.onChange=onChange;this.onStatus=onStatus;
       const el=id=>host.document.getElementById(id);
       this.kind=el('instrument-kind');this.recordBtn=el('instrument-record');
@@ -124,7 +126,7 @@
     }
     stopPreview(){
       this.previewEpoch++;
-      if(this.previewTimer!==null){this.host.clearTimeout(this.previewTimer);this.previewTimer=null;}
+      if(this.previewTimer!==null){this.host.clearInterval(this.previewTimer);this.previewTimer=null;}
       for(const source of this.previewNodes)try{source.stop();}catch{}
       this.previewNodes.clear();
       try{this.previewOutput?.disconnect();}catch{}
@@ -143,26 +145,33 @@
       this.previewRhythmButton.textContent=mode==='rhythm'?'■ STOP PREVIEW':'▶ HEAR BEAT';
       try{
         const bpm=this.host.document.getElementById('bpm-input').value;
-        // Audition one bar before committing, without recording or changing
-        // the session duration. The user's video is never included.
         const pattern=mode==='preset'
           ?this.patterns.buildPreset(this.presetSelect.value,bpm,1)
           :this.patterns.buildPreset('custom-rhythm',bpm,1,this.stepData);
-        if(!pattern){this.stopPreview();this.onStatus('Add some drum steps to audition this rhythm.',true);return;}
+        if(!pattern){this.stopPreview();this.onStatus('Add drum steps to audition this rhythm.',true);return;}
         const ctx=await this.ensureAudioContext();
         if(token!==this.previewEpoch)return;
         const output=ctx.createGain();output.gain.value=.75;
         output.connect(ctx.destination);this.previewOutput=output;
         const voice=mode==='preset'?this.loopVoiceSelect.value:defaultVoice('drums');
-        const start=ctx.currentTime+.06;
-        for(const event of pattern.events){
-          for(const node of playNote(ctx,output,pattern.kind,event.note,
-              start+event.t,event.dur,pattern.volume,voice)){
-            this.previewNodes.add(node);node.onended=()=>this.previewNodes.delete(node);
+        let nextBarAt=ctx.currentTime+.055;
+        // An audio-clock lookahead repeats the audition until Stop is pressed.
+        // Preview never writes to a layer or the video export bus.
+        const schedule=()=>{
+          if(token!==this.previewEpoch)return;
+          while(nextBarAt<ctx.currentTime+.20){
+            for(const event of pattern.events){
+              for(const node of playNote(ctx,output,pattern.kind,event.note,
+                  nextBarAt+event.t,event.dur,pattern.volume,voice)){
+                this.previewNodes.add(node);node.onended=()=>this.previewNodes.delete(node);
+              }
+            }
+            nextBarAt+=pattern.seconds;
           }
-        }
-        this.previewTimer=this.host.setTimeout(()=>this.stopPreview(),(pattern.seconds+1.2)*1000);
-        this.onStatus('Previewing '+pattern.name+'. This sound is not added to your movie until you press Add.');
+        };
+        schedule();
+        this.previewTimer=this.host.setInterval(schedule,30);
+        this.onStatus('Auditioning '+pattern.name+' on repeat. Press Stop Preview or Add when it feels right.');
       }catch(error){this.stopPreview();this.onStatus('Preview failed: '+(error.message||error),true);}
     }
     createStepGrid(){
@@ -193,7 +202,16 @@
       if(this.layers.length>=MAX_LAYERS)return this.onStatus('The rack has 12 layers. Mute or remove one to make room.',true);
       const layer=normalizeLayer(raw);
       if(!layer)return this.onStatus('That pattern is empty or cannot be played. Add some notes first.',true);
-      this.stopPreview();this.layers.push(layer);this.save();this.onChange();this.render();
+      this.stopPreview();
+      if(this.playing&&this.getTransportPosition){
+        // A new musical lane joins on the next bar boundary, rather than
+        // randomly in the middle of a rhythm or restarting everything.
+        const elapsed=this.getTransportPosition();
+        const tempo=Number(this.layers.find(item=>item.bpm)?.bpm||layer.bpm||120);
+        const bar=240/tempo;
+        layer.startAt=Math.ceil((elapsed+.25)/bar)*bar;
+      }
+      this.layers.push(layer);this.save();this.onChange('added');this.render();
       this.onStatus(layer.name+' is looping at '+layer.bpm+' BPM. Add another part or press Play All. ♡');
       return layer;
     }
@@ -210,9 +228,9 @@
       return this.addLayer(current);
     }
     get hasLayers(){return this.layers.length>0;}
-    get duration(){return Math.max(0,...this.layers.map(l=>l.seconds));}
+    get duration(){return Math.max(0,...this.layers.map(l=>l.seconds+(l.startAt||0)));}
     get isRecording(){return !!this.recording;}
-    get elapsed(){return this.recording?(performance.now()-this.recording.startedAt)/1000:0;}
+    get elapsed(){return this.recording?(this.recording.clock?this.recording.clock():(performance.now()-this.recording.startedAt)/1000):0;}
     save(){try{this.host.localStorage.setItem(STORAGE,JSON.stringify(this.layers));}
       catch{this.onStatus('Cannot save instrument layers in this browser. Export your movie before leaving.',true);}}
     ensureBus(ctx){
@@ -227,15 +245,20 @@
       if(this.bus&&this.exportBus)try{this.bus.disconnect(this.exportBus);}catch{}
       this.exportBus=null;
     }
-    begin(){if(this.recording||this.layers.length>=MAX_LAYERS)return false;
-      this.recording={kind:this.kind.value,voice:this.voiceSelect.value,startedAt:performance.now(),events:[]};
+    begin({clock=null,bpm=120}={}){if(this.recording||this.layers.length>=MAX_LAYERS)return false;
+      this.recording={kind:this.kind.value,voice:this.voiceSelect.value,
+        clock:typeof clock==='function'?clock:null,bpm,startedAt:performance.now(),events:[]};
       this.render(true);return true;}
     finish(){
       const r=this.recording;if(!r)return null;
       this.recording=null;
       const tail=Math.max(0,...r.events.map(e=>e.t+e.dur));
+      const elapsed=r.clock?r.clock():(performance.now()-r.startedAt)/1000;
+      const baseLength=Math.max(.25,elapsed,tail);
+      const beatBar=240/Math.max(60,Math.min(200,Number(r.bpm)||120));
+      const seconds=r.clock?Math.ceil((baseLength+.005)/beatBar)*beatBar:baseLength;
       const layer=normalizeLayer({id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),
-        kind:r.kind,voice:r.voice,seconds:Math.max(.25,(performance.now()-r.startedAt)/1000,tail),
+        kind:r.kind,voice:r.voice,seconds,
         events:r.events,muted:false,volume:.8});
       if(layer){this.layers.push(layer);this.save();this.onChange();}
       this.render();return layer;
@@ -247,7 +270,8 @@
         playNote(ctx,this.ensureBus(ctx),kind,note,ctx.currentTime+.01,dur,.9,this.recording?.voice||this.voiceSelect.value);
         if(this.recording){
           if(this.recording.events.length<MAX_EVENTS){
-            this.recording.events.push({t:Math.max(0,(performance.now()-this.recording.startedAt)/1000),note,dur});
+            this.recording.events.push({t:Math.max(0,this.recording.clock?
+              this.recording.clock():(performance.now()-this.recording.startedAt)/1000),note,dur});
           }else this.onStatus('512-note limit reached. Stop and keep this layer.',true);
         }
       }catch(e){this.onStatus('Instrument unavailable: '+(e.message||e),true);}

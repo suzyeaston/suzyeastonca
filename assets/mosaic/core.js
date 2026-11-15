@@ -19,6 +19,20 @@
     if (!Number.isFinite(elapsed) || !Number.isFinite(seconds) || seconds <= 0) return 0;
     return ((elapsed % seconds) + seconds) % seconds;
   }
+  // Musical timing: the transport and loop recorder use the same bar grid.
+  function barSeconds(bpm) {
+    const tempo = Number(bpm);
+    return Number.isFinite(tempo) && tempo >= 40 && tempo <= 300 ? 240 / tempo : 2;
+  }
+  function nextBarBoundary(elapsed, bpm) {
+    const bar = barSeconds(bpm);
+    if (!Number.isFinite(elapsed) || elapsed < 0) return bar;
+    // Always allow a meaningful positive bar when the musician presses Stop.
+    return Math.max(bar, Math.ceil((elapsed + .005) / bar) * bar);
+  }
+  function stopAtNextBar(elapsed, bpm) {
+    return Math.max(0, nextBarBoundary(elapsed,bpm)-Math.max(0,elapsed));
+  }
   function canChangeGrid(count, filledIndices) {
     return (count === 4 || count === 9) && filledIndices.every(index => Number.isInteger(index) && index >= 0 && index < count);
   }
@@ -58,5 +72,5 @@
   function safeFileName(name) {
     return String(name || 'mosaic').trim().replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'mosaic';
   }
-  return { DURATIONS, formatTime, clamp, columnsFor, expectedPosition, canChangeGrid, sessionSeconds, targetProgress, chooseMime, SOCIAL_VIDEO_MIMES, chooseSocialVideoMime, videoExtension, safeFileName };
+  return { DURATIONS, formatTime, clamp, columnsFor, expectedPosition, barSeconds, nextBarBoundary, stopAtNextBar, canChangeGrid, sessionSeconds, targetProgress, chooseMime, SOCIAL_VIDEO_MIMES, chooseSocialVideoMime, videoExtension, safeFileName };
 });

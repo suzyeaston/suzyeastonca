@@ -125,3 +125,118 @@
   .timeline-lane-actions button{font-size:.58rem;padding:5px}
   .instrument-layer-voice{max-width:100%}
 }
+
+/* v0.7 PERFORMANCE MODE
+ * Compact, high-contrast, synth-console presentation. A musician can reach
+ * record, transport, loop launch and mixer without a page of repeated copy.
+ */
+:root{--bg:#080a11;--panel:#12121e;--line:#39334a;--text:#f6f2ff;--muted:#b6acc8;--pink:#f298e1;--lav:#ae8fff;--mint:#a8ffdf;--yellow:#e4ff79}
+body{background:radial-gradient(ellipse at 15% 0%,#50216b33,transparent 50%),radial-gradient(ellipse at 80% 28%,#2a56602b,transparent 45%),#080a11}
+.grain{opacity:.035}
+.shell{width:min(1380px,calc(100% - 30px))}
+.topbar{padding:14px 0;border-bottom:1px solid #7766a364}
+.topbar-note,.top-link{font-size:.67rem}
+.hero{padding:21px 0 18px;gap:15px}
+h1{font-size:clamp(3.1rem,7vw,6.2rem);letter-spacing:-.07em}
+.hero-tag{min-width:98px;font-size:.63rem;padding:10px}
+.hero-tag span{margin-top:5px}
+.lead{font-size:.94rem;margin:9px 0 0}
+.eyebrow{font-size:.62rem}
+.workspace{grid-template-columns:minmax(0,1.82fr) minmax(275px,.7fr);gap:12px}
+.panel{border-radius:12px;background:linear-gradient(135deg,#1c1a2b,#10121e 70%);box-shadow:0 9px 34px #0006}
+.studio{padding:16px}
+.panel-top{margin-bottom:11px}
+.panel-top h2{font-size:1.1rem}
+.chip{padding:7px 10px}
+.grid-wrap{width:min(100%,510px);margin-inline:auto}
+.performance-grid{gap:5px}
+.tile{border-width:1px;background:radial-gradient(circle at 30% 20%,#37334c,#11131d 67%)}
+.grid-hint{font-size:.68rem;margin:10px 0 12px;line-height:1.4}
+.transport{padding-top:11px;gap:6px}
+.transport-btn{padding:9px 13px;font-size:.7rem;letter-spacing:.055em;border-radius:6px}
+.transport-btn:not(:disabled):hover{border-color:var(--mint)}
+.progress{height:4px;margin-top:2px}
+.mosaic-arrangement{margin-top:12px;padding:11px;background:#11101e;border-color:#66537c}
+.mosaic-arrangement-head h2{margin:0;font-size:.96rem}
+.mosaic-arrangement .instrument-tip{font-size:.67rem;line-height:1.4;margin:5px 0 9px}
+.mosaic-arrangement-tracks{gap:3px}
+.mosaic-timeline-row{min-height:34px;grid-template-columns:minmax(96px,130px) minmax(70px,1fr) auto;gap:4px}
+.timeline-lane-rail{min-height:34px;background:#0a0b13}
+.timeline-lane-info{padding:3px 7px;background:#211d30}
+.timeline-lane-info strong{font-size:.65rem}
+.timeline-lane-info small{font-size:.5rem}
+.timeline-clip{top:4px;bottom:4px}
+.timeline-lane-actions button{min-height:27px;padding:4px 7px}
+.instrument-rack{margin-top:12px;padding-top:14px}
+.instrument-head{gap:8px;align-items:center}
+.instrument-head h2{margin:0 0 7px;font-size:1rem}
+.live-mixer-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.live-loop-btn{font:850 .71rem ui-monospace,monospace;letter-spacing:.07em;white-space:nowrap;border:1px solid var(--mint);background:linear-gradient(135deg,#20584d,#142b32);color:var(--mint);padding:10px 12px;border-radius:7px;box-shadow:0 0 18px #61ffcb24}
+.live-loop-btn:hover:not(:disabled){background:#2d6a57}
+.live-loop-btn.is-playing{background:#a8ffdf;color:#0d2320;border-color:#a8ffdf;box-shadow:0 0 20px #a8ffdf77;animation:mosaic-pulse 1.7s ease-in-out infinite}
+.loop-status{font:750 .62rem ui-monospace,monospace;letter-spacing:.045em;color:var(--mint)}
+@keyframes mosaic-pulse{50%{box-shadow:0 0 4px #a8ffdf44}}
+.instrument-count{font-size:.62rem}
+.instrument-controls{gap:7px;margin-bottom:8px}
+.instrument-controls label{min-width:120px;font-size:.65rem}
+.instrument-controls select{padding:8px 9px;margin-top:3px;font-size:.75rem;border-color:#5b4d77;border-radius:6px;background:#101020}
+#instrument-record{padding:9px;min-width:160px;font-size:.69rem;border-radius:6px;background:var(--lav)}
+.instrument-pads{gap:4px}
+.instrument-pad{min-height:49px;gap:1px;padding:5px 0;border-radius:5px;background:linear-gradient(180deg,#e9dbff,#a795d6)}
+.instrument-pad small{font-size:.55rem}
+.instrument-tip.compact-tip{margin:6px 0 8px;font-size:.66rem;line-height:1.45}
+.instrument-loop-library{padding:11px;margin-top:10px;background:linear-gradient(135deg,#1b182c,#11131e);border-color:#584d70;border-radius:9px}
+.instrument-loop-library h3{font-size:.88rem;margin:0 0 8px}
+.instrument-loop-library .instrument-tip{font-size:.65rem;margin:5px 0 7px}
+.instrument-preset-controls label{min-width:95px}
+.instrument-preset-controls label:first-child{flex:2 1 180px}
+.instrument-preset-controls .instrument-bars-label{flex:0 1 70px;min-width:70px}
+#instrument-add-loop,#instrument-add-rhythm,.instrument-preview-btn{padding:9px 11px;font-size:.69rem;border-radius:6px}
+.instrument-beat-builder{margin-top:9px;padding-top:9px}
+.instrument-beat-builder summary{font-size:.69rem}
+.instrument-mixer-details{border:1px solid #50415e;border-radius:8px;padding:9px 10px;margin-top:10px;background:#141321}
+.instrument-mixer-details summary{cursor:pointer;list-style:none;color:var(--lav);font:800 .68rem ui-monospace,monospace;letter-spacing:.06em}
+.instrument-mixer-details summary::-webkit-details-marker{display:none}
+.instrument-mixer-details summary:before{content:'▸';color:var(--mint);padding-right:7px}
+.instrument-mixer-details[open] summary:before{content:'▾'}
+.instrument-mixer-details summary span{color:var(--muted)}
+.instrument-layers{gap:4px;margin-top:10px}
+.instrument-layer{padding:6px 8px}
+.instrument-layer-title{font-size:.67rem}
+.instrument-layer-controls{gap:4px}
+.instrument-layer-voice{font-size:.65rem;max-width:145px}
+.instrument-layer button{font-size:.63rem;padding:6px 7px}
+.sidebar{gap:10px}
+.sidebar .panel{padding:13px}
+.sidebar h2{font-size:1.05rem;margin:0 0 9px}
+.sidebar .quiet,.sidebar .share-note{font-size:.69rem;line-height:1.42;padding-top:8px;margin:8px 0}
+.settings select{padding:8px;margin:5px 0 10px}
+.sidebar .toggle{font-size:.74rem;margin:7px 0}
+.sidebar input[type=range]{margin:7px 0 8px}
+.record-btn,.export-btn{padding:11px;font-size:.73rem;border-radius:7px}
+.sidebar .capture #selected-track-description,.sidebar .delivery p{font-size:.73rem;margin:0 0 9px;line-height:1.42}
+.secondary-controls{margin-top:9px}
+.secondary-controls button{padding:7px 8px;font-size:.64rem}
+.record-help{font-size:.67rem}
+.level-section{margin-top:12px;padding-top:8px}
+.status{padding:9px 12px;font-size:.7rem;border-radius:6px}
+@media(max-width:880px){.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:570px){
+  .shell{width:calc(100% - 18px)}
+  .hero{padding:15px 0}
+  .hero-tag{display:none}
+  .studio{padding:9px}
+  .mosaic-arrangement{padding:8px}
+  .mosaic-timeline-row{grid-template-columns:minmax(68px,88px) minmax(70px,1fr) auto}
+  .timeline-lane-info strong{font-size:.55rem}
+  .timeline-lane-info small{font-size:.47rem}
+  .live-mixer-actions{justify-content:flex-start}
+  .instrument-head{align-items:flex-start;flex-wrap:wrap}
+  .instrument-count{display:none}
+  .loop-status{font-size:.58rem}
+  .live-loop-btn{padding:9px 12px}
+  .instrument-controls label{flex:1 1 130px}
+  .sidebar{grid-template-columns:1fr}
+  .instrument-pad{min-height:46px}
+}
+@media(prefers-reduced-motion:reduce){.live-loop-btn.is-playing{animation:none}}

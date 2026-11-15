@@ -70,3 +70,12 @@ host, or downloading any project zip. The route is rendered through `page-mosaic
 - Save per-layer sound patch IDs with locally stored note events; older saved layers default to a valid warm patch.
 - `?v=sound7` cache busts all script/style assets, including the new modules. The theme deploy manifest explicitly uploads soundbank.js before instruments.js and timeline.js before app.js.
 - User device QA still needed for sound quality, mobile preview, recording, preserving local clips, and real-time MP4 export.
+
+## Live-looper synchronization and compact musician mixer (2026-11, v0.7)
+- The musical transport uses a common AudioContext clock and a 30ms scheduling interval; the visual timeline uses the same clock as the instrument engine. Previously async backing-media startup happened **after** the new camera recorder started, making the recorded take lag.
+- The camera now starts after playback of existing material has started; when instrument loops exist, Stop & Keep continues until the next musical bar at the arrangement BPM, then records a bar-aligned looping length. Discard remains immediate.
+- New hand-played notes are time-stamped against the main transport clock and grouped to whole bars. Live-added instrument clips arm on a future beat boundary outside the lookahead window. Their start offsets are preserved in localStorage and shown in the timeline.
+- The instrument rack has **Loop Music / Stop Loops** controls and autoplays the first added loop, even without any video. Hear Loop/Hear Beat repeat until stopped, but never enter the export bus until the user explicitly adds the loop.
+- The site interface is denser, darker and focused on performance. The video grid occupies less vertical space, live mixer controls are prominent, and the second set of per-layer sound controls is tucked into expandable Sound Mixer details.
+- Internal asset URLs now use `?v=sync8` to avoid stale JS/CSS. All files are still self-hosted and uploaded through the existing theme manifest, with no account, model or cloud audio dependency.
+- **Limitations:** The shared-clock changes reduce typical phase error but cannot guarantee sample-accurate recording across MediaRecorder, browser video codecs and different hardware. Audio/video playback and MP4 export still need real device QA.

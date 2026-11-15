@@ -23,6 +23,8 @@
     formatNote: el('export-format-note'),
     timeline: el('mosaic-arrangement'), timelineTracks: el('mosaic-arrangement-tracks'),
     timelineDuration: el('mosaic-arrangement-duration'),
+    loopToggle: el('loop-toggle'), loopStatus: el('loop-status'),
+    compactMode: el('compact-mode'),
   };
   let instrumentRack = null;
   const hasArrangement = () => clips.size > 0 || !!instrumentRack?.hasLayers;
@@ -36,6 +38,14 @@
   let db = null;
   let audioContext = null;
   let playbackStarted = 0;
+  let transportAudioOrigin = 0;
+  let audioScheduleId = 0;
+  let takeStopTimer = 0;
+  let takeSyncBpm = 0;
+  let takeLoopSeconds = 0;
+  const transportSeconds = () => audioContext && playbackMode !== 'stopped'
+    ? Math.max(0,audioContext.currentTime - transportAudioOrigin) : 0;
+  const arrangementBpm = () => Number(instrumentRack?.layers.find(l=>l.bpm)?.bpm || ui.bpm.value);
   let playbackFrame = 0;
   let playbackMode = 'stopped';
   let activeStream = null;
@@ -371,7 +381,17 @@
     ui.cancel.hidden = !busy || playbackMode === 'exporting';
     ui.cancel.disabled = busy && !!activeRecorder && activeRecorder.state !== 'recording';
     ui.play.disabled = busy || !hasArrangement() || playbackMode === 'playing';
+    ui.play.textContent = '▶ PLAY / LOOP';
     ui.stop.disabled = busy || playbackMode !== 'playing';
+    if (ui.loopToggle) {
+      const isPlaying = playbackMode === 'playing';
+      ui.loopToggle.disabled = busy || !hasArrangement();
+      ui.loopToggle.textContent = isPlaying ? '■ STOP LOOPS' : '▶ LOOP MUSIC';
+      ui.loopToggle.setAttribute('aria-pressed',String(isPlaying));
+      ui.loopToggle.classList.toggle('is-playing',isPlaying);
+      ui.loopStatus.textContent = isPlaying ? 'LIVE · '+arrangementBpm()+' BPM'
+        : instrumentRack?.hasLayers ? 'READY · '+arrangementBpm()+' BPM' : 'ADD A LOOP TO BEGIN';
+    }
     ui.export.disabled = busy || !hasArrangement();
     ui.share.disabled = busy || !lastExport;
     ui.clear.disabled = busy || !hasArrangement();
@@ -434,6 +454,7 @@
     ui.progressRegion.setAttribute('aria-label', recording ? 'Take progress against optional planning target' : 'Session playback position');
   }
   function stopPlayback() {
+    if(audioScheduleId){clearInterval(audioScheduleId);audioScheduleId=0;}
     cancelAnimationFrame(playbackFrame);
     playbackFrame = 0;
     playbackMode = 'stopped';
@@ -450,10 +471,9 @@
   function monitorPlayback() {
     const step = () => {
       if (playbackMode === 'stopped') return;
-      const elapsed = (performance.now() - playbackStarted) / 1000;
+      const elapsed = transportSeconds();
       const position = core.expectedPosition(elapsed, sessionDuration);
       updateTimelinePlayhead(position);
-      instrumentRack?.tick(elapsed);
       updateClock(playbackMode === 'recording' ? (performance.now() - takeStartedAt) / 1000 :
         (instrumentRack?.isRecording ? instrumentRack.elapsed : position));
       if (playbackMode === 'playing' && previewContext) {
@@ -461,13 +481,13 @@
         renderFinalFrame(previewContext, 720, 720, elapsed);
       }
       // Media elements decode independently. Pull obvious stragglers back toward the shared timeline.
-      if (Math.floor(elapsed * 2) !== Math.floor((elapsed - 0.05) * 2)) {
+      if (Math.floor(elapsed * 4) !== Math.floor((elapsed - 0.05) * 4)) {
         for (const [index, video] of videoElements) {
           const clipSeconds = clips.get(index)?.seconds || sessionDuration;
           if (!video.paused && video.readyState >= 1 && clipSeconds > 0) {
             const clipPosition = core.expectedPosition(elapsed, clipSeconds);
             const diff = Math.abs(video.currentTime - clipPosition);
-            if (Math.min(diff, Math.abs(clipSeconds - diff)) > 0.22) {
+            if (Math.min(diff, Math.abs(clipSeconds - diff)) > 0.11) {
               try { video.currentTime = clipPosition; } catch { /* seek not yet allowed */ }
             }
           }
@@ -490,10 +510,14 @@
     const videos = [...videoElements.values()];
     const results = await Promise.allSettled(videos.map(video => video.play()));
     if (results.length && results.every(result => result.status === 'rejected')) throw new Error('Browser blocked playback. Click Play All, and check sound permissions.');
+    // Establish exactly one audio-clock epoch *after* media elements start.
+    // Both instrument events and captured video overdubs reference this origin.
+    transportAudioOrigin = audioContext.currentTime;
     playbackStarted = performance.now();
     instrumentRack?.ensureBus(audioContext);
     instrumentRack?.startPlayback();
     playbackMode = mode;
+    audioScheduleId = setInterval(() => instrumentRack?.tick(transportSeconds()), 30);
     ui.fxPreview.hidden = mode !== 'playing';
     monitorPlayback();
     updateUI();
@@ -547,6 +571,8 @@
       return;
     }
     stopPlayback();
+    if(takeStopTimer){clearTimeout(takeStopTimer);takeStopTimer=0;}
+    takeLoopSeconds=0;takeSyncBpm=0;
     lastExport = null;
     busy = true;
     cancelTake = false;
@@ -570,18 +596,28 @@
         activeRecorder.onstop = resolve;
         activeRecorder.onerror = e => reject(e.error || new Error('Recorder failed'));
       });
-      // Start the new recorder and the old-take monitoring on the same recording boundary.
+      // Begin backing playback BEFORE opening the recorder. Previously we
+      // captured video first, waited for async video.play(), and only then
+      // started the synth. That baked an audible late entry into overdubs.
+      const hasBacking = hasArrangement();
+      if (hasBacking) {
+        try {
+          await startPlayback('recording');
+          if(instrumentRack?.hasLayers)takeSyncBpm=arrangementBpm();
+        } catch(error) {
+          stopPlayback();
+          status('Backing playback unavailable: '+error.message+'. Capturing this take without monitoring.',true);
+        }
+      }
+      if(playbackMode==='stopped') {
+        transportAudioOrigin=audioContext.currentTime;
+        playbackStarted=performance.now();
+        playbackMode='recording';
+        monitorPlayback();
+      }
       activeRecorder.start(250);
       takeStartedAt = performance.now();
       takeStoppedAt = 0;
-      if (hasArrangement()) {
-        try { await startPlayback('recording'); }
-        catch (error) { status(`Recording started, but monitoring failed: ${error.message}`, true); }
-      } else {
-        playbackMode = 'recording';
-        playbackStarted = performance.now();
-        monitorPlayback();
-      }
       updateUI();
       status(`Recording tile ${selectedAtStart + 1}. ${targetDuration ? `${targetDuration}s is a guide only. ` : ''}Press Stop & Keep Take whenever you're done.`);
       await stopped;
@@ -591,7 +627,7 @@
       if (!wasCanceled && blob.size > 0) {
         const clip = {
           index: selectedAtStart, blob, audioOnly: input.audioOnly, muted: false, volume: 1,
-          seconds: Math.max(0.1, ((takeStoppedAt || performance.now()) - takeStartedAt) / 1000),
+          seconds: takeLoopSeconds || Math.max(0.1, ((takeStoppedAt || performance.now()) - takeStartedAt) / 1000),
         };
         installClip(clip);
         refreshSessionDuration();
@@ -603,6 +639,8 @@
     } catch (error) {
       status(`Could not record: ${error.message || error.name || 'permission failed'}. Check browser permissions and try again.`, true);
     } finally {
+      if(takeStopTimer){clearTimeout(takeStopTimer);takeStopTimer=0;}
+      takeSyncBpm=0;takeLoopSeconds=0;
       stopInput();
       if (stream) for (const track of stream.getTracks()) track.stop();
       activeRecorder = null;
@@ -612,16 +650,36 @@
     }
   }
   function stopTake(keep) {
-    if (!busy) return;
-    if (!keep) cancelTake = true;
-    if (activeRecorder?.state === 'recording') {
-      takeStoppedAt = performance.now();
-      activeRecorder.stop();
-      updateUI();
-      status(keep ? 'Finishing take…' : 'Discarding take…');
-    } else if (!keep && activeStream) {
-      stopInput();
+    if(!busy)return;
+    if(!keep)cancelTake=true;
+    if(takeStopTimer){
+      if(keep)return;
+      clearTimeout(takeStopTimer);takeStopTimer=0;
     }
+    if(activeRecorder?.state==='recording'){
+      const endCapture=()=>{
+        takeStopTimer=0;
+        if(activeRecorder?.state!=='recording')return;
+        takeStoppedAt=performance.now();
+        activeRecorder.stop();
+        updateUI();
+        status(keep?'Finishing take…':'Discarding take…');
+      };
+      // When overdubbing loops, hold until the next whole bar. Otherwise
+      // a 14.8s video might repeat against an 8s groove and phase-walk.
+      if(keep&&takeSyncBpm&&playbackMode==='recording'){
+        const elapsed=transportSeconds();
+        const barEnd=core.nextBarBoundary(elapsed,takeSyncBpm);
+        takeLoopSeconds=barEnd;
+        const wait=Math.max(0,barEnd-elapsed);
+        if(wait>.035){
+          takeStopTimer=setTimeout(endCapture,wait*1000);
+          status('Finishing your video on the next bar · '+wait.toFixed(1)+'s. Keep playing!');
+          return;
+        }
+      }
+      endCapture();
+    }else if(!keep&&activeStream)stopInput();
   }
   function cancelRecording() { stopTake(false); }
   function recordOrStop() {
@@ -866,8 +924,8 @@
   async function toggleInstrumentRecording() {
     if (!instrumentRack || (busy && !instrumentRack.isRecording)) return;
     if (instrumentRack.isRecording) {
-      stopPlayback();
       const layer = instrumentRack.finish();
+      stopPlayback();
       busy = false;
       refreshSessionDuration();
       updateUI();
@@ -880,12 +938,13 @@
     try {
       await ensureAudioContext();
       if (hasArrangement()) await startPlayback('instrument-recording');
-      if (!instrumentRack.begin()) {
-        stopPlayback();status('Maximum of 12 instrument layers reached.',true);return;
-      }
-      if (playbackMode === 'stopped') {
+      if(playbackMode==='stopped'){
+        transportAudioOrigin=audioContext.currentTime;
         playbackStarted=performance.now();
         playbackMode='instrument-recording';monitorPlayback();
+      }
+      if (!instrumentRack.begin({clock:transportSeconds,bpm:arrangementBpm()})) {
+        stopPlayback();status('Maximum of 12 instrument layers reached.',true);return;
       }
       updateUI();
       status('Recording instrument notes. Tap the pads or A S D F G H J K, then Stop & Keep Layer.');
@@ -907,7 +966,14 @@
   ui.clicks.addEventListener('change', savePreferences);
   ui.record.addEventListener('click', recordOrStop);
   ui.cancel.addEventListener('click', cancelRecording);
-  ui.play.addEventListener('click', () => startPlayback().then(() => status('Playback running. The tiles are your rhythm section.')).catch(err => status(err.message, true)));
+  ui.play.addEventListener('click', () => startPlayback().then(() => status('Playing the arrangement. Looping continues until you press Stop.')).catch(err => status(err.message, true)));
+  ui.loopToggle?.addEventListener('click', () => {
+    if(busy)return;
+    if(playbackMode==='playing'){
+      stopPlayback();status('Loops stopped. Your layers are still here.');
+    }else startPlayback('playing').then(()=>status('Live loop mixer running. Add parts, record or mute lanes.'))
+      .catch(error=>status('Cannot play loops: '+error.message,true));
+  });
   ui.stop.addEventListener('click', () => { stopPlayback(); status('Playback stopped.'); });
   ui.export.addEventListener('click', exportVideo);
   ui.share.addEventListener('click', shareVideo);
@@ -946,7 +1012,14 @@
   async function init() {
     instrumentRack = new window.MosaicInstruments.Rack({
       host:window,ensureAudioContext,onRecord:toggleInstrumentRecording,
-      onChange:()=>{lastExport=null;refreshSessionDuration();updateUI();},onStatus:status,
+      getTransportPosition:transportSeconds,
+      onChange:(reason)=>{
+        lastExport=null;refreshSessionDuration();updateUI();
+        if(reason==='added'&&!busy&&playbackMode==='stopped'){
+          startPlayback('playing').then(()=>status('Loop added. Live mixer is running. ✳'))
+            .catch(error=>status('Loop added, but playback failed: '+error.message,true));
+        }
+      },onStatus:status,
       onPreviewStart:()=>{if(playbackMode!=='stopped')stopPlayback();},
     });
     restorePreferences();
