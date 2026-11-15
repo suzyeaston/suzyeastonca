@@ -41,7 +41,7 @@
     if(!station||!Number.isFinite(station.x)||!Number.isFinite(station.z))return null;
     const root=new THREE.Group();
     root.name='Waterfront West Coast Express platform and stationary commuter train';
-    root.position.set(station.x,0,station.z);
+    root.position.set(station.x,-1.35,station.z);
     root.rotation.y=Number.isFinite(station.yaw)?station.yaw:0;
     const gravel=material(THREE,0x555653,0.96),
       steel=material(THREE,0xd2cec1,0.34,0.69),
@@ -175,6 +175,8 @@
     root.userData.westCoastExpress=true;
     root.userData.stagedTrainNotLive=true;
     root.userData.platformSurveyed=false;
+    root.userData.railElevation=-1.35;
+    root.userData.platformBelowPublicLot=true;
     root.userData.tracksSurveyed=false;
     root.userData.vehicleCount=4;
     root.userData.routeTracks=routes;
