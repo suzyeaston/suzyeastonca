@@ -3,13 +3,13 @@
 define( 'ABSPATH', __DIR__ );
 define( 'DAY_IN_SECONDS', 86400 );
 define( 'HOUR_IN_SECONDS', 3600 );
-$GLOBALS['filters'] = [];
-$GLOBALS['actions'] = [];
+$GLOBALS['registered_filters'] = [];
+$GLOBALS['registered_actions'] = [];
 $GLOBALS['tech_calls'] = 0;
 $GLOBALS['music_calls'] = 0;
 $GLOBALS['history_calls'] = 0;
-function add_filter( $name, ...$args ) { $GLOBALS['filters'][] = $name; }
-function add_action( $name, ...$args ) { $GLOBALS['actions'][] = $name; }
+function add_filter( $name, ...$args ) { $GLOBALS['registered_filters'][] = $name; }
+function add_action( $name, ...$args ) { $GLOBALS['registered_actions'][] = $name; }
 function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
 function wp_date( $format, $timestamp, $timezone = null ) {
     return ( new DateTimeImmutable( '@' . $timestamp ) )->setTimezone( $timezone ?: new DateTimeZone( 'UTC' ) )->format( $format );
@@ -125,7 +125,7 @@ check_hub( ! suzy_yvr_events_is_route(), 'legacy culture route remains independe
 $GLOBALS['admin'] = true;
 $_SERVER['REQUEST_URI'] = '/vancouver-events/';
 check_hub( ! suzy_yvr_events_is_route(), 'admin requests are never rewritten' );
-check_hub( in_array( 'template_include', $GLOBALS['filters'], true ), 'route template hook registered' );
-check_hub( in_array( 'wp_enqueue_scripts', $GLOBALS['actions'], true ), 'style enqueued only by route guard' );
+check_hub( in_array( 'template_include', $GLOBALS['registered_filters'], true ), 'route template hook registered' );
+check_hub( in_array( 'wp_enqueue_scripts', $GLOBALS['registered_actions'], true ), 'style enqueued only by route guard' );
 
 echo "Passed $tests unified Vancouver Events tests.\n";
