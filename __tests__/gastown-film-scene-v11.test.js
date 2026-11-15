@@ -11,6 +11,8 @@ class Group {
     this.children = [];
     this.position = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } };
     this.rotation = { x: 0, y: 0, z: 0 };
+    this.userData = {};
+    this.visible = true;
   }
   add(mesh) { this.children.push(mesh); }
 }
@@ -18,7 +20,7 @@ class Mesh extends Group { constructor(geometry, material) { super(); this.geome
 class Geometry { constructor(...args) { this.args = args; } }
 class Material { constructor(options) { Object.assign(this, options); } }
 const THREE = {
-  Group, Mesh, BoxGeometry: Geometry, CylinderGeometry: Geometry,
+  Group, Mesh, BoxGeometry: Geometry, CylinderGeometry: Geometry, SphereGeometry: Geometry,
   MeshBasicMaterial: Material, MeshStandardMaterial: Material,
 };
 
@@ -31,7 +33,8 @@ test('Station East creates moving road and parking traffic without placeholder p
   assert.equal(buses.length, 2);
   assert.equal(cars.length, 4);
   assert.equal(lotCars.length, 1);
-  assert.equal(scene.root.children.length, 7);
+  assert.equal(scene.root.children.length, 8, 'traffic, parking arrival, and Harbour Centre bus stop');
+  assert.ok(scene.root.children.some(node => node.name === 'Harbour Centre eastbound bus stop'));
   const before = cars.map(car => [car.position.x,car.position.z]);
   const lotBefore = [lotCars[0].position.x,lotCars[0].position.z];
   scene.update(5.0);

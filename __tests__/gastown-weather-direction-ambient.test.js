@@ -5,11 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const read = f => fs.readFileSync(path.join(__dirname,'..',f),'utf8');
 
-test('Water Street cars follow westbound only, trolley corridor stays separate',()=>{
+test('West Cordova cars are westbound on the north/right and trolleys eastbound on the south/right',()=>{
  const src=read('js/gastown-street-life.js');
- assert.match(src,/along\(total-distance,-6\.4,true,car\)/);
+ assert.match(src,/along\(total-distance,6\.4,true,car\)/);
  assert.doesNotMatch(src,/const reverse=index%2===1/);
- assert.match(src,/Route #3 trolleys run on the illustrated Cordova-side circuit/);
+ assert.match(src,/Eastbound trolleys keep right \(south side\) on W Cordova/);
 });
 
 test('storm advances visible lightning each frame and thunder after flash',()=>{
