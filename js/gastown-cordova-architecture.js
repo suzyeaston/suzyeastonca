@@ -214,6 +214,69 @@
         const yellow=new THREE.MeshBasicMaterial({color:0xe9d44f});
         const shopGreen=new THREE.MeshBasicMaterial({color:0x23613b});
 
+        // PR #795 correctly reoriented the glazing, but the 0.34 m-wide
+        // facades were still free-standing planes. The mapped Harbour Centre
+        // parcel runs more than 70 m behind this streetwall. Build an
+        // orthogonal, setback-aware podium *inside that actual footprint*,
+        // overlapping the existing Spencer podium so every facade has a
+        // real roof, depth, returns and a physical connection to the tower.
+        // Intentionally avoid a deeply concave GIS extrude here because
+        // that previously created enormous triangular roof/shadow artifacts.
+        const local5=toLocal(coords[5]),local14=toLocal(coords[14]);
+        const frontX=(local5.x+local14.x)/2+0.36;
+        const backX=Math.min(cx+37,25.7);
+        const southZ=local14.z+0.35;
+        const northZ=local5.z-0.35;
+        const mainNorthZ=20.0;
+        const roofY=13.40;
+        function volume(name,x1,x2,z1,z2,height,material){
+          const mesh=addBox(group,name,(x1+x2)/2,height/2,(z1+z2)/2,
+            x2-x1,height,z2-z1,material);
+          mesh.userData={connectedBuildingMass:true};
+          return mesh;
+        }
+        volume('Harbour Centre connected civic podium core',
+          frontX,backX,southZ,mainNorthZ,roofY,masonry);
+        // Step around the genuine NW edge of the civic parcel, rather than
+        // allowing a full rectangular mass to project outside the lot.
+        const wingBackX=-5.85;
+        volume('Harbour Centre connected north retail wing',
+          frontX,wingBackX,mainNorthZ-0.45,northZ,roofY,masonry);
+        const roofMaterial=new THREE.MeshStandardMaterial({
+          color:0x777c7d,roughness:0.92,metalness:0.03});
+        addBox(group,'Harbour Centre connected civic podium roof',
+          (frontX+backX)/2,roofY+0.12,(southZ+mainNorthZ)/2,
+          backX-frontX,0.24,mainNorthZ-southZ,roofMaterial);
+        addBox(group,'Harbour Centre connected wing roof',
+          (frontX+wingBackX)/2,roofY+0.12,(mainNorthZ+northZ)/2,
+          wingBackX-frontX,0.24,northZ-mainNorthZ,roofMaterial);
+        // Side and rear elevations remain readable during suzyfly; no
+        // hovering wall with an empty white void behind it.
+        for(let x=frontX+3.5;x<backX-2;x+=5.8){
+          for(const y of [4.4,7.7,10.9]){
+            addBox(group,'Harbour Centre connected podium rear window',
+              x,y,southZ-0.055,4.1,1.55,0.09,darkGlazing);
+          }
+        }
+        for(let z=southZ+3.8;z<mainNorthZ-2;z+=6.1){
+          for(const y of [4.4,7.7,10.9]){
+            addBox(group,'Harbour Centre connected podium east window',
+              backX+0.055,y,z,0.09,1.55,4.2,darkGlazing);
+          }
+        }
+        for(const x of [frontX+1.0,backX-1.0]){
+          addBox(group,'Harbour Centre rooftop low parapet',
+            x,roofY+0.60,(southZ+mainNorthZ)/2,0.48,0.95,mainNorthZ-southZ,trim);
+        }
+        for(const z of [southZ+0.3,mainNorthZ-0.1]){
+          addBox(group,'Harbour Centre rooftop end parapet',
+            (frontX+backX)/2,roofY+0.60,z,backX-frontX,0.95,0.45,trim);
+        }
+        group.userData.connectedCivicPodium={
+          frontX,backX,southZ,northZ,roofY,wingBackX,
+          overlapsSpencerTower:backX>cx-16 && frontX<cx+16
+        };
+
         function shopSign(parent,name,text,x,y,face,width,height,bg,fg) {
           const z=face*0.52;
           const backing=addBox(parent,name+' fascia panel',x,y,z,width,height,0.12,
@@ -301,6 +364,8 @@
           addBox(frontage,'Harbour Centre stepped podium cornice',
             0,13.68,0,len+0.6,0.42,0.8,trim);
           if(label==='Dollarama'){
+            // Eastern / parking-lot end of the Cordova block, as shown in
+            // the July 2024 540 W Cordova user reference.
             const entryX=-len*0.16;
             addBox(frontage,'Dollarama recessed glass door pair',
               entryX,1.55,face*0.37,2.9,2.9,0.1,darkGlazing);
@@ -311,23 +376,41 @@
               entryX,1.6,face*0.45,0.09,2.95,0.1,doorFrame);
             shopSign(frontage,'Dollarama Cordova storefront','DOLLARAMA',
               entryX,4.42,face,11.6,0.86,'#e9d44f','#1c6a39');
-          } else {
-            shopSign(frontage,'Harbour Centre Cordova wayfinding','HARBOUR CENTRE',
-              len*0.04,4.42,face,13.4,0.82,'#23613b','#f1f1d9');
+          } else if(label==='Food Court / Shops'){
+            // Food Court and Shops are independent recessed glass entrances
+            // with distinct small awnings, as in the 542 W Cordova photos.
+            for(const [name,text,x] of [
+              ['Food Court','FOOD COURT',-len*0.23],
+              ['Shops','SHOPS',len*0.23]
+            ]){
+              addBox(frontage,name+' recessed glass entrance pair',
+                x,1.59,face*0.39,3.35,3.10,0.1,darkGlazing);
+              addBox(frontage,name+' vertical door stile',
+                x,1.59,face*0.48,0.10,3.05,0.12,mullion);
+              for(const side of [-1,1])
+                addBox(frontage,name+' narrow door jamb',
+                  x+side*1.69,1.59,face*0.45,0.11,3.14,0.13,doorFrame);
+              addBox(frontage,name+' projecting entrance awning',
+                x,3.77,face*0.88,5.1,0.28,1.25,charcoal);
+              shopSign(frontage,name+' Cordova entry',text,
+                x,4.45,face,Math.min(11.8,len*0.40),0.88,
+                '#23613b','#f1f1d9');
+            }
           }
           return frontage;
         }
 
-        // The 5–14 edges are one collinear Cordova-facing 79m streetwall,
-        // interrupted only by the small 8m shop/food-court lobby.
-        const westRetail=lotFacingEdge(5,6,'Dollarama');
-        const eastRetail=lotFacingEdge(13,14,'Harbour Centre');
+        // GIS feature-16 fronts W Cordova from west to east: Food Court /
+        // Shops first (542 W Cordova), then a narrow connecting entry,
+        // then Dollarama (540 W Cordova) toward the Station East parking.
+        const westRetail=lotFacingEdge(5,6,'Food Court / Shops');
+        const eastRetail=lotFacingEdge(13,14,'Dollarama');
         const a=coords[6],z=coords[13],pa=toLocal(a),pb=toLocal(z);
         const deltaX=pb.x-pa.x,deltaZ=pb.z-pa.z;
         const entryLen=Math.hypot(deltaX,deltaZ);
         if(westRetail&&eastRetail&&entryLen>5&&entryLen<12){
           const entry=new THREE.Group();
-          entry.name='Harbour Centre Cordova recessed food court and shops lobby';
+          entry.name='Harbour Centre Cordova recessed connecting lobby';
           entry.position.set((pa.x+pb.x)/2,0,(pa.z+pb.z)/2);
           entry.rotation.y=Math.atan2(-deltaZ,deltaX);
           const face=westRetail.userData.parkingFace;
@@ -336,12 +419,12 @@
           group.add(entry);
           addBox(entry,'Harbour Centre shaded lobby interior',
             0,2.0,-face*0.6,entryLen-0.35,4.0,0.25,doorFrame);
-          addBox(entry,'Harbour Centre food court full-height doors',
+          addBox(entry,'Harbour Centre connecting lobby full-height doors',
             0,2,face*0.12,entryLen-0.55,3.8,0.1,glassBase);
           for(const x of [-entryLen*0.31,0,entryLen*0.31])
             addBox(entry,'Harbour Centre lobby metal door mullion',
               x,1.9,face*0.19,0.11,3.8,0.11,mullion);
-          shopSign(entry,'Harbour Centre food court and shops','FOOD COURT  |  SHOPS',
+          shopSign(entry,'Harbour Centre Cordova main entrance','HARBOUR CENTRE',
             0,4.33,face,entryLen-0.4,0.77,'#23613b','#f1f1d9');
           addBox(entry,'Harbour Centre glass lobby upper band',
             0,9.1,0,entryLen-0.3,8.6,0.32,darkGlazing);
@@ -350,7 +433,8 @@
         }
         group.userData.cordovaStreetWallSource='City of Vancouver feature-16 footprint edges';
         group.userData.cordovaFrontFacesComputedFromLot=true;
-        group.userData.cordovaRetailLandmark='Dollarama / 542 W Cordova (illustrative storefront)';
+        group.userData.cordovaRetailLandmark='Food Court / Shops (542 W Cordova) to Dollarama (540 W Cordova)';
+        group.userData.cordovaRetailOrder=['Food Court','Shops','Harbour Centre','Dollarama'];
         group.userData.landmark='Harbour Centre / Spencer Building';
         group.userData.architectureSource='https://harbourcentre.com/';
         group.userData.civicAnchor={lat:49.284697,lon:-123.111935};
