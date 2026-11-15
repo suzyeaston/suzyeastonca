@@ -112,3 +112,27 @@ test('Vancouver Lookout is within a few metres of the real 555 W Hastings coordi
     'Lookout must be at 555 W Hastings, not at the 333 Seymour parcel');
   assert.ok(Math.hypot(global.x-world.parkingLot.center.x,global.z-world.parkingLot.center.z)>45);
 });
+
+test('Cordova-facing Harbour Centre streetwall follows the real civic edges',()=>{
+  const group=model().create(threeStub(),world);
+  const harbour=group.children.find(child=>child.userData.landmark==='Harbour Centre / Spencer Building');
+  assert.ok(harbour);
+  const facades=harbour.children.filter(node=>node.name.startsWith('Harbour Centre Cordova civic parcel frontage'));
+  assert.equal(facades.length,2);
+  const parcel=world.buildings.find(b=>b.id==='feature-16');
+  for(const facade of facades){
+    const [a,b]=facade.userData.civicEdge,pa=parcel.footprint[a],pb=parcel.footprint[b];
+    const center={x:(pa.x+pb.x)/2,z:(pa.z+pb.z)/2};
+    const yaw=-harbour.rotation.y;
+    const local=facade.position,worldPos={
+      x:harbour.position.x+local.x*Math.cos(yaw)-local.z*Math.sin(yaw),
+      z:harbour.position.z+local.x*Math.sin(yaw)+local.z*Math.cos(yaw)
+    };
+    assert.ok(Math.hypot(center.x-worldPos.x,center.z-worldPos.z)<0.05,
+      'facade must sit on the correct 2015 civic parcel edge');
+    assert.ok(facade.children.some(node=>node.name==='Harbour Centre Cordova continuous recessed window band'));
+    assert.ok(facade.children.every(node=>node.castShadow===false),
+      'architectural details may not cast black wedges');
+  }
+  assert.match(harbour.userData.cordovaStreetWallSource,/feature-16/);
+});
