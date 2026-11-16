@@ -922,8 +922,8 @@
     if (pointerHelpEl) pointerHelpEl.dataset.locked = locked ? 'true' : 'false';
     if (pointerHintEl) {
       pointerHintEl.textContent = locked
-        ? 'Mouse captured · W A S D to move'
-        : 'Click the 3D scene to look around · W A S D move';
+        ? 'Mouse captured · ↑/↓ move · ←/→ turn · W/S move · A/D sidestep'
+        : 'Click to look · ↑/↓ move · ←/→ turn · W/S move · A/D sidestep';
     }
     if (releasePointerBtn) {
       releasePointerBtn.disabled = !locked;

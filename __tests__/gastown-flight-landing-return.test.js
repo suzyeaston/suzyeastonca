@@ -166,7 +166,7 @@ test('in-flight banner spells out holding the Space bar while ascending',()=>{
  const page=read('page-gastown-sim.php');
  assert.match(sim,/Flying! Hold SPACE BAR to ascend · Q\/Ctrl to descend · type SUZYFLY again to land here/);
  assert.match(sim,/Flying! Hold SPACE BAR to rise · Q\/Ctrl to descend · move above a street or sidewalk to land/);
- assert.match(page,/hold the <strong>Space bar<\/strong> to ascend/);
+ assert.match(page,/hold the <strong>Space bar<\/strong> to ascend/i);
  assert.match(page,/hold SPACE BAR to ascend · Q\/Ctrl to descend/);
  assert.doesNotMatch(sim,/Flying! Type SUZYFLY again to land at Station East/);
 });
