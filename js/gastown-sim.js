@@ -90,6 +90,7 @@
   const minimapDistanceEl = app.querySelector('[data-sim-map-distance]');
   const pointerHelpEl = app.querySelector('[data-sim-pointer-help]');
   const pointerHintEl = app.querySelector('[data-sim-pointer-hint]');
+  const flightTipEl = app.querySelector('[data-sim-flight-tip]');
   const releasePointerBtn = app.querySelector('[data-action="sim-release-pointer"]');
   const minimapTooltipEl = app.querySelector('[data-sim-minimap-tooltip]');
   const compassEl = app.querySelector('[data-sim-compass]');
@@ -7041,10 +7042,22 @@
     return null;
   }
 
+  function updateFlightTip() {
+    if(!flightTipEl)return;
+    const fly=state.flight;
+    flightTipEl.dataset.flying=String(!!fly.enabled);
+    flightTipEl.textContent=fly.landing
+      ? '✈ Landing at Station East parking…'
+      : fly.enabled
+        ? '✈ Flying! Type SUZYFLY again to land at Station East'
+        : '✈ Want to fly? Type SUZYFLY · type it again to land at Station East';
+  }
+
   function beginFlightLanding() {
     const point=findParkingLandingTarget();
     if(!point){setStatus('Station East landing aisle is not clear. Keep flying.');return false;}
     state.flight.landing=point;
+    updateFlightTip();
     state.flight.secretBuffer='';
     state.flight.up=false;state.flight.down=false;state.flight.vertical=0;
     clearMovementInput();state.velocity.set(0,0,0);
@@ -7074,6 +7087,7 @@
     if(remaining<0.04&&fly.altitude<0.04){
       player.position.set(target.x,ground,target.z);
       fly.enabled=false;fly.altitude=0;fly.vertical=0;fly.landing=null;
+      updateFlightTip();
       fly.up=false;fly.down=false;
       state.velocity.set(0,0,0);
       state.lastSafePosition.copy(player.position);
@@ -7512,6 +7526,7 @@
             if(!fly.landing)beginFlightLanding();
           }else if(!state.landingLab.inside){
             fly.enabled=true;fly.altitude=Math.max(0,player.position.y-getGroundY());
+            updateFlightTip();
             fly.landing=null;
             state.thirdPerson=true;state.avatarCameraFacing='back';
             state.followCameraDistance=undefined;
