@@ -72,7 +72,7 @@ test('Suzyfly toggle is discoverable in HUD, tutorial, and controls without capt
  const css=read('assets/css/gastown-sim.css');
  assert.match(page,/data-sim-flight-tip/);
  assert.match(page,/Type <kbd>suzyfly<\/kbd>/);
- assert.match(page,/type it again to land at Station East/);
+ assert.match(page,/type it again to land vertically/i);
  assert.match(page,/<strong>SUZYFLY<\/strong>/);
  assert.match(sim,/const flightTipEl = app\.querySelector\('\[data-sim-flight-tip\]'\)/);
  assert.match(sim,/function updateFlightTip\(\)/);
