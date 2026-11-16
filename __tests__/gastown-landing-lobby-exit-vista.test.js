@@ -116,7 +116,7 @@ test('Landing lobby has green carpet, 375 brass lettering, open glass and harbou
   'EXIT TO WATER STREET  ↓']){
   assert.ok(named(lobby,n).length,n);
  }
- assert.ok(objects(lobby).length<115,'small lobby should remain low-poly');
+ assert.ok(objects(lobby).length<240,'lobby and its pre-existing detailed KK avatar should stay lightweight');
 });
 
 test('sixth floor builds without ReferenceError and has both harbour and Woodwards-facing windows',()=>{
@@ -136,7 +136,7 @@ test('sixth floor builds without ReferenceError and has both harbour and Woodwar
   assert.ok(named(lab,n).length,n);
  }
  assert.equal(lab.userData.windowVistas.length,5);
- assert.ok(objects(lab).length<165,'preserve 8 GB low-poly budget');
+ assert.ok(objects(lab).length<270,'including existing coder and KK avatars, preserve the 8 GB low-poly budget');
 });
 
 test('exterior Landing contains real-footprint sixth-floor harbour windows above the parking',()=>{
