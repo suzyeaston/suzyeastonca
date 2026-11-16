@@ -78,7 +78,7 @@ function controllerHarness(stage='lab',start={x:800,z:804.9}){
    setNow:v=>{now=v;},...controls};
 }
 
-test('Arrival is safely away from elevator; KK leaves alone and Yangos greets once',()=>{
+test('KK stays upstairs, taps Yangos to cover and greets Suzy without triggering elevator',()=>{
  const portal=loadPlaces().landingEntranceFor(
   JSON.parse(read('assets/world/gastown-water-street.json')));
  assert.ok(Math.hypot(portal.roomSpawn.x-portal.roomExit.x,
@@ -89,15 +89,26 @@ test('Arrival is safely away from elevator; KK leaves alone and Yangos greets on
  h.setNow(1.1);h.updateLandingEscort(0.016,1.1);
  assert.equal(h.lab.stage,'lab');
  assert.equal(h.status.filter(x=>x.who==='KK').length,1);
+ h.setNow(4.4);h.updateLandingEscort(0.016,4.4);
+ assert.equal(h.lab.kkCoveredByYangos,true,'KK asks Yangos to cover him');
+ assert.ok(h.room.userData.greeter.userData.tapArm.rotation.z>0.5,
+  'KK visibly taps Yangos on the shoulder');
+ assert.ok(h.status.some(x=>/taps Yangos on the shoulder/.test(x.text)));
  h.setNow(5.9);h.updateLandingEscort(0.016,5.9);
- assert.equal(h.room.userData.greeter.visible,false,'KK can leave by himself');
- assert.equal(h.lab.stage,'lab','KK departing must not trigger elevator');
+ assert.equal(h.room.userData.greeter.visible,true,'KK remains upstairs');
+ assert.equal(h.room.userData.greeter.position.x,803.2,
+  'KK takes up a position beside Yangos rather than leaving');
+ assert.equal(h.lab.stage,'lab','handoff must not trigger elevator');
  assert.equal(h.lab.yangosGreeted,true);
  assert.equal(h.status.filter(x=>x.who==='Yangos').length,1);
  assert.match(h.status.find(x=>x.who==='Yangos').text,/Welcome to the Multi-Modal Lab/);
  assert.equal(h.player.position.z,804.9,'Suzy stays in room');
  h.setNow(6.2);h.updateLandingEscort(0.016,6.2);
  assert.equal(h.status.filter(x=>x.who==='Yangos').length,1,'no repeated greeting');
+ assert.equal(h.room.userData.greeter.visible,true,'KK stays visible after Yangos speaks');
+ assert.equal(h.room.userData.greeter.userData.tapArm.rotation.z,0,
+  'KK's tapping hand settles back down');
+ assert.equal(h.states.length,0,'Suzy never leaves the sixth floor on handoff');
 });
 
 test('Even standing at return lift never triggers automatic descent; E does',()=>{
@@ -156,6 +167,10 @@ test('Yangos and security guard are actual distinct lightweight NPCs',()=>{
  const lobbyMeshes=descendants(lobby).map(n=>n.name);
  assert.ok(lab.userData.yangos);
  assert.ok(lab.userData.yangosWave);
+ assert.ok(lab.userData.greeter.userData.tapArm,'KK has an actual shoulder-tap joint');
+ const armPieces=descendants(lab.userData.greeter.userData.tapArm).map(n=>n.name);
+ assert.ok(armPieces.includes('KK tattooed forearm'));
+ assert.ok(armPieces.includes('KK hand'));
  assert.ok(labMeshes.includes('Yangos | fictional Multimodal Lab welcome host'));
  assert.ok(labMeshes.includes('Yangos welcoming hand'));
  assert.ok(lobby.userData.securityGuard);
