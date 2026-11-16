@@ -23,8 +23,8 @@ get_header();
         <div class="gastown-dialog-body" id="gastown-tutorial-copy">
           <p>You're Suzy. This is your playable Vancouver. Click in and move.</p>
           <p>The corridor is tuned as a focused two-block walk: Waterfront threshold, Water Street rhythm, Steam Clock corner, and Maple Tree Square edge.</p>
-          <p>Click the 3D scene to capture your mouse. <strong>Press Esc at any time to release it</strong> and use the page normally. W/A/S/D moves, mouse looks around, E interacts.</p>
-          <p><strong>Want to fly?</strong> Click into the 3D scene, then type <code>suzyfly</code> (any capitalization, no Enter). hold the <strong>Space bar</strong> to ascend even while stationary; <strong>Q</strong> or <strong>Ctrl</strong> descends. Type <code>suzyfly</code> again to land straight down where you're flying, when above walkable ground. A third entry while descending cancels the landing. If you're above water or a building, fly above a public street or sidewalk first.</p>
+          <p>Click the 3D scene to capture your mouse. <strong>Press Esc at any time to release it</strong> and use the page normally. <strong>Arrow keys:</strong> Up/Down move forward/back; Left/Right turn Suzy. <strong>WASD:</strong> W/S move forward/back, but A/D sidestep without turning. Mouse looks around; E interacts.</p>
+          <p><strong>Want to fly?</strong> Click into the 3D scene, then type <code>suzyfly</code> (any capitalization, no Enter). Hold the <strong>Space bar</strong> to ascend even while stationary; <strong>Q</strong> or <strong>Ctrl</strong> descends. Type <code>suzyfly</code> again to land straight down where you're flying, when above walkable ground. A third entry while descending cancels the landing. If you're above water or a building, fly above a public street or sidewalk first.</p>
         </div>
         <div class="gastown-dialog-actions">
           <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start walk</button>
@@ -54,7 +54,7 @@ get_header();
         title="Enter fullscreen"
       >⛶</button>
       <div class="gastown-pointer-help" data-sim-pointer-help role="status" aria-live="polite">
-        <span class="gastown-pointer-help-label" data-sim-pointer-hint>Click the scene to look around · W A S D move</span>
+        <span class="gastown-pointer-help-label" data-sim-pointer-hint>Click to look · ↑/↓ move · ←/→ turn · W/S move · A/D sidestep</span>
         <span class="gastown-pointer-help-escape">ESC = RELEASE MOUSE</span>
         <button type="button" data-action="sim-release-pointer" class="gastown-release-pointer" aria-label="Release simulator mouse pointer">Release mouse</button>
       </div>
@@ -142,9 +142,10 @@ get_header();
           <li><strong>Click</strong> to step into the street</li>
           <li><strong>Mouse</strong> look left, right, up or down (including third-person), or click and drag</li>
           <li><strong>P / Take photo</strong> save a clean PNG of the current 3D camera, without menus</li>
-          <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
-          <li><strong>A S D + arrows</strong> move / turn</li>
-          <li><strong>suzyfly</strong> type it in any capitalization (no Enter) after clicking the scene. Type it again to land vertically where you are, if on walkable ground; repeat to cancel a landing. hold the <strong>Space bar</strong> to ascend even while stationary; <strong>Q</strong> or <strong>Ctrl</strong> descends; <strong>Shift</strong> flies faster. Above buildings or water, move over a street or sidewalk before landing.</li>
+          <li><strong>Arrow keys:</strong> ↑ forward, ↓ backward, ← turn left, → turn right (turning changes which way Suzy faces).</li>
+          <li><strong>WASD:</strong> W forward, S backward, A sidestep left, D sidestep right (A/D do not turn Suzy).</li>
+          <li><strong>Hold W or ↑</strong> to build into a run (Shift also works). Both control schemes work while flying.</li>
+          <li><strong>suzyfly</strong> type it in any capitalization (no Enter) after clicking the scene. Type it again to land vertically where you are, if on walkable ground; repeat to cancel a landing. Hold the <strong>Space bar</strong> to ascend even while stationary; <strong>Q</strong> or <strong>Ctrl</strong> descends; <strong>Shift</strong> flies faster. Above buildings or water, move over a street or sidewalk before landing.</li>
           <li><strong>E / click</strong> interact</li>
           <li><strong>B / See Suzy</strong> switch between first-person and behind-Suzy; <strong>Face / Front</strong> and <strong>Back / Follow</strong> choose the film camera side</li>
           <li><strong>Entrance / Harbour / Rail-yard / Diagonal</strong> jump between safe Station East viewpoints, with no track access</li>
