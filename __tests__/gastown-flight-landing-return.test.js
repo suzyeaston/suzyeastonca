@@ -140,8 +140,8 @@ test('Landing returns via sixth-floor elevator and lobby before Water Street',()
     assert.ok(sim.includes("lab.stage==='"+stage+"'"),stage);
   assert.match(sim,/landingTravel\('return-lift',portal\.elevatorCar/);
   assert.match(sim,/landingTravel\('lobby-return',\{x:850,z:851\.6\}/);
-  assert.match(sim,/landingTravel\('street',outside,'Back on Water Street/);
-  assert.match(sim,/lab\.reentryBlockedUntil=nowSeconds\+8/);
+  assert.match(sim,/landingTravel\('street',outside,\s*'Exited The Landing through the glass doors/);
+  assert.match(sim,/lab\.reentryBlockedUntil=performance\.now\(\)\/1000\+5/);
   assert.match(sim,/lab\.outsideEscort\.visible=true/);
   assert.match(sim,/\['lift','riding','return-lift','riding-down'\]\.includes\(stage\)/);
   assert.match(places,/Sixth floor return elevator left open glass leaf/);

@@ -566,6 +566,30 @@
       const px=p.x+axis.x*offset,pz=p.z+axis.z*offset;
       addBox(THREE,root,'Steamworks outdoor patio frame',px,1.36,pz,0.14,2.7,0.14,frame);
     }
+    // Make the MML-facing sixth-floor row legible from SUZYFLY on the
+    // parking/harbour side of the Kelly-Douglas footprint. This is the
+    // northwest facade edge in the existing civic polygon, NOT an extra
+    // tower. No sign is added outside the real building.
+    const parkingA=pts[0],parkingB=pts[1];
+    const pDX=parkingB.x-parkingA.x,pDZ=parkingB.z-parkingA.z;
+    const pLen=Math.hypot(pDX,pDZ)||1;
+    const parkingYaw=Math.atan2(-pDZ,pDX);
+    const sixthGlass=new THREE.MeshStandardMaterial({
+      color:0x637f88,roughness:0.22,metalness:0.18,
+      transparent:true,opacity:0.79,side:THREE.DoubleSide
+    });
+    const frameStone=new THREE.MeshStandardMaterial({color:0xd8d6cc,roughness:0.86});
+    for(let bay=0;bay<7;bay++){
+      const t=(bay+0.5)/7,x=parkingA.x+pDX*t,z=parkingA.z+pDZ*t;
+      addBox(THREE,root,'The Landing sixth-floor harbour-facing MML window',
+        x,18.85,z,2.52,2.95,0.16,sixthGlass,parkingYaw);
+      addBox(THREE,root,'The Landing sixth-floor window centre mullion',
+        x,18.85,z,0.09,2.98,0.18,frameStone,parkingYaw);
+    }
+    addSegment(THREE,root,'The Landing sixth-floor exterior limestone sill',
+      parkingA,parkingB,17.32,0.14,frameStone);
+    root.userData.sixthFloorWindowsFace='Station East parking lot / Burrard Inlet';
+    root.userData.sixthFloorWindowCount=7;
     root.userData.provenance = landing.source;
     return root;
   }
@@ -684,13 +708,26 @@
     const denim=new THREE.MeshStandardMaterial({color:0x36536c,roughness:0.92}); // seated lab coder's trousers
     const skin=new THREE.MeshStandardMaterial({color:0xc99372,roughness:0.92});
     const green=new THREE.MeshStandardMaterial({color:0x3d614a,roughness:0.89});
+    const gold=new THREE.MeshStandardMaterial({color:0xbda16a,metalness:0.52,roughness:0.36});
+    const harbourRail=new THREE.MeshStandardMaterial({color:0x3d4c52,roughness:0.8});
+    const warehouseRoof=new THREE.MeshStandardMaterial({color:0x6c6660,roughness:0.96});
+    const distantBrick=new THREE.MeshStandardMaterial({color:0x9e655c,roughness:0.95});
     function cube(name,x,y,z,w,h,d,mat) {
       const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
       m.name=name;m.position.set(x,y,z);root.add(m);return m;
     }
     cube('Multimodal Lab sixth-floor timber floor',800,-0.16,800,16,0.3,20,oak);
     cube('Multimodal Lab pale left wall',792.1,3.7,800,0.28,7.4,20,cream);
-    cube('Multimodal Lab pale right wall',807.9,3.7,800,0.28,7.4,20,cream);
+    // Sixth-floor eastern glazing is needed to sight the Woodward's
+    // district; a 20m solid wall used to erase every skyline glimpse.
+    cube('Multimodal Lab east wall lower sill',807.9,0.57,800,0.28,1.14,20,cream);
+    for(const z of [791,797.5,804,809]){
+      cube('Multimodal Lab east white window pier',807.9,3.85,z,0.28,7.1,0.62,cream);
+    }
+    for(const z of [794.3,800.75,806.5]){
+      cube('Multimodal Lab east picture-window glazing',807.88,4.05,z,0.08,5.55,5.4,glass);
+    }
+    cube('Multimodal Lab east upper window lintel',807.9,7.12,800,0.3,0.43,20,cream);
     cube('Multimodal Lab entry wall',800,3.7,810,16,7.4,0.25,cream);
     cube('Multimodal Lab timber ceiling',800,7.35,800,16,0.26,20,oak);
     for(let z=791;z<=808;z+=2.1)cube('Multimodal Lab exposed wood ceiling beam',800,7.04,z,15.6,0.25,0.31,oak);
@@ -704,17 +741,46 @@
       {x:805.77,y:4.82,z:804.8},3.5,0.58,Math.PI/2,
       {background:'#f5f4f1',color:'#236ca2'});
     for(const z of [796,801,806])for(const x of [793.2,806.8])cube('Sixth floor gallery pilaster',x,3.65,z,0.44,7.3,0.5,wall);
-    cube('Window wall lower railing',800,0.6,790.1,16,1.15,0.24,cream);
-    cube('Panoramic North Shore view',800,4.3,790.08,15.2,5.8,0.03,blue);
-    // A graphical mountains-and-harbour silhouette, not a photo texture.
-    for(let i=0;i<8;i++)cube('North Shore mountain ridge silhouette',793+i*1.95,1.7+(i%3)*0.28,790.01,2.15,1.6+(i%3)*0.42,0.05,mountain);
-    cube('Burrard Inlet blue horizon',800,1.38,789.98,15.1,0.36,0.07,blue);
-    for(const x of [793,795,797,799,801,803,805,807]){
-      cube('Arched harbour window iron mullion',x,4.12,789.91,0.065,5.5,0.09,dark);
+    // Photo references show a bright sixth-floor venue overlooking the
+    // parking/rail yard and Burrard Inlet, not a flat blue "sea" pasted over
+    // the glass. The virtual MML is staged off-map so this is a PARALLAX
+    // skyline diorama behind the actual glazing, not a fake satellite model.
+    cube('Multimodal Lab north window pale low sill',800,0.56,790.04,16,1.12,0.28,cream);
+    cube('MML north sky over parking and Burrard Inlet',800,4.15,787.62,15.2,5.65,0.05,blue);
+    for(let i=0;i<8;i++){
+      const x=792.9+i*2.0;
+      cube('North Shore mountain ridge silhouette',
+        x,2.48+(i%3)*0.16,787.93,2.15,1.28+(i%3)*0.20,0.09,mountain);
     }
-    cube('Harbour window horizontal transom',800,4.4,789.89,15.1,0.09,0.12,dark);
-    cube('Window arch upper beam',800,7.02,789.89,15.0,0.18,0.14,dark);
-    cube('Window glazing',800,4,789.8,15,5.65,0.04,glass);
+    cube('Burrard Inlet blue horizon',800,1.98,788.36,15.2,0.77,0.09,blue);
+    cube('Waterfront quay / rail-yard dark horizon',800,1.48,788.68,15.2,0.12,0.12,harbourRail);
+    for(const x of [795.4,798.1,801.6,805.3]){
+      cube('Waterfront container crane near-vertical',x,2.2,788.38,0.08,1.3,0.09,harbourRail);
+      const boom=cube('Waterfront container crane angled boom',x+0.33,2.63,788.34,0.9,0.065,0.06,harbourRail);
+      boom.rotation.z=-0.48;
+    }
+    // Lower foreground looks down on parking and rails, with the harbour
+    // beyond; this matches the relationship in the user's flying views.
+    cube('Station East parking lot upper roofline',800,1.17,789.10,15.1,0.24,0.10,warehouseRoof);
+    for(let x=794;x<=806;x+=2.4){
+      cube('Station East parked cars seen from the MML',
+        x,1.02,789.17,1.2,0.11,0.12,harbourRail);
+    }
+    for(const x of [794,797,800,803,806]){
+      cube('North-facing sixth-floor large white window mullion',x,4.05,789.84,0.15,5.6,0.16,cream);
+    }
+    cube('North-facing sixth-floor transom',800,6.66,789.84,15.4,0.18,0.16,cream);
+    cube('North-facing sixth-floor window glazing',800,4.02,789.78,15.2,5.60,0.035,glass);
+
+    // Across the east-facing windows sits the Woodward's district. A slim
+    // distant mass and the sign are visible here rather than being pasted
+    // across the north-facing harbour vista.
+    cube("Woodward's district distant red-brick silhouette",809.45,3.5,798.4,
+      0.52,7.0,2.9,distantBrick);
+    cube("Woodward's district W sign steel mast",808.85,5.15,800.1,
+      0.24,1.22,0.22,harbourRail);
+    sign(THREE,root,'W', {x:808.73,y:5.77,z:800.1},0.43,0.45,
+      -Math.PI/2,{background:'#7b312e',color:'#f56e50'});
     for(const x of [795,805]) {
       cube('Multimodal Lab green indoor plant stalk',x,0.8,792.6,0.13,1.2,0.13,green);
       const leaves=new THREE.Mesh(new THREE.SphereGeometry(0.64,8,6),green);
@@ -772,6 +838,10 @@
     greeter.position.set(803.0,0,804.7);greeter.visible=false;root.add(greeter);
     // Return elevator is an explicit doorway back to the lobby, rather
     // than an impossible sixth-floor door that teleports directly outdoors.
+    cube('MML 6F green carpet elevator threshold',800,0.016,808.4,
+      3.0,0.025,2.4,green);
+    cube('Multimodal Lab wood ceiling pendant rail',800,6.82,801.3,
+      7.5,0.08,0.12,harbourRail);
     cube('Sixth floor return elevator left open glass leaf',799.37,1.65,809.83,1.06,3.3,0.1,glass);
     cube('Sixth floor return elevator right open glass leaf',800.63,1.65,809.83,1.06,3.3,0.1,glass);
     cube('Sixth floor elevator bronze header',800,3.38,809.83,3.15,0.22,0.18,gold);
@@ -781,6 +851,8 @@
     sign(THREE,root,'ELEVATOR DOWN TO WATER STREET',
       {x:800,y:2.05,z:809.59},3.8,0.29,0,{background:'#294744',color:'#f3e9c9'});
     root.userData.fictionalInterior=true;
+    root.userData.viewDirection='north-west over Station East parking, rail yard and harbour; east-side Woodwards';
+    root.userData.windowVistas=['parking','rail-yard','Burrard Inlet','North Shore','Woodwards east'];
     root.userData.greeter=greeter;
     return root;
   }
@@ -796,6 +868,9 @@
     const gold=new THREE.MeshStandardMaterial({color:0xb99855,metalness:0.58,roughness:0.3});
     const glass=new THREE.MeshStandardMaterial({color:0xb2d3d9,transparent:true,opacity:0.28,depthWrite:false,side:THREE.DoubleSide,roughness:0.16,metalness:0.02});
     const tile=new THREE.MeshStandardMaterial({color:0x89745e,roughness:0.79});
+    const carpet=new THREE.MeshStandardMaterial({color:0x315946,roughness:1});
+    const foliage=new THREE.MeshStandardMaterial({color:0x446b4b,roughness:0.95});
+    const planter=new THREE.MeshStandardMaterial({color:0x49483c,roughness:0.82});
     // The vestibule and floor display both use this dark stone. A missing
     // material here used to throw before Station East and the lot were rendered.
     const dark=new THREE.MeshStandardMaterial({color:0x222a2f,roughness:0.48});
@@ -807,18 +882,54 @@
     block('The Landing lobby stone floor',850,-0.13,850,16,0.24,20,tile);
     block('The Landing cream lobby west wall',842,3.3,850,0.2,6.6,20,cream);
     block('The Landing cream lobby east wall',858,3.3,850,0.2,6.6,20,cream);
-    block('The Landing lobby north back wall',850,3.3,840,16,6.6,0.2,cream);
+    // Reference photos and building history show daylight through large
+    // glass panels toward Vancouver Harbour at the end of the lobby.
+    block('The Landing lobby north wall west pier',844.2,3.3,840,4.4,6.6,0.2,cream);
+    block('The Landing lobby north wall east pier',855.8,3.3,840,4.4,6.6,0.2,cream);
+    block('The Landing lobby north wall upper lintel',850,5.65,840,7.2,1.9,0.2,cream);
+    block('The Landing north harbour-facing lobby window',850,2.4,839.95,7.1,4.8,0.09,glass);
+    for(const x of [847.8,850,852.2]){
+      block('The Landing harbour window dark mullion',x,2.4,839.88,0.09,4.75,0.11,metal);
+    }
     // Split the lobby south wall around the central 3.6m entrance, with a lintel
     // above it; the former full-width wall literally sealed the doors.
     block('The Landing entrance wall west wing',845.7,3.3,860,7.4,6.6,0.2,stone);
     block('The Landing entrance wall east wing',854.3,3.3,860,7.4,6.6,0.2,stone);
     block('The Landing entrance lintel above door',850,5.1,860,3.6,3.0,0.2,stone);
     block('The Landing ceiling',850,6.65,850,16,0.22,20,cream);
+    // The actual 375 Water reference has dark glass doors, a long green
+    // carpet and warm brass "THE LANDING 375" lettering above the entry.
+    // Thin separated layers avoid depth-fighting with the stone floor.
+    block('The Landing green carpet entrance runner',850,0.015,856.4,2.85,0.028,6.4,carpet);
+    block('The Landing entrance green doormat',850,0.031,858.95,3.5,0.029,1.2,carpet);
+    for(const x of [847.6,852.4]){
+      block('The Landing indoor potted foliage ceramic planter',x,0.4,856.15,
+        0.72,0.8,0.72,planter);
+      const plant=new THREE.Mesh(new THREE.SphereGeometry(0.59,8,6),foliage);
+      plant.name='The Landing lobby green reception plant';
+      plant.position.set(x,1.24,856.15);root.add(plant);
+    }
+    for(const z of [847.5,853.2]){
+      block('The Landing warm pendant fixture',850,5.9,z,2.7,0.13,0.18,
+        new THREE.MeshBasicMaterial({color:0xffedcc}));
+    }
     // The ground floor entry deliberately looks back toward Water Street.
     const entranceLeft=block('Glass main entrance left hinged door',848.68,1.76,859.85,0.95,3.5,0.09,glass);
     const entranceRight=block('Glass main entrance right hinged door',851.32,1.76,859.85,0.95,3.5,0.09,glass);
-    // No central stile: the pair is already fully opened to invite Suzy in.
-    for(const side of [-1,1])block('Main door brass pull',850+side*1.32,1.44,859.59,0.04,0.52,0.08,gold);
+    // Side-hinged glass panels are held open, with brass pulls. Keep a
+    // 1.65m gap at x=850 so the doorway actually reads as traversable.
+    for(const side of [-1,1]){
+      block('The Landing bronze vestibule vertical door frame',850+side*1.74,1.9,859.89,
+        0.09,3.8,0.13,metal);
+      block('Main door brass pull',850+side*1.32,1.44,859.59,0.04,0.52,0.08,gold);
+    }
+    block('The Landing glazed vestibule horizontal transom',850,3.66,859.82,
+      3.62,0.10,0.14,metal);
+    block('The Landing interior 375 etched brass entrance lintel',850,3.95,859.75,
+      5.6,0.30,0.18,gold);
+    sign(THREE,root,'375   THE LANDING   375',
+      {x:850,y:4.16,z:859.48},5.4,0.43,0,
+      {background:'#9e844e',color:'#f3edc9'});
     block('Reception desk',854,1.04,853,3.6,1.1,1.0,stone);
     block('Reception desk brass trim',854,1.61,853.45,3.6,0.10,0.13,gold);
     // Lift on player-left as they walk inward (negative X at X=845).
@@ -834,6 +945,11 @@
       {x:850,y:4.7,z:859.48},4.9,0.43,0,{background:'#3a4140',color:'#f4e6be'});
     sign(THREE,root,'LIFTS  ⇦',
       {x:848,y:3.55,z:857.7},2.2,0.44,0,{background:'#3c4243',color:'#f7e7bf'});
+    // The visible EXIT sign is paired with a gameplay trigger. It is
+    // navigable from lobby, escort and return-lobby, not only after lift.
+    sign(THREE,root,'EXIT TO WATER STREET  ↓',
+      {x:850,y:3.2,z:859.45},3.2,0.34,0,
+      {background:'#244c39',color:'#e1f3d9'});
     // This is the same model cloned later for the outdoor first greeting.
     const kk=createKrisAvatar(THREE);
     kk.name='KK fictional lobby escort';
@@ -854,7 +970,10 @@
       entranceLeft,entranceRight,liftLeft,liftRight,carLeft,carRight,
       entranceLeftX:entranceLeft.position.x,entranceRightX:entranceRight.position.x,
       liftLeftZ:liftLeft.position.z,liftRightZ:liftRight.position.z,
-      carLeftX:carLeft.position.x,carRightX:carRight.position.x};
+      carLeftX:carLeft.position.x,carRightX:carRight.position.x,
+      exitDoor:{x:850,z:858.25},entranceWalkway:{x:850,z:856.4},
+      floorTreatment:'heritage stone with green 375 Water entry carpet',
+      exteriorSightline:'harbour-facing north lobby glazing'};
     return root;
   }
 

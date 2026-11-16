@@ -13,7 +13,8 @@ test('The Landing corner portal is anchored to the real Water Street frontage',(
  assert.match(source,/function landingEntranceFor\(world\)/);
  assert.match(source,/const a=pts\[6\],b=pts\[7\]/);
  assert.match(source,/The Landing sidewalk barrel canopy curved iron rib/);
- assert.match(source,/The Landing paired glass door mullion/);
+ assert.match(source,/The Landing double-door brass pull handle/);
+ assert.doesNotMatch(source,/The Landing paired glass door mullion/);
  assert.match(source,/The Landing translucent overhead canopy glazing/);
  assert.match(source,/entrancePane.renderOrder=4/);
  const a=world.landing.footprint[6],b=world.landing.footprint[7];
@@ -26,14 +27,15 @@ test('The Landing corner portal is anchored to the real Water Street frontage',(
 
 test('sixth floor is a bounded fictional playable interior, with visible exit and KK dialogue',()=>{
  assert.match(source,/function createLabInterior\(THREE\)/);
- for(const marker of ['fictionalInterior=true','Sixth floor','North Shore mountain ridge silhouette','Black grand piano body','KK stylized portrait head','KK denim jacket','Exit to Water Street door']) {
+ for(const marker of ['fictionalInterior=true','Sixth floor','North Shore mountain ridge silhouette','Black grand piano body','KK rectangular eyeglass upper rim','KK open grey sleeveless vest front','ELEVATOR DOWN TO WATER STREET']) {
   assert.ok(source.includes(marker),marker);
  }
  assert.match(sim,/function interactWithLanding\(\)/);
  assert.match(sim,/function updateLandingHint\(\)/);
  assert.match(sim,/state\.landingLab\.inside/);
- assert.match(sim,/if \(state\.landingLab\.inside && interactWithLanding\(\)\)/);
- assert.match(sim,/player\.position\.x=Math\.max\(792\.75/);
+  assert.match(sim,/if \(state\.landingLab\.inside\) \{/);
+  assert.match(sim,/if\(!interactWithLanding\(\)\)/);
+ assert.match(sim,/minX:792\.75,maxX:807\.25,minZ:791\.1,maxZ:809\.25/);
  const dialog=JSON.parse(read('assets/dialog/gastown.json')).kk_lab_greeter;
  assert.ok(dialog&&dialog.lines.length>=2);
  assert.match(dialog.lines.join(' '),/imaginary Multimodal Lab/);
