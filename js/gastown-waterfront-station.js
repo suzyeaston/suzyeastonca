@@ -824,10 +824,12 @@
 
   function platformCommutersFor(world) {
     if (!world || !world.spawn) return [];
+    // The original illustrative long platform overlaps the rear heritage
+    // footprint at its western end; use only the clear east boarding apron.
     const patrols = [
-      [[-13,-9.0],[-9,-9.5],[-4,-9.1]],
-      [[7,-9.9],[13,-9.8],[18,-10.2]],
-      [[-28,-9.7],[-21,-9.5],[-17,-9.2]]
+      [[8,-9.3],[12,-9.5],[18,-9.1]],
+      [[23,-10.2],[29,-10.0],[33,-10.3]],
+      [[4,-11.1],[7,-10.7],[11,-10.9]]
     ];
     return patrols.map((patrol,index)=>({
       id:'waterfront-wce-platform-commuter-'+index,
