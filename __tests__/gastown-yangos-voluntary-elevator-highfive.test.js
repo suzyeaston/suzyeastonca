@@ -184,7 +184,7 @@ test('Yangos and security guard are actual distinct lightweight NPCs',()=>{
  assert.ok(lobby.userData.securityGuard);
  assert.ok(lobby.userData.securityHighFiveArm);
  assert.ok(lobbyMeshes.includes('Security guard raised high-five hand'));
- assert.ok(descendants(lab).length<270);
+ assert.ok(descendants(lab).length<350,'Film Club audience and display remain a bounded 8 GB scene');
  assert.doesNotMatch(sim,/taps Yangos on the shoulder/);
  assert.ok(descendants(lobby).length<240);
  assert.match(sim,/if\(lab\.stage==='lobby-return'&&highFiveLandingGuard\(\)\)/);

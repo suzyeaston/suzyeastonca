@@ -136,7 +136,7 @@ test('sixth floor builds without ReferenceError and has both harbour and Woodwar
   assert.ok(named(lab,n).length,n);
  }
  assert.equal(lab.userData.windowVistas.length,5);
- assert.ok(objects(lab).length<270,'including existing coder and KK avatars, preserve the 8 GB low-poly budget');
+ assert.ok(objects(lab).length<350,'including seated attendees, live screen, coder, KK and Yangos: 8 GB low-poly budget');
 });
 
 test('exterior Landing contains real-footprint sixth-floor harbour windows above the parking',()=>{

@@ -87,6 +87,110 @@
   }
 
 
+
+  // An ORIGINAL procedural animation, never a borrowed screening or a network
+  // video. One 512x288 CanvasTexture updates at ~12fps while Suzy is in MML.
+  // Inspired by the Clear LED wall used at BC + AI Film Club, per public
+  // August 2026 recap and Michelle Diamond's June screening photography.
+  // Render-time work is constant regardless of audience count.
+  function createFilmClubVisual(THREE,root){
+    if(!window.document||!window.document.createElement)return null;
+    const canvas=window.document.createElement('canvas');
+    canvas.width=512;canvas.height=288;
+    const ctx=canvas.getContext&&canvas.getContext('2d');
+    if(!ctx)return null;
+    const texture=new THREE.CanvasTexture(canvas);
+    texture.colorSpace=THREE.SRGBColorSpace;
+    const display=new THREE.Mesh(new THREE.PlaneGeometry(7.04,3.69),
+      new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide,toneMapped:false}));
+    display.name='BC + AI Film Club live generative animation on Clear LED style wall';
+    display.position.set(792.58,4.09,799.9);
+    display.rotation.y=Math.PI/2; // the west wall faces the audience to the east
+    root.add(display);
+    const playhead={canvas,texture,display,lastFrame:-Infinity,frames:0};
+    const W=512,H=288,TAU=Math.PI*2;
+    playhead.draw=function(seconds){
+      if(!Number.isFinite(seconds))return false;
+      if(seconds-playhead.lastFrame<1/12&&seconds>=playhead.lastFrame)return false;
+      playhead.lastFrame=seconds;playhead.frames++;
+      const t=seconds*.62;
+      ctx.fillStyle='#060415';ctx.fillRect(0,0,W,H);
+      // Soft ultramarine/ultraviolet light spilling from one imagined vortex.
+      for(let y=0;y<H;y+=8){
+        const horizon=Math.sin(y*.017+t*.52)*.5+.5;
+        const r=Math.round(11+12*horizon),g=Math.round(7+9*horizon);
+        const b=Math.round(33+32*horizon);
+        ctx.fillStyle='rgb('+r+','+g+','+b+')';
+        ctx.fillRect(0,y,W,8);
+      }
+      const cx=W*(.51+.095*Math.sin(t*.29));
+      const cy=H*(.49+.085*Math.cos(t*.35));
+      if(typeof ctx.createRadialGradient==='function'){
+        const haze=ctx.createRadialGradient(cx,cy,10,cx,cy,218);
+        haze.addColorStop(0,'rgba(236,41,176,.54)');
+        haze.addColorStop(.35,'rgba(64,74,242,.36)');
+        haze.addColorStop(1,'rgba(2,6,28,0)');
+        ctx.fillStyle=haze;ctx.fillRect(0,0,W,H);
+      }
+      // Layered organic spectral ribbons, nested like hand-directed
+      // AI motion-graphics; no generated film is copied or streamed.
+      if(typeof ctx.beginPath==='function'&&typeof ctx.bezierCurveTo==='function'){
+        for(let band=0;band<9;band++){
+          const phase=t*.54+band*.63;
+          const ox=band*7.5,swirl=Math.sin(phase)*33;
+          ctx.beginPath();
+          ctx.moveTo(-28,cy+Math.sin(phase)*86);
+          ctx.bezierCurveTo(cx-133+swirl,cy-165+ox,
+            cx+144-Math.cos(phase)*72,cy+185-ox,
+            W+30,cy+Math.cos(phase+.9)*100);
+          ctx.lineWidth=3+(band%4)*2;
+          ctx.strokeStyle=['rgba(34,242,232,.73)','rgba(236,63,178,.66)',
+            'rgba(145,99,255,.62)','rgba(251,170,93,.50)'][band%4];
+          ctx.stroke();
+        }
+        for(let ring=0;ring<11;ring++){
+          const r=15+ring*11+Math.sin(t*1.4+ring)*5;
+          ctx.beginPath();
+          if(typeof ctx.ellipse==='function')ctx.ellipse(cx,cy,r*1.48,r*.82,
+            t*.14+ring*.24,0,TAU);
+          else if(typeof ctx.arc==='function')ctx.arc(cx,cy,r,0,TAU);
+          ctx.lineWidth=ring%3===0?2.6:1.15;
+          ctx.strokeStyle='hsla('+((ring*28+t*31)%360)+',98%,73%,.52)';
+          ctx.stroke();
+        }
+      }
+      // Twinkling micrograins: fast, bounded drawing even on 8GB laptops.
+      for(let i=0;i<68;i++){
+        const x=(i*97+Math.sin(t*.37+i*2)*23+1024)%W;
+        const y=(i*47+Math.cos(t*.6+i)*17+576)%H;
+        const glint=.14+.45*(.5+.5*Math.sin(t*2.3+i));
+        ctx.fillStyle='rgba(212,244,255,'+glint.toFixed(3)+')';
+        ctx.fillRect(x,y,(i%5===0?2.5:1.1),1.2);
+      }
+      // Branded event framing, not a real-world film or claimed recording.
+      if(typeof ctx.fillText==='function'){
+        ctx.textBaseline='top';ctx.textAlign='left';
+        ctx.font='700 17px monospace';
+        ctx.fillStyle='rgba(238,245,255,.90)';
+        ctx.fillText('BC + AI  /  FILM CLUB',22,19);
+        ctx.font='11px monospace';
+        ctx.fillStyle='rgba(168,227,243,.72)';
+        ctx.fillText('ORIGINAL GENERATIVE VISUAL  ·  IN THE ROOM',22,43);
+        ctx.fillStyle='rgba(200,200,238,.70)';
+        ctx.fillText('LATENT GARDEN   /   MOTION STUDY 001',22,H-25);
+      }
+      texture.needsUpdate=true;
+      return true;
+    };
+    playhead.draw(0);
+    return playhead;
+  }
+  function animateFilmClub(root,seconds){
+    const screen=root&&root.userData&&root.userData.filmClubScreen;
+    if(!root||!root.visible||!screen||!screen.draw)return false;
+    return screen.draw(seconds);
+  }
+
   // The Cordova-side edge [0,1] is the open driveway. Edges 3-5 face the
   // working waterfront. These are intentionally representative outlines,
   // shared by drawing, movement and the fence-view preset.
@@ -755,8 +859,17 @@
       new THREE.MeshBasicMaterial({color:0xfff5db}));
     for(const x of [795.5,804.5])for(const z of [798,805])cube('Multimodal Lab white timber support column',
       x,3.2,z,0.25,6.4,0.25,cream);
-    cube('Multimodal Lab glowing media wall',805.9,3.3,802.2,0.15,2.3,3.9,
-      new THREE.MeshBasicMaterial({color:0x327cae}));
+    // Clear LED's big display is the photographic centrepiece of monthly
+    // BC + AI Film Club screenings, not a small static blue rectangle.
+    const ledFrame=new THREE.MeshStandardMaterial({color:0x11151e,roughness:0.32,metalness:0.55});
+    const ledEdge=new THREE.MeshBasicMaterial({color:0x795dd0});
+    cube('Film Club black Clear LED style screen enclosure',792.35,4.09,799.9,0.27,4.08,7.35,ledFrame);
+    cube('Film Club LED wall thin top violet light strip',792.53,6.12,799.9,0.08,0.055,7.34,ledEdge);
+    cube('Film Club LED wall thin bottom light strip',792.53,2.06,799.9,0.08,0.055,7.34,ledEdge);
+    const filmClubScreen=createFilmClubVisual(THREE,root);
+    root.userData.filmClubScreen=filmClubScreen;
+    root.userData.filmClubVenue='BC + AI Film Club at the Multimodal Media Lab';
+    root.userData.filmClubSource='BC + AI August Film Club recap: Clear LED wall; June Michelle Diamond audience photos';
     sign(THREE,root,'MML  ·  Multimodal Media Lab',
       {x:805.77,y:4.82,z:804.8},3.5,0.58,Math.PI/2,
       {background:'#f5f4f1',color:'#236ca2'});
@@ -812,11 +925,97 @@
     cube('Piano keyboard',799.5,1.03,796.2,1.75,0.08,0.36,cream);
     for(const x of [797.5,799.5])for(const z of [794.35,795.8])cube('Grand piano leg',x,0.47,z,0.12,0.85,0.14,dark);
     cube('Lab communal workshop table',801,0.96,802,4.7,0.16,2.4,wood);
-    for(let i=0;i<4;i++){
-      const x=795.1+i*2.35;
-      cube('Multimodal Lab gathering cocktail table '+i,x,1.09,799.9,0.85,0.09,0.85,cream);
-      cube('Multimodal Lab gathering table support '+i,x,0.57,799.9,0.075,1.04,0.075,dark);
+    // Move networking high-tops away from the audience sightlines and
+    // entrance route. Workshop table + creative coder remain at the side.
+    for(const [i,x,z] of [[0,794.1,805.8],[1,805.8,801.1]]){
+      cube('Multimodal Lab gathering cocktail table '+i,x,1.09,z,0.85,0.09,0.85,cream);
+      cube('Multimodal Lab gathering table support '+i,x,0.57,z,0.075,1.04,0.075,dark);
     }
+    // Film Club in June photographed a seated audience facing a screen,
+    // presenter and laptop demo station. A few people remain standing
+    // around the back, like a community meetup rather than a cinema.
+    const chairMetal=new THREE.MeshStandardMaterial({color:0x343943,metalness:0.24,roughness:0.6});
+    const chairSeat=new THREE.MeshStandardMaterial({color:0x263144,roughness:0.9});
+    const audienceSkin=[
+      new THREE.MeshStandardMaterial({color:0xc99372,roughness:0.93}),
+      new THREE.MeshStandardMaterial({color:0x8f604c,roughness:0.93}),
+      new THREE.MeshStandardMaterial({color:0xe3be96,roughness:0.93})];
+    const audienceTops=['0x38677b','0x765384','0x9c5b55','0x456451'].map(v=>
+      new THREE.MeshStandardMaterial({color:Number(v),roughness:0.9}));
+    const seatedAudience=[];
+    // 3 rows, three seats each. All face the west-wall LED screen; the
+    // aisle to the return elevator (x ~800, z >806) stays open.
+    for(const [rowIndex,x] of [797.2,799.0,801.0].entries()){
+      for(const [columnIndex,z] of [795.05,797.15,799.2].entries()){
+        const chair=new THREE.Group();
+        chair.name='BC + AI Film Club audience chair';
+        chair.position.set(x,0,z);chair.rotation.y=Math.PI/2;
+        root.add(chair);
+        function seatPart(name,px,py,pz,w,h,d,material){
+          const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+          m.name=name;m.position.set(px,py,pz);chair.add(m);return m;
+        }
+        seatPart('Film Club chair seat',0,0.54,0,0.73,0.11,0.67,chairSeat);
+        seatPart('Film Club chair back',0,1.00,0.31,0.76,0.95,0.11,chairSeat);
+        for(const dx of [-0.25,0.25])
+          seatPart('Film Club chair leg',dx,0.26,0.18,0.055,0.51,0.055,chairMetal);
+        const person=new THREE.Group();
+        person.name='BC + AI Film Club seated attendee';
+        chair.add(person);
+        const index=rowIndex*3+columnIndex;
+        const shirt=audienceTops[index%audienceTops.length];
+        seatPart('Film Club attendee seated jacket',0,1.16,-0.02,0.54,0.69,0.37,shirt);
+        seatPart('Film Club attendee bent knees',0,0.59,-0.32,0.55,0.23,0.61,chairMetal);
+        const face=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,6),
+          audienceSkin[index%audienceSkin.length]);
+        face.name='Film Club attentive audience face';
+        face.position.set(0,1.72,-0.08);person.add(face);
+        seatedAudience.push(chair);
+      }
+    }
+    // Small share-out cluster from the June event photographs. These are
+    // deliberately generic stylizations, NOT identifiable real attendees.
+    const standingAttendees=[];
+    for(const [index,x,z] of [[0,794.4,805.3],[1,796.0,806.5],[2,805.65,793.9]]){
+      const attendee=new THREE.Group();
+      attendee.name=index===0?'BC + AI Film Club fictional presenter':'BC + AI Film Club standing attendee';
+      attendee.position.set(x,0,z);
+      attendee.rotation.y=-Math.PI/3;
+      root.add(attendee);
+      const top=audienceTops[(index+1)%audienceTops.length];
+      function attendeePart(name,px,py,pz,w,h,d,material){
+        const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+        m.name=name;m.position.set(px,py,pz);attendee.add(m);
+      }
+      attendeePart('Film Club standing participant top',0,1.35,0,0.65,0.82,0.4,top);
+      for(const dx of [-0.17,0.17])
+        attendeePart('Film Club standing participant leg',dx,0.52,0,0.25,1.03,0.3,chairMetal);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.24,8,6),
+        audienceSkin[(index+1)%audienceSkin.length]);
+      head.name='Film Club standing participant head';
+      head.position.set(0,1.96,0);attendee.add(head);
+      standingAttendees.push(attendee);
+    }
+    root.userData.filmClubStanding=standingAttendees;
+    // Real meetups feature workflow discussions and presenter share-outs
+    // alongside screening time, not a row of identical anonymous seats.
+    cube('Film Club presenter demo station',794.2,1.01,804.1,1.4,0.1,0.7,wood);
+    cube('Film Club demo station slim stand',794.2,0.52,804.1,0.08,0.95,0.10,chairMetal);
+    cube('Film Club presenter laptop shell',794.2,1.38,804.25,0.95,0.64,0.075,dark);
+    cube('Film Club presenter live workflow laptop display',794.2,1.39,804.20,0.78,0.48,0.013,
+      new THREE.MeshBasicMaterial({color:0x5e64cb}));
+    cube('Film Club floor microphone pole',794.0,0.92,803.4,0.055,1.82,0.055,chairMetal);
+    cube('Film Club floor microphone',794.0,1.86,803.38,0.11,0.13,0.17,dark);
+    sign(THREE,root,'BC + AI  /  FILM CLUB',
+      {x:792.65,y:6.54,z:800.0},3.0,0.36,Math.PI/2,
+      {background:'#24213f',color:'#d6d5ff'});
+    const filmClubLight=new THREE.MeshBasicMaterial({color:0x6346a7,transparent:true,opacity:0.38,depthWrite:false});
+    for(const z of [795.6,803.5]){
+      cube('Film Club violet uplight at front wall',793.0,0.08,z,0.16,0.16,0.46,
+        new THREE.MeshBasicMaterial({color:0xb65af5}));
+      cube('Film Club subtle violet floor spill',793.3,0.018,z,1.28,0.015,0.77,filmClubLight);
+    }
+    root.userData.filmClubAudience=seatedAudience;
     // Photos of the actual venue show a bright event space with exposed
     // timber ceiling, white pillars, daylight windows and blue MML brand.
     // This is a fictionalized walkthrough, not an actual surveyed floorplan.
@@ -1120,5 +1319,5 @@
     return group;
   }
 
-  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, createLandingJourney, createKrisAvatar, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
+  window.GastownWaterfrontPlaces=Object.freeze({ reference:REFERENCE, create, createParking, createLanding, createLabInterior, createLandingJourney, animateFilmClub, createKrisAvatar, landingEntranceFor, inPolygon, isWalkableLot, entranceFor, lookoutFor, parkingCars });
 })(window);

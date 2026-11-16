@@ -8111,6 +8111,13 @@
         if (!state.landingLab.inside) maybeSpeakNearNpc(time / 1000);
         updateSteamClock(delta, time / 1000);
         if(state.isRunning)updateLandingEscort(delta,time/1000);
+        // Animate the original Film Club visual only while the sixth-floor
+        // room is in view. One throttled 512x288 texture, never a video
+        // decoder, external media request, or new frame-by-frame mesh.
+        if(state.landingLab.stage==='lab' && state.landingLab.roomRoot &&
+            waterfrontPlaces && typeof waterfrontPlaces.animateFilmClub==='function'){
+          waterfrontPlaces.animateFilmClub(state.landingLab.roomRoot,time/1000);
+        }
         updateProgressiveVisibility();
         if(!state.landingLab.inside)updateNpcs(delta);
         if (streetLifeScene) streetLifeScene.update(time / 1000);
