@@ -7039,12 +7039,12 @@
     const fly=state.flight;
     flightTipEl.dataset.flying=String(!!fly.enabled);
     flightTipEl.textContent=fly.landing
-      ? '✈ Descending here… type suzyfly to cancel'
+      ? '✈ Descending here… type SUZYFLY to cancel'
       : fly.unsafeLandingNotice
-        ? '✈ Move above a street or sidewalk before landing · Q descends'
+        ? '✈ Flying! Hold SPACE BAR to rise · Q/Ctrl to descend · move above a street or sidewalk to land'
         : fly.enabled
-          ? '✈ Flying · Space up (even while still) · Q down · type suzyfly to land here'
-          : '✈ Type suzyfly (any case, no Enter) · Space up · Q down · type again to land';
+          ? '✈ Flying! Hold SPACE BAR to ascend · Q/Ctrl to descend · type SUZYFLY again to land here'
+          : '✈ Type SUZYFLY (any case, no Enter) to fly · hold SPACE BAR to ascend · Q/Ctrl to descend';
   }
 
   function finishFlightLanding() {
