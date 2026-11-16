@@ -831,13 +831,16 @@
       [[23,-10.2],[29,-10.0],[33,-10.3]],
       [[4,-11.1],[7,-10.7],[11,-10.9]]
     ];
-    return patrols.map((patrol,index)=>({
-      id:'waterfront-wce-platform-commuter-'+index,
-      role:'commuter',behavior:'route_walk',
-      dialogId:'pedestrian_route_tip',
-      silhouetteScale:0.87+index*0.03,interactRadius:1.8,
-      idleSpot:patrol[0],patrol,yaw:0.4
-    }));
+    return patrols.map((route,index)=>{
+      const patrol=route.map(([x,z])=>({x,z}));
+      return {
+        id:'waterfront-wce-platform-commuter-'+index,
+        role:'commuter',behavior:'route_walk',
+        dialogId:'pedestrian_route_tip',
+        silhouetteScale:0.87+index*0.03,interactRadius:1.8,
+        idleSpot:patrol[0],patrol,yaw:0.4
+      };
+    });
   }
 
   window.GastownWaterfrontStation = Object.freeze({
