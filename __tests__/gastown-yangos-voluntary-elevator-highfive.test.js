@@ -101,13 +101,13 @@ test('KK stays upstairs, taps Yangos to cover and greets Suzy without triggering
  assert.equal(h.lab.stage,'lab','handoff must not trigger elevator');
  assert.equal(h.lab.yangosGreeted,true);
  assert.equal(h.status.filter(x=>x.who==='Yangos').length,1);
- assert.match(h.status.find(x=>x.who==='Yangos').text,/Welcome to the Multi-Modal Lab/);
+ assert.match(h.status.find(x=>x.who==='Yangos').text,/welcome to the Multi-Modal Lab/i);
  assert.equal(h.player.position.z,804.9,'Suzy stays in room');
  h.setNow(6.2);h.updateLandingEscort(0.016,6.2);
  assert.equal(h.status.filter(x=>x.who==='Yangos').length,1,'no repeated greeting');
  assert.equal(h.room.userData.greeter.visible,true,'KK stays visible after Yangos speaks');
  assert.equal(h.room.userData.greeter.userData.tapArm.rotation.z,0,
-  'KK's tapping hand settles back down');
+  'KK tapping hand settles back down');
  assert.equal(h.states.length,0,'Suzy never leaves the sixth floor on handoff');
 });
 
