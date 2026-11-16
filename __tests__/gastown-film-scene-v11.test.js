@@ -33,7 +33,9 @@ test('Station East creates moving road and parking traffic without placeholder p
   assert.equal(buses.length, 2);
   assert.equal(cars.length, 4);
   assert.equal(lotCars.length, 1);
-  assert.equal(scene.root.children.length, 8, 'traffic, parking arrival, and Harbour Centre bus stop');
+  assert.equal(scene.root.children.length, 11,
+    'Cordova traffic, Harbour Centre stop, and three separate Water Street cars');
+  assert.equal(scene.root.children.filter(node=>/Water Street one-way westbound car/.test(node.name)).length,3);
   assert.ok(scene.root.children.some(node => node.name === 'Harbour Centre eastbound bus stop'));
   const before = cars.map(car => [car.position.x,car.position.z]);
   const lotBefore = [lotCars[0].position.x,lotCars[0].position.z];
