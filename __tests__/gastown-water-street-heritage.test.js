@@ -161,3 +161,26 @@ test('Water and Cambie no longer ends in a void, with mapped corner shop frontag
   assert.ok(g.children.some(n=>n.name.endsWith('ground-floor shop window')));
  }
 });
+
+
+test('Clock intersection paving is layered to avoid coplanar flicker; no blank cream wall',()=>{
+ const s=scene();
+ const intersection=s.children.find(x=>x.name==='Water and Cambie open brick intersection');
+ assert.ok(intersection);
+ const heights=intersection.children.map(x=>x.position.y);
+ assert.ok(heights.every(Number.isFinite));
+ assert.ok(heights.every(y=>y>=0.071 && y<=0.134));
+ assert.deepEqual(Array.from(intersection.userData.nonCoplanarSurfaceLevels),
+  [0.071,0.081,0.108,0.134]);
+ const mainRoad=nodes(s).find(x=>x.name==='Water Street brick roadway / historic paver lane');
+ assert.ok(mainRoad);
+ assert.ok(heights.every(y=>Math.abs(y-mainRoad.position.y)>0.008));
+ const corners=s.children.find(x=>x.name==='Water and Cambie feature-aligned heritage corner shops');
+ assert.ok(corners);
+ for(const facade of corners.children){
+  assert.equal(facade.userData.opaqueFullHeightOverlay,false);
+  assert.equal(facade.userData.facadeSides,2);
+  assert.equal(facade.children.filter(n=>n.name.endsWith('warm heritage pier base')).length,0);
+  assert.equal(facade.children.filter(n=>n.name.endsWith('ground-floor shop window')).length>0,true);
+ }
+});
