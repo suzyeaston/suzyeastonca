@@ -702,7 +702,8 @@
         'KK forearm geometric tattoo','KK turquoise wrist bracelet','KK hand'
       ].includes(part.name));
     for(const part of rightArmParts){
-      avatar.remove(part);
+      if(typeof avatar.remove==='function')avatar.remove(part);
+      else avatar.children.splice(avatar.children.indexOf(part),1);
       tapArm.add(part);
       part.position.x-=0.48;
       part.position.y-=1.56;
