@@ -282,7 +282,7 @@
       // Instancing is essential: 35 balconies cost ONE draw call on a small
       // MacBook, instead of 35 expensive standalone meshes.
       const balconySlab=new THREE.CylinderGeometry(2.25,2.25,0.18,12,1,
-        false,-Math.PI*0.12,Math.PI*1.20);
+        0,-Math.PI*0.12,Math.PI*1.20);
       if(THREE.InstancedMesh&&THREE.Object3D){
         const floors=35;
         const stack=new THREE.InstancedMesh(balconySlab,balcony,floors);
