@@ -24,6 +24,7 @@ get_header();
           <p>You're Suzy. This is your playable Vancouver. Click in and move.</p>
           <p>The corridor is tuned as a focused two-block walk: Waterfront threshold, Water Street rhythm, Steam Clock corner, and Maple Tree Square edge.</p>
           <p>Click the 3D scene to capture your mouse. <strong>Press Esc at any time to release it</strong> and use the page normally. W/A/S/D moves, mouse looks around, E interacts.</p>
+          <p>Want to fly? Type <strong>suzyfly</strong> during gameplay. Type <strong>suzyfly</strong> again to return to the Station East parking lot. In flight, use Space to rise and Ctrl to descend.</p>
         </div>
         <div class="gastown-dialog-actions">
           <button type="button" class="pixel-button secondary" data-action="tutorial-start" aria-label="Start the simulator tutorial">Start walk</button>
@@ -57,6 +58,7 @@ get_header();
         <span class="gastown-pointer-help-escape">ESC = RELEASE MOUSE</span>
         <button type="button" data-action="sim-release-pointer" class="gastown-release-pointer" aria-label="Release simulator mouse pointer">Release mouse</button>
       </div>
+      <p class="gastown-flight-tip" data-sim-flight-tip aria-live="polite">✈ Want to fly? Type <kbd>suzyfly</kbd> · type it again to land at Station East</p>
       <button type="button" class="gastown-photo-button" data-action="scene-photo"
         aria-label="Save a PNG photo of the current Gastown camera view" title="Save a clean PNG of the 3D view (P)">📸 Take photo</button>
       <button type="button" class="gastown-local-ambience" data-action="local-ambience-toggle"
@@ -142,6 +144,7 @@ get_header();
           <li><strong>P / Take photo</strong> save a clean PNG of the current 3D camera, without menus</li>
           <li><strong>W / ↑</strong> hold to run (Shift still works)</li>
           <li><strong>A S D + arrows</strong> move / turn</li>
+          <li><strong>SUZYFLY</strong> type the word while playing to fly; type <strong>SUZYFLY</strong> again to land at Station East. Space rises, Ctrl descends, Shift flies faster.</li>
           <li><strong>E / click</strong> interact</li>
           <li><strong>B / See Suzy</strong> switch between first-person and behind-Suzy; <strong>Face / Front</strong> and <strong>Back / Follow</strong> choose the film camera side</li>
           <li><strong>Entrance / Harbour / Rail-yard / Diagonal</strong> jump between safe Station East viewpoints, with no track access</li>

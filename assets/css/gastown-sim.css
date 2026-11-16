@@ -527,6 +527,12 @@
 .gastown-minimap-legend .dot.landing { background: #aa5f4e; }
 .gastown-map-distance { margin: 0; font: 0.67rem/1.35 ui-monospace, monospace; color: #b6cae1; }
 .gastown-pointer-help { position: absolute; top: 0.72rem; left: 50%; transform: translateX(-50%); z-index: 9; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 0.35rem 0.75rem; padding: 0.48rem 0.6rem; max-width: calc(100% - 17rem); border: 1px solid rgba(250,208,135,0.76); border-radius: 8px; color: #f2f7ff; background: rgba(8,16,25,0.93); font: 700 0.75rem/1.4 system-ui, sans-serif; box-shadow: 0 5px 20px rgba(0,0,0,0.35); }
+/* Always-visible, small gameplay discovery hint below the mouse help.
+   Never captures clicks or pointer lock. */
+.gastown-flight-tip { position: absolute; top: 3.48rem; left: 50%; transform: translateX(-50%); z-index: 8; max-width: calc(100% - 18rem); margin: 0; padding: 0.23rem 0.56rem; border-radius: 5px; border: 1px solid rgba(125,197,226,0.45); background: rgba(8,19,29,0.85); color: #cce8f6; text-align: center; font: 700 0.68rem/1.4 ui-monospace, monospace; pointer-events: none; }
+.gastown-flight-tip kbd { color: #f4d286; font: inherit; text-transform: uppercase; }
+.gastown-flight-tip[data-flying="true"] { color: #f4d286; border-color: #d6aa62; }
+@media (max-width: 880px) { .gastown-flight-tip { top: 6.3rem; left: 0.6rem; transform: none; max-width: calc(100% - 1.2rem); } }
 .gastown-pointer-help-escape { color: #ffdb8e; border: 1px solid rgba(255,218,139,0.45); padding: 0.14rem 0.42rem; border-radius: 4px; letter-spacing: 0.035em; }
 .gastown-release-pointer { display: inline-flex; padding: 0.18rem 0.45rem; border-radius: 4px; background: #244863; color: white; border: 1px solid #7fc6ea; font-weight: 700; font-size: 0.7rem; cursor: pointer; }
 .gastown-release-pointer:disabled { opacity: 0.55; cursor: default; }

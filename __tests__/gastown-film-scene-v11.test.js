@@ -64,3 +64,22 @@ test('sound is optional, user-activated and synthetic, never a foreign voice ass
   assert.match(page, /data-action="local-ambience-toggle"/);
   assert.match(css, /\.gastown-local-ambience:focus-visible/);
 });
+
+
+test('Suzyfly toggle is discoverable in HUD, tutorial, and controls without capturing mouse',()=>{
+ const page=read('page-gastown-sim.php');
+ const sim=read('js/gastown-sim.js');
+ const css=read('assets/css/gastown-sim.css');
+ assert.match(page,/data-sim-flight-tip/);
+ assert.match(page,/Type <kbd>suzyfly<\/kbd>/);
+ assert.match(page,/type it again to land at Station East/);
+ assert.match(page,/<strong>SUZYFLY<\/strong>/);
+ assert.match(sim,/const flightTipEl = app\.querySelector\('\[data-sim-flight-tip\]'\)/);
+ assert.match(sim,/function updateFlightTip\(\)/);
+ assert.match(sim,/fly\.enabled=true;fly\.altitude/);
+ assert.match(sim,/if\(fly\.enabled\)/);
+ assert.match(sim,/beginFlightLanding\(\)/);
+ assert.match(sim,/updateFlightTip\(\)/);
+ assert.match(css,/\.gastown-flight-tip\s*\{[^}]*pointer-events:\s*none/);
+ assert.match(css,/\.gastown-flight-tip\[data-flying="true"\]/);
+});

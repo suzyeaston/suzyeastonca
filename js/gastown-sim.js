@@ -90,6 +90,7 @@
   const minimapDistanceEl = app.querySelector('[data-sim-map-distance]');
   const pointerHelpEl = app.querySelector('[data-sim-pointer-help]');
   const pointerHintEl = app.querySelector('[data-sim-pointer-hint]');
+  const flightTipEl = app.querySelector('[data-sim-flight-tip]');
   const releasePointerBtn = app.querySelector('[data-action="sim-release-pointer"]');
   const minimapTooltipEl = app.querySelector('[data-sim-minimap-tooltip]');
   const compassEl = app.querySelector('[data-sim-compass]');
@@ -5202,7 +5203,10 @@
         clockRoot.userData.clockWhistles=5;
         clockRoot.userData.placement='Water and Cambie north-side brick corner';
 
-        const plazaRadius = (hero.plaza && hero.plaza.radius) || (hero.ground_emphasis_radius || 4.2);
+        // The plaza belongs around the sculpture's sidewalk base, not as a
+        // 5.5m circle spreading into the Water Street road. Keep it small.
+        const plazaRadius = Math.min(2.2,((hero.plaza && hero.plaza.radius)
+          || (hero.ground_emphasis_radius || 4.2))*0.40);
         const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.74, 0.84, 16), accentMaterial);
         plinth.position.y = 0.36;
         clockArtwork.add(plinth);
@@ -5329,11 +5333,17 @@
 
         const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 40), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
         plaza.rotation.x = -Math.PI / 2;
-        plaza.position.y = 0.03;
+        // Raise the clock plinth/paving above the separately layered
+        // Water/Cambie street meshes. 0.001m gaps caused Z-fighting.
+        plaza.position.y = 0.155;
+        plaza.renderOrder=6;
+        plaza.name='Steam Clock small brick plaza base';
         clockRoot.add(plaza);
-        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.62, plazaRadius + 1.1, 40), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
+        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius, plazaRadius + 0.58, 40), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
         plazaApron.rotation.x = -Math.PI / 2;
-        plazaApron.position.y = 0.031;
+        plazaApron.position.y = 0.155;
+        plazaApron.renderOrder=6;
+        plazaApron.name='Steam Clock non-overlapping plaza ring';
         clockRoot.add(plazaApron);
 
         const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.12, depthWrite: false, depthTest: true });
@@ -7032,10 +7042,22 @@
     return null;
   }
 
+  function updateFlightTip() {
+    if(!flightTipEl)return;
+    const fly=state.flight;
+    flightTipEl.dataset.flying=String(!!fly.enabled);
+    flightTipEl.textContent=fly.landing
+      ? '✈ Landing at Station East parking…'
+      : fly.enabled
+        ? '✈ Flying! Type SUZYFLY again to land at Station East'
+        : '✈ Want to fly? Type SUZYFLY · type it again to land at Station East';
+  }
+
   function beginFlightLanding() {
     const point=findParkingLandingTarget();
     if(!point){setStatus('Station East landing aisle is not clear. Keep flying.');return false;}
     state.flight.landing=point;
+    updateFlightTip();
     state.flight.secretBuffer='';
     state.flight.up=false;state.flight.down=false;state.flight.vertical=0;
     clearMovementInput();state.velocity.set(0,0,0);
@@ -7065,6 +7087,7 @@
     if(remaining<0.04&&fly.altitude<0.04){
       player.position.set(target.x,ground,target.z);
       fly.enabled=false;fly.altitude=0;fly.vertical=0;fly.landing=null;
+      updateFlightTip();
       fly.up=false;fly.down=false;
       state.velocity.set(0,0,0);
       state.lastSafePosition.copy(player.position);
@@ -7503,6 +7526,7 @@
             if(!fly.landing)beginFlightLanding();
           }else if(!state.landingLab.inside){
             fly.enabled=true;fly.altitude=Math.max(0,player.position.y-getGroundY());
+            updateFlightTip();
             fly.landing=null;
             state.thirdPerson=true;state.avatarCameraFacing='back';
             state.followCameraDistance=undefined;

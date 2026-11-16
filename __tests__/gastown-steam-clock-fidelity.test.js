@@ -34,3 +34,14 @@ test('Steam Clock is tied to existing real corner anchor, with paving and no cha
  assert.match(sim,/clockRoot\.position\.set\(hero\.x, 0, hero\.z\)/);
  assert.match(sim,/worldGroup\.add\(clockRoot\)/);
 });
+
+
+test('clock plaza is compact and avoids overlapping disc and ring triangles',()=>{
+ const src=read('js/gastown-sim.js');
+ assert.match(src,/const plazaRadius = Math\.min\(2\.2,/);
+ assert.match(src,/plaza\.position\.y = 0\.155/);
+ assert.match(src,/new THREE\.RingGeometry\(plazaRadius, plazaRadius \+ 0\.58, 40\)/);
+ assert.match(src,/plazaApron\.position\.y = 0\.155/);
+ assert.match(src,/Steam Clock non-overlapping plaza ring/);
+ assert.doesNotMatch(src,/plazaRadius \* 0\.62, plazaRadius \+ 1\.1/);
+});
