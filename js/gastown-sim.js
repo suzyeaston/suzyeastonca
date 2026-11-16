@@ -196,7 +196,7 @@
     walkerName: 'Suzy',
     thirdPerson: true,
     avatarCameraFacing: 'back', // Initial camera sees Suzy walking toward the city.
-    flight: {enabled:false,altitude:0,vertical:0,secretBuffer:'',landing:null},
+    flight: {enabled:false,altitude:0,vertical:0,secretBuffer:'',landing:null,unsafeLandingNotice:false},
     magic: {active:false,elapsed:0,duration:2.4,group:null,spellIndex:0,spellLastAt:0},
     followCameraDistance: undefined,
     avatarElapsed: 0,
@@ -7025,21 +7025,13 @@
     applyOverviewCameraPose();
   }
 
-  // The station-east central aisle is the only automatic landing target.
-  // Its walkability rules are the same rules used by normal ground traversal.
-  function findParkingLandingTarget() {
-    const lot=state.world&&state.world.parkingLot;
-    if(!lot||!waterfrontPlaces||!waterfrontPlaces.entranceFor
-      ||!waterfrontPlaces.lookoutFor||!waterfrontPlaces.isWalkableLot)return null;
-    const entry=waterfrontPlaces.entranceFor(lot);
-    const fence=waterfrontPlaces.lookoutFor(state.world,
-      harbourVista&&harbourVista.positionFor&&harbourVista.positionFor(state.world));
-    if(!entry||!fence)return null;
-    for(const t of [0.44,0.38,0.5,0.32,0.56,0.25]){
-      const p={x:entry.x+(fence.x-entry.x)*t,z:entry.z+(fence.z-entry.z)*t};
-      if(waterfrontPlaces.isWalkableLot(state.world,p))return p;
-    }
-    return null;
+  // Flight is a local toggle. No map-wide autopilot or forced parking-lot
+  // relocation: Suzy can land vertically at her CURRENT position as long
+  // as that point is part of the established walkable ground.
+  function isSafeFlightLanding() {
+    return !!(state.world && isSpawnSafe({
+      x:player.position.x,z:player.position.z
+    }));
   }
 
   function updateFlightTip() {
@@ -7047,55 +7039,100 @@
     const fly=state.flight;
     flightTipEl.dataset.flying=String(!!fly.enabled);
     flightTipEl.textContent=fly.landing
-      ? '✈ Landing at Station East parking…'
-      : fly.enabled
-        ? '✈ Flying! Type SUZYFLY again to land at Station East'
-        : '✈ Want to fly? Type SUZYFLY · type it again to land at Station East';
+      ? '✈ Descending here… type suzyfly to cancel'
+      : fly.unsafeLandingNotice
+        ? '✈ Move above a street or sidewalk before landing · Q descends'
+        : fly.enabled
+          ? '✈ Flying · Space up (even while still) · Q down · type suzyfly to land here'
+          : '✈ Type suzyfly (any case, no Enter) · Space up · Q down · type again to land';
+  }
+
+  function finishFlightLanding() {
+    const fly=state.flight;
+    if(!isSafeFlightLanding())return false;
+    // Keep exactly the same X/Z and orientation; just settle onto ground.
+    player.position.y=getGroundY();
+    fly.enabled=false;fly.altitude=0;fly.vertical=0;fly.landing=null;
+    fly.up=false;fly.down=false;fly.unsafeLandingNotice=false;
+    fly.secretBuffer='';
+    clearMovementInput();
+    state.lastSafePosition.copy(player.position);
+    updateFlightTip();
+    setStatus('Touchdown right here! Type suzyfly (any capitalization) to fly again.');
+    return true;
   }
 
   function beginFlightLanding() {
-    const point=findParkingLandingTarget();
-    if(!point){setStatus('Station East landing aisle is not clear. Keep flying.');return false;}
-    state.flight.landing=point;
+    if(!isSafeFlightLanding()){
+      state.flight.unsafeLandingNotice=true;
+      updateFlightTip();
+      setStatus('No safe ground directly below. Fly above a public street or sidewalk, then type suzyfly again. No teleporting.');
+      return false;
+    }
+    const fly=state.flight;
+    fly.landing={x:player.position.x,z:player.position.z};
+    fly.vertical=0;fly.unsafeLandingNotice=false;
+    fly.secretBuffer='';
+    clearMovementInput();
     updateFlightTip();
-    state.flight.secretBuffer='';
-    state.flight.up=false;state.flight.down=false;state.flight.vertical=0;
-    clearMovementInput();state.velocity.set(0,0,0);
-    state.thirdPerson=true;state.avatarCameraFacing='back';
-    state.followCameraDistance=undefined;applyStreetCameraPose();
-    setStatus('SUZYFLY: gently returning to Station East parking. Cape stays out until touchdown.');
+    setStatus('SUZYFLY: descending straight down at this spot. Type suzyfly again to cancel.');
+    return true;
+  }
+
+  function cancelFlightLanding() {
+    if(!state.flight.landing)return false;
+    state.flight.landing=null;
+    state.flight.vertical=0;
+    state.flight.unsafeLandingNotice=false;
+    clearMovementInput();
+    updateFlightTip();
+    setStatus('Landing cancelled. Fly on! Space rises, Q (or Ctrl) descends.');
     return true;
   }
 
   function updateFlightLanding(delta) {
     const fly=state.flight,target=fly.landing;
-    if(!target)return;
-    const dx=target.x-player.position.x,dz=target.z-player.position.z;
-    const distance=Math.hypot(dx,dz);
-    const step=Math.min(distance,delta*18);
-    if(distance>0.0001){
-      player.position.x+=dx/distance*step;
-      player.position.z+=dz/distance*step;
-    }
-    const remaining=Math.max(0,distance-step);
-    const ground=getGroundY();
-    // Retain height while traversing toward the lot. The final few metres
-    // descend at human-readable speed, not a single-frame ground teleport.
-    const safeHeight=Math.min(36,remaining*0.16);
-    player.position.y=Math.max(ground+safeHeight,player.position.y-delta*9.5);
-    fly.altitude=Math.max(0,player.position.y-ground);
-    if(remaining<0.04&&fly.altitude<0.04){
-      player.position.set(target.x,ground,target.z);
-      fly.enabled=false;fly.altitude=0;fly.vertical=0;fly.landing=null;
+    if(!target||!state.isRunning)return;
+    // Never fly toward an artificial landing waypoint. The target captures
+    // the exact X/Z when SUZYFLY was typed. No automatic camera relocation.
+    if(!isSafeFlightLanding()){
+      cancelFlightLanding();
+      fly.unsafeLandingNotice=true;
       updateFlightTip();
-      fly.up=false;fly.down=false;
-      state.velocity.set(0,0,0);
-      state.lastSafePosition.copy(player.position);
-      enforceWorldBounds();
-      state.followCameraDistance=undefined;
-      applyStreetCameraPose();
-      setStatus('Touchdown at Station East parking! SUZYFLY again whenever you want to take off.');
+      setStatus('Landing area is no longer safe. Return above a street or sidewalk.');
+      return;
     }
+    const ground=getGroundY();
+    const nextHeight=Math.max(ground,player.position.y-delta*8.5);
+    player.position.y=nextHeight;
+    fly.altitude=Math.max(0,nextHeight-ground);
+    fly.vertical=-8.5;
+    if(fly.altitude<=0.025)finishFlightLanding();
+  }
+
+  function updateFlightVertical(delta) {
+    const fly=state.flight;
+    const safeGround=isSafeFlightLanding();
+    const vertical=(fly.up?1:0)-(fly.down?1:0);
+    fly.vertical=THREE.MathUtils.lerp(fly.vertical,vertical*8,
+      Math.min(1,delta*8));
+    // Q/Ctrl can lower Suzy without any horizontal movement. If a building
+    // or water is directly below, maintain clearance instead of clipping.
+    const lowest=safeGround?0:2.5;
+    fly.altitude=THREE.MathUtils.clamp(fly.altitude+fly.vertical*delta,
+      lowest,85);
+    player.position.y=getGroundY()+fly.altitude;
+    if(fly.down&&!safeGround&&fly.altitude<=lowest+0.02){
+      if(!fly.unsafeLandingNotice){
+        fly.unsafeLandingNotice=true;
+        updateFlightTip();
+        setStatus('No walkable ground below. Move over a street or sidewalk to descend fully.');
+      }
+    }else if(safeGround&&fly.unsafeLandingNotice){
+      fly.unsafeLandingNotice=false;
+      updateFlightTip();
+    }
+    if(fly.down&&safeGround&&fly.altitude<=0.04)finishFlightLanding();
   }
 
   function movePlayer(delta) {
@@ -7144,11 +7181,7 @@
     player.position.x += state.velocity.x * delta;
     player.position.z += state.velocity.z * delta;
     if(state.flight.enabled){
-      const fly=state.flight;
-      const vertical=(fly.up?1:0)-(fly.down?1:0);
-      fly.vertical=THREE.MathUtils.lerp(fly.vertical,vertical*6.4,Math.min(1,delta*5));
-      fly.altitude=THREE.MathUtils.clamp(fly.altitude+fly.vertical*delta,0,72);
-      player.position.y=getGroundY()+fly.altitude;
+      updateFlightVertical(delta);
     } else player.position.y = getGroundY();
 
     if(!state.flight.enabled||state.landingLab.inside)enforceWorldBounds();
@@ -7218,7 +7251,9 @@
     if (code === 'AltLeft' || code === 'AltRight') state.gait.precise = pressed;
     if (code === 'ShiftLeft' || code === 'ShiftRight') state.gait.traverse = pressed;
     if(code==='Space')state.flight.up=pressed;
-    if(code==='ControlLeft'||code==='ControlRight')state.flight.down=pressed;
+    // Q works on Mac/Windows without invoking browser Control shortcuts.
+    if(code==='KeyQ'||code==='ControlLeft'||code==='ControlRight')
+      state.flight.down=pressed;
     if ((code === 'KeyW' || code === 'ArrowUp') && !pressed) {
       state.motion.runHoldSeconds = 0;
       state.motion.runActive = false;
@@ -7322,6 +7357,8 @@
     const spawn = resolveSafeSpawn();
     state.flight.enabled=false;state.flight.altitude=0;state.flight.vertical=0;state.flight.landing=null;
     state.flight.secretBuffer='';state.flight.up=false;state.flight.down=false;
+    state.flight.unsafeLandingNotice=false;
+    updateFlightTip();
     state.thirdPerson=true;state.avatarCameraFacing='back';
     player.position.set(spawn.x, spawn.y, spawn.z);
     state.lastSafePosition.copy(player.position);
@@ -7515,7 +7552,10 @@
       const writing=['INPUT','TEXTAREA','SELECT'].includes((event.target&&event.target.tagName)||'')
         ||(event.target&&event.target.isContentEditable);
       if (consumeFlightSpellKey(event)) return;
-      if(!writing&&!event.repeat&&!event.altKey&&!event.metaKey&&!event.ctrlKey
+      // Only accept the typed command during active, focused gameplay.
+      // event.code is independent of Shift / Caps Lock, so every case works.
+      if(state.isRunning&&state.cameraMode==='street'&&
+        !writing&&!event.repeat&&!event.altKey&&!event.metaKey&&!event.ctrlKey
         &&/^Key[A-Z]$/.test(event.code)){
         state.flight.secretBuffer=(state.flight.secretBuffer+event.code.slice(3).toLowerCase()).slice(-16);
         if(state.flight.secretBuffer.endsWith('suzyfly')){
@@ -7523,7 +7563,8 @@
           if (state.magic.active) return;
           fly.secretBuffer='';
           if(fly.enabled){
-            if(!fly.landing)beginFlightLanding();
+            if(fly.landing)cancelFlightLanding();
+            else beginFlightLanding();
           }else if(!state.landingLab.inside){
             fly.enabled=true;fly.altitude=Math.max(0,player.position.y-getGroundY());
             updateFlightTip();
@@ -7531,12 +7572,12 @@
             state.thirdPerson=true;state.avatarCameraFacing='back';
             state.followCameraDistance=undefined;
             applyStreetCameraPose();
-            setStatus('SUZYFLY! WASD to fly, SPACE up, CTRL down, SHIFT for turbo. Type SUZYFLY again to return to Station East parking.');
+            setStatus('SUZYFLY! Any case works. SPACE rises while hovering, Q or CTRL descends, SHIFT speeds up. Type suzyfly again to land here.');
           }else setStatus('Exit The Landing before activating SUZYFLY.');
           event.preventDefault();return;
         }
       }
-      if(state.flight.enabled&&['Space','ControlLeft','ControlRight'].includes(event.code))event.preventDefault();
+      if(state.flight.enabled&&!writing&&['Space','KeyQ','ControlLeft','ControlRight'].includes(event.code))event.preventDefault();
       if (event.code === 'KeyP' && !event.repeat &&
           !['INPUT','TEXTAREA','SELECT'].includes((event.target && event.target.tagName)||'')) {
         event.preventDefault();
