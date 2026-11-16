@@ -32,7 +32,8 @@ test('sixth floor is a bounded fictional playable interior, with visible exit an
  assert.match(sim,/function interactWithLanding\(\)/);
  assert.match(sim,/function updateLandingHint\(\)/);
  assert.match(sim,/state\.landingLab\.inside/);
- assert.match(sim,/if \(state\.landingLab\.inside && interactWithLanding\(\)\)/);
+  assert.match(sim,/if \(state\.landingLab\.inside\) \{/);
+  assert.match(sim,/if\(!interactWithLanding\(\)\)/);
  assert.match(sim,/player\.position\.x=Math\.max\(792\.75/);
  const dialog=JSON.parse(read('assets/dialog/gastown.json')).kk_lab_greeter;
  assert.ok(dialog&&dialog.lines.length>=2);
