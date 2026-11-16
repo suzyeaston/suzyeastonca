@@ -566,6 +566,30 @@
       const px=p.x+axis.x*offset,pz=p.z+axis.z*offset;
       addBox(THREE,root,'Steamworks outdoor patio frame',px,1.36,pz,0.14,2.7,0.14,frame);
     }
+    // Make the MML-facing sixth-floor row legible from SUZYFLY on the
+    // parking/harbour side of the Kelly-Douglas footprint. This is the
+    // northwest facade edge in the existing civic polygon, NOT an extra
+    // tower. No sign is added outside the real building.
+    const parkingA=pts[0],parkingB=pts[1];
+    const pDX=parkingB.x-parkingA.x,pDZ=parkingB.z-parkingA.z;
+    const pLen=Math.hypot(pDX,pDZ)||1;
+    const parkingYaw=Math.atan2(-pDZ,pDX);
+    const sixthGlass=new THREE.MeshStandardMaterial({
+      color:0x637f88,roughness:0.22,metalness:0.18,
+      transparent:true,opacity:0.79,side:THREE.DoubleSide
+    });
+    const frameStone=new THREE.MeshStandardMaterial({color:0xd8d6cc,roughness:0.86});
+    for(let bay=0;bay<7;bay++){
+      const t=(bay+0.5)/7,x=parkingA.x+pDX*t,z=parkingA.z+pDZ*t;
+      addBox(THREE,root,'The Landing sixth-floor harbour-facing MML window',
+        x,18.85,z,2.52,2.95,0.16,sixthGlass,parkingYaw);
+      addBox(THREE,root,'The Landing sixth-floor window centre mullion',
+        x,18.85,z,0.09,2.98,0.18,frameStone,parkingYaw);
+    }
+    addSegment(THREE,root,'The Landing sixth-floor exterior limestone sill',
+      parkingA,parkingB,17.32,0.14,frameStone);
+    root.userData.sixthFloorWindowsFace='Station East parking lot / Burrard Inlet';
+    root.userData.sixthFloorWindowCount=7;
     root.userData.provenance = landing.source;
     return root;
   }
