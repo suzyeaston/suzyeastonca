@@ -180,7 +180,9 @@
       journeyRoot:null, escort:null, lastNear:false, farewellAt:0,
       stageSince:0, greetPlayed:false, lastGreeting:'', indoorPreviousView:null,
       doorProgress:1, liftDoorProgress:0, carDoorProgress:0, escortPaused:false,
-      outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false, reentryBlockedUntil:0 },
+      outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false, reentryBlockedUntil:0,
+      yangosGreeted:false,yangosTalked:false,lastNearLabLift:false,
+      guardHighFiveAt:0,lastGuardNear:false },
     dialogData: {},
     activeDialogNpcId: '',
     activeDialogEntry: null,
@@ -1249,10 +1251,15 @@
   // Audio is intentionally fictional NPC speech, never a voice clone of KK.
   // Browser speech is reliably available without a cloud voice endpoint.
   function landingSpeak(phrase) {
+    return landingNpcSpeak('KK',phrase);
+  }
+
+  function landingNpcSpeak(speaker,phrase) {
     const lab=state.landingLab;
-    if(lab.lastGreeting===phrase)return;
-    lab.lastGreeting=phrase;
-    setStatus('KK: "'+phrase+'"');
+    const messageKey=speaker+':'+phrase;
+    if(lab.lastGreeting===messageKey)return;
+    lab.lastGreeting=messageKey;
+    setStatus(speaker+': "'+phrase+'"');
     if(!state.hasInteracted||!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
     try {
       window.speechSynthesis.cancel();
@@ -1313,6 +1320,12 @@
     lab.lastGreeting='';
     lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
     lab.nearLobbyExit=false;
+    lab.yangosGreeted=false;lab.yangosTalked=false;
+    lab.guardHighFiveAt=0;lab.lastGuardNear=false;
+    if(lab.roomRoot&&lab.roomRoot.userData.yangosWave)
+      lab.roomRoot.userData.yangosWave.rotation.z=0;
+    if(lab.journeyRoot&&lab.journeyRoot.userData.securityHighFiveArm)
+      lab.journeyRoot.userData.securityHighFiveArm.rotation.z=0;
     lab.doorProgress=1;lab.liftDoorProgress=0;lab.carDoorProgress=0;
     return landingTravel('lobby',portal.lobbySpawn,
       'The Landing doors are open. KK is waiting inside. Follow him to the elevator.');
@@ -1350,10 +1363,36 @@
 
   function returnLandingLabToLift(portal){
     if(state.landingLab.stage!=='lab'||!portal)return false;
+    // Elevator only activates with deliberate E directly at its door.
+    // A walk past KK's exit or an idle spawn cannot trigger a return.
     if(Math.hypot(player.position.x-portal.roomExit.x,
-      player.position.z-portal.roomExit.z)>2.3)return false;
+      player.position.z-portal.roomExit.z)>1.55)return false;
     return landingTravel('return-lift',portal.elevatorCar,
       'Taking the elevator down to The Landing ground-floor lobby.');
+  }
+
+  function highFiveLandingGuard() {
+    const lab=state.landingLab;
+    if(lab.stage!=='lobby-return'||!lab.journeyRoot)return false;
+    const guardPos=lab.journeyRoot.userData.securityGuardPosition;
+    if(!guardPos||Math.hypot(player.position.x-guardPos.x,
+      player.position.z-guardPos.z)>2.3)return false;
+    const now=performance.now()/1000;
+    if(now-(lab.guardHighFiveAt||0)<2.2)return true;
+    lab.guardHighFiveAt=now;
+    setStatus('✋ HIGH FIVE! Security: Welcome back, Suzy! See you next time.');
+    return true;
+  }
+
+  function talkToYangos() {
+    const lab=state.landingLab;
+    const yangos=lab.roomRoot&&lab.roomRoot.userData.yangos;
+    if(lab.stage!=='lab'||!yangos||!lab.yangosGreeted)return false;
+    if(Math.hypot(player.position.x-yangos.position.x,
+      player.position.z-yangos.position.z)>2.0)return false;
+    lab.yangosTalked=true;
+    landingNpcSpeak('Yangos','Glad you made it! Have a look around the lab. The windows face the harbour.');
+    return true;
   }
 
   function interactWithLanding() {
@@ -1363,8 +1402,12 @@
     const portal=waterfrontPlaces.landingEntranceFor(state.world);
     if(!portal)return false;
     const lab=state.landingLab;
+    if(lab.stage==='lobby-return'&&highFiveLandingGuard())return true;
     if(isLandingLobbyStage())return exitLandingToWaterStreet(portal);
-    if(lab.stage==='lab')return returnLandingLabToLift(portal);
+    if(lab.stage==='lab'){
+      if(talkToYangos())return true;
+      return returnLandingLabToLift(portal);
+    }
     if(lab.stage==='street'&&Math.hypot(player.position.x-portal.threshold.x,
       player.position.z-portal.threshold.z)<2.3)return startLandingJourney(portal);
     return false;
@@ -1458,7 +1501,7 @@
       if(elapsed>3.8){
         landingTravel('lab',portal.roomSpawn,'Sixth floor. Welcome to the Multimodal Media Lab.');
         lab.farewellAt=nowSeconds;
-        lab.farewellSpoken=false;
+        lab.farewellSpoken=false;lab.yangosGreeted=false;
         if(lab.roomRoot&&lab.roomRoot.userData.greeter){
           const kk=lab.roomRoot.userData.greeter;
           kk.visible=true;kk.position.set(800.9,0,807);
@@ -1484,10 +1527,23 @@
           kk.rotation.y=Math.PI;
         }else if(t>=5.6)kk.visible=false;
       }
-      if(elapsed>2.7&&near(portal.roomExit,1.55)){
-        // Walk to the door or press E: both travel via the elevator.
-        returnLandingLabToLift(portal);
+      // KK leaves alone. Suzy stays upstairs for a separate welcome.
+      if(!lab.yangosGreeted&&nowSeconds-lab.farewellAt>=5.6){
+        lab.yangosGreeted=true;
+        landingNpcSpeak('Yangos','Hey Suzy! Welcome to the Multi-Modal Lab. Come have a look around!');
       }
+      if(lab.roomRoot&&lab.roomRoot.userData.yangosWave){
+        const arm=lab.roomRoot.userData.yangosWave;
+        const waveTime=nowSeconds-lab.farewellAt-5.6;
+        arm.rotation.z=waveTime>=0&&waveTime<3.0
+          ?-2.15+Math.sin(waveTime*9)*0.18:0;
+      }
+      const nearLabLift=near(portal.roomExit,1.55);
+      if(nearLabLift&&!lab.lastNearLabLift){
+        setStatus('Return elevator: press E at the doors when YOU want to go downstairs.');
+      }
+      lab.lastNearLabLift=nearLabLift;
+      // No proximity-driven elevator trip. E is the only return action.
     }else if(lab.stage==='return-lift'){
       if(elapsed>1.6){
         lab.stage='riding-down';lab.stageSince=nowSeconds;
@@ -1502,6 +1558,19 @@
     }else if(lab.stage==='lobby-return'){
       // Shared lobby exit above handles both E and walking back through
       // the main entrance. No separate unreachable elevator-return branch.
+      const guardPos=data&&data.securityGuardPosition;
+      if(guardPos){
+        const atGuard=near(guardPos,3.0);
+        if(atGuard&&!lab.lastGuardNear){
+          setStatus('Security guard: come closer and press E for a HIGH FIVE! ✋');
+        }
+        lab.lastGuardNear=atGuard;
+      }
+    }
+    if(data&&data.securityHighFiveArm){
+      const t=nowSeconds-(lab.guardHighFiveAt||0);
+      const raise=t>=0&&t<2.2?Math.min(1,t*5,(2.2-t)*5):0;
+      data.securityHighFiveArm.rotation.z=-2.3*Math.max(0,raise);
     }
     setDoors();
   }
@@ -2280,6 +2349,15 @@
         normalizedSpeed, // feed flight velocity into hair wind without restarting footsteps
         state.flight.enabled ? 0 : getGroundY() - player.position.y,
         state.flight.enabled ? 'flying' : (state.motion.runActive ? 'running' : 'walking'));
+      // Animate Suzy participating in the downstairs high five, after
+      // the normal walk gait has been applied this frame.
+      if(state.landingLab.stage==='lobby-return'&&
+         suzyAvatar.userData&&suzyAvatar.userData.limbs){
+        const t=performance.now()/1000-(state.landingLab.guardHighFiveAt||0);
+        const lift=t>=0&&t<2.2?Math.min(1,t*5,(2.2-t)*5):0;
+        const right=suzyAvatar.userData.limbs.arms[1];
+        if(right&&lift>0)right.rotation.x=-2.05*Math.max(0,lift);
+      }
       if(state.flight.enabled){
         // Arms swept outward, legs held still. No ground-based walk cycle in flight.
         suzyAvatar.rotation.x=-0.16;
@@ -7664,9 +7742,11 @@
           if(!interactWithLanding()){
             const here=state.landingLab.stage;
             setStatus(here==='lab'
-              ? 'Return elevator: walk toward the door marked ELEVATOR DOWN and press E.'
+              ? 'You can explore the lab or greet Yangos. To leave, approach ELEVATOR DOWN and press E.'
               : isLandingLobbyStage()
-                ? 'To leave, walk back to the green carpet and glass entrance, then press E.'
+                ? (here==='lobby-return'
+                    ? 'Back in the lobby! Security is by reception: press E nearby for a high five, or use the glass entrance to leave.'
+                    : 'To leave, walk back to the green carpet and glass entrance, then press E.')
                 : 'Elevator in motion; the lobby exit is on the ground floor.');
           }
           return;
