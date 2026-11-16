@@ -45,7 +45,8 @@ function controllerHarness(stage='lab',start={x:800,z:804.9}){
  const player={position:{...start}};
  const states=[];
  const lab={stage,inside:true,stageSince:0,fade:0,farewellAt:0,
-  farewellSpoken:false,yangosGreeted:false,yangosTalked:false,lastNearLabLift:false,
+  farewellSpoken:false,coverHostGreeted:false,yangosTalked:false,yangosWaveAt:0,
+  kkCoveredByVolunteer:false,lastNearLabLift:false,
   lastGuardNear:false,nearLobbyExit:false,
   guardHighFiveAt:0,roomRoot:labRoom,journeyRoot:lobby,
   hasLeftEntry:true,calledLift:false,escortPaused:false,
@@ -78,7 +79,7 @@ function controllerHarness(stage='lab',start={x:800,z:804.9}){
    setNow:v=>{now=v;},...controls};
 }
 
-test('KK stays upstairs, taps Yangos to cover and greets Suzy without triggering elevator',()=>{
+test('KK taps a volunteer to cover while Yangos remains an independent guest',()=>{
  const portal=loadPlaces().landingEntranceFor(
   JSON.parse(read('assets/world/gastown-water-street.json')));
  assert.ok(Math.hypot(portal.roomSpawn.x-portal.roomExit.x,
@@ -90,22 +91,22 @@ test('KK stays upstairs, taps Yangos to cover and greets Suzy without triggering
  assert.equal(h.lab.stage,'lab');
  assert.equal(h.status.filter(x=>x.who==='KK').length,1);
  h.setNow(4.4);h.updateLandingEscort(0.016,4.4);
- assert.equal(h.lab.kkCoveredByYangos,true,'KK asks Yangos to cover him');
+ assert.equal(h.lab.kkCoveredByVolunteer,true,'KK asks the lab volunteer to cover');
  assert.ok(h.room.userData.greeter.userData.tapArm.rotation.z>0.5,
-  'KK visibly taps Yangos on the shoulder');
- assert.ok(h.status.some(x=>/taps Yangos on the shoulder/.test(x.text)));
+  'KK visibly taps the volunteer on the shoulder');
+ assert.ok(h.status.some(x=>/taps the lab volunteer on the shoulder/.test(x.text)));
  h.setNow(5.9);h.updateLandingEscort(0.016,5.9);
  assert.equal(h.room.userData.greeter.visible,true,'KK remains upstairs');
  assert.equal(h.room.userData.greeter.position.x,803.2,
-  'KK takes up a position beside Yangos rather than leaving');
+  'KK takes up a position beside the volunteer rather than leaving');
  assert.equal(h.lab.stage,'lab','handoff must not trigger elevator');
- assert.equal(h.lab.yangosGreeted,true);
- assert.equal(h.status.filter(x=>x.who==='Yangos').length,1);
- assert.match(h.status.find(x=>x.who==='Yangos').text,/welcome to the Multi-Modal Lab/i);
+ assert.equal(h.lab.coverHostGreeted,true);
+ assert.equal(h.status.filter(x=>x.who==='Lab volunteer').length,1);
+ assert.match(h.status.find(x=>x.who==='Lab volunteer').text,/Welcome, Suzy/i);
  assert.equal(h.player.position.z,804.9,'Suzy stays in room');
  h.setNow(6.2);h.updateLandingEscort(0.016,6.2);
- assert.equal(h.status.filter(x=>x.who==='Yangos').length,1,'no repeated greeting');
- assert.equal(h.room.userData.greeter.visible,true,'KK stays visible after Yangos speaks');
+ assert.equal(h.status.filter(x=>x.who==='Lab volunteer').length,1,'no repeated greeting');
+ assert.equal(h.room.userData.greeter.visible,true,'KK stays visible after the volunteer speaks');
  assert.equal(h.room.userData.greeter.userData.tapArm.rotation.z,0,
   'KK tapping hand settles back down');
  assert.equal(h.states.length,0,'Suzy never leaves the sixth floor on handoff');
@@ -113,7 +114,7 @@ test('KK stays upstairs, taps Yangos to cover and greets Suzy without triggering
 
 test('Even standing at return lift never triggers automatic descent; E does',()=>{
  const h=controllerHarness('lab',{x:800,z:809.1});
- h.lab.farewellSpoken=true;h.lab.yangosGreeted=true;
+ h.lab.farewellSpoken=true;h.lab.coverHostGreeted=true;
  for(const t of [3.0,6.0,9.0,20]){
   h.setNow(t);h.updateLandingEscort(0.016,t);
   assert.equal(h.lab.stage,'lab','walking near a door must never teleport');
@@ -130,16 +131,16 @@ test('Even standing at return lift never triggers automatic descent; E does',()=
  assert.equal(h.lab.stage,'lobby-return');
 });
 
-test('Yangos can be greeted, lab remains explorable away from elevator',()=>{
- const h=controllerHarness('lab',{x:804.1,z:804.7});
- assert.equal(h.interactWithLanding(),false,'greeting waits for KK to leave');
- h.lab.yangosGreeted=true;
- assert.equal(h.interactWithLanding(),true);
+test('Yangos remains independently approachable, without a staffing handoff',()=>{
+ const h=controllerHarness('lab',{x:805,z:797.4});
+ assert.equal(h.lab.kkCoveredByVolunteer,false);
+ assert.equal(h.interactWithLanding(),true,'Suzy can greet Yangos directly');
  assert.equal(h.lab.stage,'lab');
  assert.equal(h.lab.yangosTalked,true);
  assert.equal(h.status.at(-1).who,'Yangos');
+ assert.equal(h.lab.kkCoveredByVolunteer,false,'greeting Yangos does not make him staff');
+ assert.ok(h.lab.yangosWaveAt>0,'Yangos waves back to Suzy');
  const far=controllerHarness('lab',{x:798,z:797});
- far.lab.yangosGreeted=true;
  assert.equal(far.interactWithLanding(),false);
  assert.equal(far.lab.stage,'lab');
 });
@@ -167,16 +168,24 @@ test('Yangos and security guard are actual distinct lightweight NPCs',()=>{
  const lobbyMeshes=descendants(lobby).map(n=>n.name);
  assert.ok(lab.userData.yangos);
  assert.ok(lab.userData.yangosWave);
+ assert.ok(lab.userData.coverHost);
+ assert.ok(lab.userData.coverHostWave);
+ assert.ok(labMeshes.includes('MML volunteer | KK handoff and welcome'));
+ assert.ok(labMeshes.includes('MML volunteer greeting hand'));
+ assert.ok(Math.hypot(lab.userData.coverHost.position.x-lab.userData.yangos.position.x,
+  lab.userData.coverHost.position.z-lab.userData.yangos.position.z)>5,
+  'Yangos has his own independent position across the room');
  assert.ok(lab.userData.greeter.userData.tapArm,'KK has an actual shoulder-tap joint');
  const armPieces=descendants(lab.userData.greeter.userData.tapArm).map(n=>n.name);
  assert.ok(armPieces.includes('KK tattooed forearm'));
  assert.ok(armPieces.includes('KK hand'));
- assert.ok(labMeshes.includes('Yangos | fictional Multimodal Lab welcome host'));
+ assert.ok(labMeshes.includes('Yangos | independent Multi-Modal Lab guest'));
  assert.ok(labMeshes.includes('Yangos welcoming hand'));
  assert.ok(lobby.userData.securityGuard);
  assert.ok(lobby.userData.securityHighFiveArm);
  assert.ok(lobbyMeshes.includes('Security guard raised high-five hand'));
  assert.ok(descendants(lab).length<270);
+ assert.doesNotMatch(sim,/taps Yangos on the shoulder/);
  assert.ok(descendants(lobby).length<240);
  assert.match(sim,/if\(lab\.stage==='lobby-return'&&highFiveLandingGuard\(\)\)/);
  assert.doesNotMatch(sim,/if\(elapsed>2\.7&&near\(portal\.roomExit,1\.55\)\)/);
