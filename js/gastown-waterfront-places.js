@@ -973,6 +973,30 @@
         seatedAudience.push(chair);
       }
     }
+    // Small share-out cluster from the June event photographs. These are
+    // deliberately generic stylizations, NOT identifiable real attendees.
+    const standingAttendees=[];
+    for(const [index,x,z] of [[0,794.4,805.3],[1,796.0,806.5],[2,805.65,793.9]]){
+      const attendee=new THREE.Group();
+      attendee.name=index===0?'BC + AI Film Club fictional presenter':'BC + AI Film Club standing attendee';
+      attendee.position.set(x,0,z);
+      attendee.rotation.y=-Math.PI/3;
+      root.add(attendee);
+      const top=audienceTops[(index+1)%audienceTops.length];
+      function attendeePart(name,px,py,pz,w,h,d,material){
+        const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+        m.name=name;m.position.set(px,py,pz);attendee.add(m);
+      }
+      attendeePart('Film Club standing participant top',0,1.35,0,0.65,0.82,0.4,top);
+      for(const dx of [-0.17,0.17])
+        attendeePart('Film Club standing participant leg',dx,0.52,0,0.25,1.03,0.3,chairMetal);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(0.24,8,6),
+        audienceSkin[(index+1)%audienceSkin.length]);
+      head.name='Film Club standing participant head';
+      head.position.set(0,1.96,0);attendee.add(head);
+      standingAttendees.push(attendee);
+    }
+    root.userData.filmClubStanding=standingAttendees;
     // Real meetups feature workflow discussions and presenter share-outs
     // alongside screening time, not a row of identical anonymous seats.
     cube('Film Club presenter demo station',794.2,1.01,804.1,1.4,0.1,0.7,wood);
