@@ -736,14 +736,21 @@
       intersection.name='Water and Cambie open brick intersection';
       const asphalt=new THREE.MeshStandardMaterial({color:0x6c6158,roughness:0.97});
       const brickCorner=new THREE.MeshStandardMaterial({color:0x89574a,roughness:0.93});
-      function pavement(name,a,b,width,material){
+      // Different street types need distinct vertical layers. Previous PR
+      // placed five overlapping surfaces at y=0.046, directly under the
+      // existing y=0.055 brick lane. Depth fighting caused the clock-side
+      // sidewalk to flash and paint broad triangles while moving/flying.
+      function pavement(name,a,b,width,material,height){
         const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);
         if(length<0.1)return;
         const pane=new THREE.Mesh(new THREE.PlaneGeometry(width,length),material);
         pane.name=name;
         pane.rotation.set(-Math.PI/2,Math.atan2(-dx,-dz),0,'YXZ');
-        pane.position.set((a.x+b.x)/2,0.046,(a.z+b.z)/2);
-        pane.receiveShadow=true;pane.renderOrder=2;intersection.add(pane);
+        pane.position.set((a.x+b.x)/2,height,(a.z+b.z)/2);
+        pane.receiveShadow=false;
+        pane.renderOrder=height>=0.10?5:3;
+        pane.userData={surfaceLevel:height,nonCollidable:true};
+        intersection.add(pane);
       }
       const end=route[route.length-1],prior=route[route.length-2];
       const dir={x:(end.x-prior.x)/Math.hypot(end.x-prior.x,end.z-prior.z),
@@ -757,27 +764,28 @@
       ];
       for(let i=1;i<waterBeyond.length;i++)
         pavement('Water Street east-of-Cambie paved continuation',
-          waterBeyond[i-1],waterBeyond[i],10.4,paving);
+          waterBeyond[i-1],waterBeyond[i],10.4,paving,0.071);
       // Cambie runs north to the waterfront and south to W Cordova.
       // These shallow planes replace the void while retaining open views.
       pavement('Cambie Street northbound connection to the waterfront',
-        {x:214,z:112},{x:203,z:173},10.3,asphalt);
+        {x:214,z:112},{x:203,z:173},10.3,asphalt,0.081);
       pavement('Cambie Street southbound connection to W Cordova',
-        {x:203,z:172},{x:189,z:220},10.3,asphalt);
+        {x:203,z:172},{x:189,z:220},10.3,asphalt,0.081);
       pavement('Water and Cambie brick raised intersection apron',
         {x:end.x-dir.x*4,z:end.z-dir.z*4},
-        {x:end.x+dir.x*12,z:end.z+dir.z*12},15.2,brickCorner);
+        {x:end.x+dir.x*12,z:end.z+dir.z*12},15.2,brickCorner,0.108);
       // Small sidewalk corner aprons stay beside, not across, the road.
       const side={x:-dir.z,z:dir.x};
       for(const sign of [-1,1]){
         const a={x:end.x+side.x*sign*8,z:end.z+side.z*sign*8};
         const b={x:a.x+dir.x*8,z:a.z+dir.z*8};
-        pavement('Water and Cambie pedestrian corner sidewalk',a,b,3.2,stone);
+        pavement('Water and Cambie pedestrian corner sidewalk',a,b,3.2,stone,0.134);
       }
       intersection.userData={
         reference:'Water Street continues toward Abbott; Cambie crosses north-south',
         openWestboundVehicleLane:true,navmeshUnchanged:true,
-        surfaceOnly:true,sourceRouteTerminal:route[route.length-1].id
+        surfaceOnly:true,sourceRouteTerminal:route[route.length-1].id,
+        nonCoplanarSurfaceLevels:[0.071,0.081,0.108,0.134]
       };
       root.add(intersection);
 
@@ -808,24 +816,42 @@
         corner.add(g);
         // Extend a deliberately shallow layer OUTWARD from the mapped wall;
         // no free-standing billboard or building mass intersects the street.
-        box(g,label+' warm heritage pier base',0,7.0,0,len,14,0.11,bodyMaterial);
-        box(g,label+' ground-floor plate glass',0,1.82,0.14,len*0.88,2.9,0.12,glass);
-        box(g,label+' dark storefront fascia',0,3.64,0.21,len*0.93,0.55,0.13,metal);
+        // The old full-height 14m cream rectangle was the huge blank
+        // paper wall in the user's clock screenshots. Civic GIS already
+        // provides a solid building: only APPLY storefront trim and glass.
+        // Two-sided detail prevents a blank back when flying past Cambie.
         const bays=Math.max(3,Math.min(7,Math.floor(len/3.1)));
         const bayWidth=len/bays;
-        for(let bay=0;bay<bays;bay++){
-          const x=(bay+0.5)*bayWidth-len/2;
-          for(const y of [5.6,8.85,11.9])
-            box(g,label+' heritage sash windows',x,y,0.18,bayWidth-0.47,1.85,0.13,darkSash);
-          box(g,label+' ground-floor shop window',x,1.65,0.24,bayWidth-0.30,2.30,0.1,awningGlass);
+        for(const face of [-1,1]){
+          box(g,label+' stone low storefront plinth',0,0.48,face*0.11,
+            len,0.92,0.12,bodyMaterial);
+          box(g,label+' ground-floor plate glass',0,1.82,face*0.23,
+            len*0.88,2.9,0.12,glass);
+          box(g,label+' dark storefront fascia',0,3.64,face*0.31,
+            len*0.93,0.55,0.13,metal);
+          for(let bay=0;bay<bays;bay++){
+            const x=(bay+0.5)*bayWidth-len/2;
+            for(const y of [5.6,8.85,11.9]){
+              box(g,label+' heritage sash windows',x,y,face*0.25,
+                bayWidth-0.47,1.85,0.13,darkSash);
+            }
+            box(g,label+' ground-floor shop window',x,1.65,face*0.35,
+              bayWidth-0.30,2.30,0.10,awningGlass);
+          }
+          for(let bay=1;bay<bays;bay++){
+            const x=bay*bayWidth-len/2;
+            box(g,label+' brick pilaster',x,8.25,face*0.27,
+              0.30,10.8,0.16,bodyMaterial);
+          }
+          box(g,label+' projecting heritage cornice',0,14.05,face*0.2,
+            len+0.26,0.37,0.46,creamBrick);
+          box(g,label+' recessed doorway',0,1.60,face*0.42,
+            Math.min(2.4,len/4),3.05,0.09,darkSash);
+          box(g,label+' entrance awning',0,3.92,face*0.72,
+            Math.min(5.5,len*0.7),0.20,1.32,metal);
         }
-        for(let bay=1;bay<bays;bay++){
-          const x=bay*bayWidth-len/2;
-          box(g,label+' brick pilaster',x,8.25,0.24,0.30,10.8,0.15,bodyMaterial);
-        }
-        box(g,label+' projecting heritage cornice',0,14.05,0.12,len+0.26,0.37,0.46,creamBrick);
-        box(g,label+' recessed doorway',0,1.60,0.36,Math.min(2.4,len/4),3.05,0.09,darkSash);
-        box(g,label+' entrance awning',0,3.92,0.68,Math.min(5.5,len*0.7),0.20,1.32,metal);
+        g.userData.opaqueFullHeightOverlay=false;
+        g.userData.facadeSides=2;
         // Storefront sign follows the sightline of the original user
         // Street View photos. No third-party Google textures embedded.
         if(typeof document!=='undefined'&&THREE.CanvasTexture&&THREE.PlaneGeometry){
