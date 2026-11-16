@@ -84,3 +84,54 @@ test('heritage frontages attach to mapped civic building footprints, not fake st
  assert.ok(all.some(n=>n.name==='Ground floor glazing band'));
  assert.ok(all.some(n=>n.name==='Gastown mature tree fine canopy'));
 });
+
+
+test('Water Street curb posts, chains, five-globe lamps and trees stand OUTSIDE the roadway',()=>{
+ const root=scene();
+ const furniture=root.children.filter(n=>n.name==='Water Street heritage sidewalk furniture');
+ assert.ok(furniture.length>=16,'sidewalk furniture on each side of Water Street');
+ const widths=[];
+ const names=['Black cast iron chain bollard','Bollard spherical cap',
+  'Gastown five-globe iron lamppost','Water Street mature tree trunk',
+  'Iron street-tree grate','Gastown sidewalk bench seat',
+  'Iron bench leg','Gastown bicycle rack'];
+ for(const group of furniture){
+  assert.equal(group.userData.roadwayHalfWidth,5.2);
+  assert.equal(group.userData.sideOfWaterStreet,group.userData.sidewalkOffset<0?'north':'south');
+  for(const node of group.children.filter(n=>names.includes(n.name))){
+   assert.ok(Math.abs(node.position.x)>=5.95,
+    node.name+' should not occupy the 10.4m carriageway');
+   widths.push(Math.abs(node.position.x));
+  }
+  if(group.children.some(n=>n.name==='Black cast iron chain bollard')){
+   assert.equal(group.userData.mappedRouteSegment,world.route.centerline.length-2,
+    'heritage chains belong by Steam Clock, not across every block');
+   assert.equal(group.userData.sideOfWaterStreet,'north');
+  }
+ }
+ assert.ok(widths.length>20);
+ const chainGroup=furniture.filter(n=>n.children.some(c=>c.name==='Black cast iron chain bollard'));
+ assert.equal(chainGroup.length,1,'only one short chain section by the clock');
+ assert.equal(chainGroup[0].children.filter(n=>n.name==='Sagging heritage curb chain').length,4);
+});
+
+test('Water Street has three moving westbound cars and no eastbound motor traffic',()=>{
+ const THREE=stub();
+ const traffic=require('../js/gastown-street-life.js').create(THREE,world);
+ const cars=traffic.root.children.filter(n=>/Water Street one-way westbound car/.test(n.name));
+ assert.equal(cars.length,3);
+ assert.deepEqual(traffic.root.userData.waterStreetTraffic,{
+  direction:'westbound',oneWay:true,start:'Water & Cambie',
+  end:'Waterfront / Water Street',laneOffsetMetres:1.75
+ });
+ const original=cars.map(car=>({x:car.position.x,z:car.position.z}));
+ traffic.update(3);
+ cars.forEach((car,i)=>{
+  assert.equal(car.userData.travelDirection,'westbound');
+  assert.ok(car.position.x<original[i].x-2,'car advances west, never east');
+  assert.ok(Number.isFinite(car.rotation.y));
+ });
+ const first=world.route.centerline[7],last=world.route.centerline.at(-1);
+ assert.ok(original[0].x>first.x && original[0].x>last.x-3,
+   'first westbound car spawns at Steam Clock eastern end');
+});
