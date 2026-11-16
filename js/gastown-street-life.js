@@ -575,56 +575,95 @@
       const plate=box(group,label+' signboard',x,y,z,w,0.43,0.16,mat);
       plate.userData.displayLabel=label;return plate;
     }
-    // The GIS building meshes already supply real wall footprints. Previously
-    // this pass added freestanding 12.7m opaque facade boxes into the roadway,
-    // blocking the entire route. Keep *only* street furniture here; dedicated
-    // footprint-aligned facade modules need a separately surveyed frontage.
+    // The GIS building meshes supply the wall footprints. This is furniture
+    // on the sidewalks only, not a pedestrianized or blocked roadway.
+    //
+    // Three.js heading convention: local -Z points east along the route,
+    // local X is CROSS-STREET. The previous code mistakenly used local Z for
+    // the curb offset, putting whole rows of chain bollards, lamps and trees
+    // directly into the driving lane.
+    const roadwayHalfWidth=5.2; // illustrated paver slab: 10.4 m
+    const sidewalkX=roadwayHalfWidth+2.2;
     for(let i=7;i<route.length-1;i++){
       const f=frame(i);
       for(const side of [-1,1]) {
-        const street=new THREE.Group();street.name='Water Street heritage sidewalk furniture';
-        street.position.set(f.x,0,f.z);street.rotation.y=f.yaw;root.add(street);
-        for(let n=-1;n<=1;n++){
-          const x=n*5.1,z=side*7.35;
-          const post=cylinder(street,'Black cast iron chain bollard',x,0.48,z,0.085,0.95,iron);
-          cylinder(street,'Bollard spherical cap',x,1.02,z,0.13,0.18,iron);
-          if(n<1) {
-            const next=x+5.1;
-            join(street,'Sagging heritage curb chain',{x,y:0.87,z},{x:(x+next)/2,y:0.65,z},0.023,iron);
-            join(street,'Sagging heritage curb chain',{x:(x+next)/2,y:0.65,z},{x:next,y:0.87,z},0.023,iron);
+        const street=new THREE.Group();
+        street.name='Water Street heritage sidewalk furniture';
+        street.position.set(f.x,0,f.z);
+        street.rotation.y=f.yaw;
+        street.userData={
+          sideOfWaterStreet:side<0?'north':'south',
+          roadwayHalfWidth, sidewalkOffset:side*sidewalkX,
+          mappedRouteSegment:i
+        };
+        root.add(street);
+        const x=side*sidewalkX;
+
+        // Real short chains frame the Steam Clock's north-side sidewalk,
+        // not the roadway, and certainly not every block of Water Street.
+        if(i===route.length-2 && side===-1){
+          const chainX=side*(roadwayHalfWidth+0.85);
+          for(let n=-1;n<=1;n++){
+            const z=n*5.1;
+            cylinder(street,'Black cast iron chain bollard',chainX,0.48,z,0.085,0.95,iron);
+            cylinder(street,'Bollard spherical cap',chainX,1.02,z,0.13,0.18,iron);
+            if(n<1){
+              const next=z+5.1;
+              join(street,'Sagging heritage curb chain',
+                {x:chainX,y:0.87,z},{x:chainX,y:0.65,z:(z+next)/2},0.023,iron);
+              join(street,'Sagging heritage curb chain',
+                {x:chainX,y:0.65,z:(z+next)/2},
+                {x:chainX,y:0.87,z:next},0.023,iron);
+            }
           }
         }
-        // Five globe lamps, warm and ornate, at alternating sidewalk bays.
+        // Distinctive five-globe Gastown lamps line the SIDEWALK, not
+        // the centre of the street. Local Z is the along-street position.
         if(i%2===1){
-          const z=side*8.6;
-          cylinder(street,'Gastown five-globe iron lamppost',0,2.65,z,0.10,5.2,iron);
-          for(const dx of [-0.52,0,0.52]){
-            const y=dx===0?5.55:4.92;
-            if(dx!==0)join(street,'Lamp ornate bracket',{x:0,y:4.8,z},{x:dx,y:y-0.1,z},0.045,iron);
+          cylinder(street,'Gastown five-globe iron lamppost',x,2.65,0,0.10,5.2,iron);
+          const globeOffsets=[
+            {dx:0,dz:0,y:5.65},
+            {dx:-0.48,dz:0,y:4.96},{dx:0.48,dz:0,y:4.96},
+            {dx:0,dz:-0.48,y:4.96},{dx:0,dz:0.48,y:4.96}
+          ];
+          globeOffsets.forEach(offset=>{
+            if(offset.dx||offset.dz)join(street,'Lamp ornate bracket',
+              {x,y:4.74,z:0},
+              {x:x+offset.dx,y:offset.y-0.12,z:offset.dz},
+              0.045,iron);
             const orb=new THREE.Mesh(new THREE.SphereGeometry(0.23,9,7),globe);
-            orb.name='Five globe heritage street light';orb.position.set(dx,y,z);street.add(orb);
-          }
+            orb.name='Five globe heritage street light';
+            orb.position.set(x+offset.dx,offset.y,offset.dz);
+            street.add(orb);
+          });
         }
         if(i%3===1) {
-          // Leafless branching shape is recognizable in grey Vancouver weather.
-          const z=side*8.85,x=3.3;
-          cylinder(street,'Water Street mature tree trunk',x,2,z,0.21,3.8,wood);
-          for(const arm of [-1,1]) {
+          // Trees stand inside sidewalk grates. Crown branches are modest
+          // enough to stay above the sidewalk instead of cutting through
+          // traffic at Suzy's head height.
+          const treeX=side*(sidewalkX+0.35),treeZ=3.3;
+          cylinder(street,'Water Street mature tree trunk',treeX,2,treeZ,0.21,3.8,wood);
+          for(const arm of [-1,1]){
             join(street,'Gastown street tree winter branches',
-              {x,y:3.4,z},{x:x+arm*1.7,y:5.5,z:z+0.75},0.065,wood);
+              {x:treeX,y:3.4,z:treeZ},
+              {x:treeX+arm*0.9,y:5.5,z:treeZ+0.65},0.065,wood);
             join(street,'Gastown mature tree branching crown',
-              {x:x+arm*1.1,y:4.85,z:z+0.5},
-              {x:x+arm*2.75,y:6.75,z:z+1.25},0.034,wood);
+              {x:treeX+arm*0.65,y:4.85,z:treeZ+0.4},
+              {x:treeX+arm*1.25,y:6.7,z:treeZ+1.15},0.034,wood);
             join(street,'Gastown mature tree fine canopy',
-              {x:x+arm*1.5,y:5.2,z:z+0.7},
-              {x:x+arm*2.5,y:6.9,z:z-0.8},0.025,wood);
+              {x:treeX+arm*0.8,y:5.2,z:treeZ+0.6},
+              {x:treeX+arm*1.2,y:6.85,z:treeZ-0.7},0.025,wood);
           }
-          box(street,'Iron street-tree grate',x,0.15,z,1.6,0.04,1.6,iron);
+          box(street,'Iron street-tree grate',treeX,0.15,treeZ,1.6,0.04,1.6,iron);
         }
         if(i===11 || i===14){
-          box(street,'Gastown sidewalk bench seat',-2,0.56,side*8.85,1.6,0.12,0.5,wood);
-          for(const x of [-2.6,-1.4])box(street,'Iron bench leg',x,0.3,side*8.85,0.09,0.54,0.14,iron);
-          box(street,'Gastown bicycle rack',3.0,0.56,side*8.4,0.13,1,1.2,iron);
+          box(street,'Gastown sidewalk bench seat',side*(sidewalkX+0.38),
+            0.56,-2,0.5,0.12,1.6,wood);
+          for(const z of [-2.55,-1.45])
+            box(street,'Iron bench leg',side*(sidewalkX+0.38),
+              0.3,z,0.14,0.54,0.09,iron);
+          box(street,'Gastown bicycle rack',side*(sidewalkX+0.16),
+            0.56,3.0,0.55,1,0.13,iron);
         }
       }
     }
@@ -633,10 +672,11 @@
     const vf=frame(12),delivery=new THREE.Group();
     delivery.name='Water Street parked local delivery van';
     delivery.position.set(vf.x,0.12,vf.z);
-    delivery.rotation.y=vf.yaw;
-    box(delivery,'White courier van body',3.8,1.45,-3.4,2.1,2.25,4.6,lightStone);
-    box(delivery,'Van windscreen',3.8,1.75,-5.74,1.85,1.12,0.09,glass);
-    for(const x of [2.65,4.95])for(const z of [-4.8,-2.3]){
+    // Parked on the north/right curb for westbound vehicles.
+    delivery.rotation.y=vf.yaw+Math.PI;
+    box(delivery,'White courier van body',4.3,1.45,-3.4,2.1,2.25,4.6,lightStone);
+    box(delivery,'Van windscreen',4.3,1.75,-5.74,1.85,1.12,0.09,glass);
+    for(const x of [3.15,5.45])for(const z of [-4.8,-2.3]){
       const wheel=new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.46,0.15,10),iron);
       wheel.rotation.z=Math.PI/2;wheel.position.set(x,0.52,z);delivery.add(wheel);
     }
