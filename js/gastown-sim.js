@@ -3496,7 +3496,9 @@
     const lowGraphicsPenalty = state.lowGraphics ? 1 : 0;
     return {
       pedestrian: (weather === 'fog' ? 1 : 2) + (mood === 'commuter' ? 1 : 0) - lowGraphicsPenalty,
-      commuter: state.lowGraphics ? 7 : (weather === 'fog' ? 10 : 14),
+      // Commuter paths now include the grand hall and WCE platform, not only
+      // the Cordova forecourt. Keep a small crowd even in low-graphics mode.
+      commuter: state.lowGraphics ? 13 : (weather === 'fog' ? 17 : 24),
       tourist: (weather === 'clear' && mood === 'lively' ? 5 : weather === 'clear' ? 4 : weather === 'drizzle' ? 3 : 2) - lowGraphicsPenalty,
       cyclist: (weather === 'rain' || weather === 'thunderstorm' || weather === 'fog' ? 0 : 1),
       skateboarder: (weather === 'rain' || weather === 'thunderstorm' ? 0 : 1),
@@ -3510,8 +3512,13 @@
     const profile = getNpcSpawnProfile();
     const counts = {};
     const stationCommuters = stationModel ? stationModel.commutersFor(world) : [];
+    const interiorCommuters = stationModel && stationModel.interiorCommutersFor
+      ? stationModel.interiorCommutersFor(world) : [];
+    const platformCommuters = stationModel && stationModel.platformCommutersFor
+      ? stationModel.platformCommutersFor(world) : [];
     const lotWalkers = streetLife && stationModel ? streetLife.peopleFor(world, stationModel) : [];
-    return lotWalkers.concat(stationCommuters, world.npcs || []).filter((npc) => {
+    // Interior first so lower graphic settings never empty the heritage hall.
+    return interiorCommuters.concat(platformCommuters, stationCommuters, lotWalkers, world.npcs || []).filter((npc) => {
       const role = npc.role || 'pedestrian';
       counts[role] = counts[role] || 0;
       const limit = Number.isFinite(profile[role]) ? profile[role] : 99;
@@ -3930,7 +3937,9 @@
       // The parking asphalt is still +0.19 while the service alley below is
       // -3.60. Set feet on the actual public surface, never on the alley.
       const onRaisedLot = world.parkingLot && isPointInPolygon(start, world.parkingLot.polygon || []);
-      const baseY = onRaisedLot ? 0.19 : 0;
+      const onPlatform = stationModel && stationModel.isWalkableWestCoastExpress
+        && stationModel.isWalkableWestCoastExpress(world, start);
+      const baseY = onRaisedLot ? 0.19 : onPlatform ? -1 : 0;
       visual.position.set(start.x, baseY, start.z);
       worldGroup.add(visual);
       // NPC dialogue remains interactive, without floating speech boxes.
@@ -5914,8 +5923,20 @@
     return best;
   }
 
-  function getGroundY() {
-    return (state.world && state.world.bounds && typeof state.world.bounds.floorY === 'number') ? state.world.bounds.floorY : 0;
+  function getGroundY(point) {
+    const outside = (state.world && state.world.bounds &&
+      typeof state.world.bounds.floorY === 'number') ? state.world.bounds.floorY : 0;
+    const here = point || { x:player.position.x, z:player.position.z };
+    // Match the visual sloped passage and slightly lower WCE boarding surface.
+    // All other public streets, including the raised Station East parking lot,
+    // keep their existing authored heights.
+    if (state.world && stationModel && stationModel.surfaceYFor &&
+        (stationModel.isWalkableInterior(state.world,here) ||
+          (stationModel.isWalkableWestCoastExpress &&
+            stationModel.isWalkableWestCoastExpress(state.world,here)))) {
+      return stationModel.surfaceYFor(state.world,here);
+    }
+    return outside;
   }
 
   function getWorldSpawn() {
@@ -5942,11 +5963,22 @@
     if (isPointInPolygon(point, walkBounds)
         || (stationModel && stationModel.isWalkableForecourt(state.world, point))
         || (stationModel && stationModel.isWalkableInterior && stationModel.isWalkableInterior(state.world, point))
+        || (stationModel && stationModel.isWalkableWestCoastExpress
+          && stationModel.isWalkableWestCoastExpress(state.world, point))
         || onLot) {
       state.lastSafePosition.set(player.position.x, player.position.y, player.position.z);
       return;
     }
 
+    // Protect both indoor routes from a teleport through the rear masonry,
+    // platform edge or rail tracks. Walking back down the hall remains possible.
+    if (stationModel && stationModel.isWalkableWestCoastExpress &&
+        stationModel.isWalkableWestCoastExpress(state.world, state.lastSafePosition)) {
+      player.position.copy(state.lastSafePosition);
+      state.velocity.set(0, 0, 0);
+      flashBoundaryStatus('West Coast Express: stay behind the platform safety strip.');
+      return;
+    }
     // Keep an indoor walker against the nearest concourse wall rather than
     // snapping across the station building into the outdoor route polygon.
     if (stationModel && stationModel.isWalkableInterior

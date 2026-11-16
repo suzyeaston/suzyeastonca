@@ -27,7 +27,7 @@ test('the simulator includes the authored street life and never draws generic pa
   const php = read('functions.php');
   assert.match(src, /streetLife\.create\(THREE, world\)/);
   assert.match(src, /streetLifeScene\.update\(time \/ 1000\)/);
-  assert.match(src, /lotWalkers\.concat\(stationCommuters, world\.npcs \|\| \[\]\)/);
+  assert.match(src, /interiorCommuters\.concat\(platformCommuters, stationCommuters, lotWalkers, world\.npcs \|\| \[\]\)/);
   assert.match(src, /'view_axis', 'parking', 'heritage_frontage'/);
   assert.match(php, /'se-gastown-street-life'/);
   assert.match(src, /'parking-highfive'/);

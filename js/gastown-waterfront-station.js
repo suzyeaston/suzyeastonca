@@ -68,17 +68,46 @@
   // A bounded, public-facing *interpretation* of the historic main hall.
   // Coordinates use the same transform as the station shell and are not
   // surveyed interior floor plans. The far end is deliberately closed.
-  function isWalkableInterior(world, point) {
-    if (!world || !world.spawn || !point) return false;
+  function localFor(world, point) {
     const a = anchorFor(world);
     const dx = point.x - a.x, dz = point.z - a.z;
-    const x = dx * Math.cos(a.yaw) - dz * Math.sin(a.yaw);
-    const z = dx * Math.sin(a.yaw) + dz * Math.cos(a.yaw);
-    // Expanded historic hall plus public east-west side-entry circulation.
-    // The corridor joins the same concourse, rather than snapping to Cordova.
-    const grandHall = Math.abs(x) <= 18.9 && z >= -31.5 && z <= 5.1;
+    return {
+      x: dx * Math.cos(a.yaw) - dz * Math.sin(a.yaw),
+      z: dx * Math.sin(a.yaw) + dz * Math.cos(a.yaw)
+    };
+  }
+
+  // A single open, staff-facing public transfer route through the rear arcade.
+  // The modeled fare-paid threshold is narrative only; no actual fare is checked.
+  function isWalkableInterior(world, point) {
+    if (!world || !world.spawn || !point) return false;
+    const { x, z } = localFor(world, point);
+    const grandHall = Math.abs(x) <= 18.9 && z >= -33.6 && z <= 5.1;
     const eastPassage = x >= 18.3 && x <= 56.5 && z >= -6.15 && z <= -1.85;
-    return grandHall || eastPassage;
+    const westCoastConnector = Math.abs(x) <= 3.3 && z >= -41.1 && z < -31.5;
+    return grandHall || eastPassage || westCoastConnector;
+  }
+
+  function isWalkableWestCoastExpress(world, point) {
+    if (!world || !world.spawn || !point) return false;
+    const local = localFor(world, point);
+    // Roofed boarding platform only: keep the yellow rail edge and all tracks
+    // outside walkable bounds. The far side of the station rear wall is north.
+    return point.x >= -75 && point.x <= 35
+      && point.z >= -13.9 && point.z <= -5.75
+      && local.z <= -35.0;
+  }
+
+  function surfaceYFor(world, point) {
+    if (!world || !point) return 0;
+    const local = localFor(world, point);
+    // An eight-metre sloped internal passage joins the 0m heritage hall
+    // to the platform at -1m without a camera or character teleport.
+    if (Math.abs(local.x) <= 3.3 && local.z <= -33.1 && local.z >= -41.1) {
+      return -Math.max(0, Math.min(1, (-local.z - 33.1) / 8));
+    }
+    if (isWalkableInterior(world, point)) return 0;
+    return isWalkableWestCoastExpress(world, point) ? -1 : 0;
   }
 
   function sideEntranceFor(world) {
@@ -232,7 +261,12 @@
       }
     }
     box('CPR station hall upper masonry', 0, 15.4, -17, 46, 2.2, 34, brick);
-    box('CPR station hall rear masonry', 0, 7.8, -33.75, 46, 15.6, 0.5, brick);
+    // Open the middle rear arcade for a real WCE connection; flankers stay
+    // structurally enclosed instead of exposing the rail yard.
+    for (const x of [-13.65, 13.65]) {
+      box('CPR station hall rear masonry', x, 7.8, -33.75, 18.7, 15.6, 0.5, brick);
+    }
+    box('Waterfront rear arcade heritage lintel', 0, 13.55, -33.75, 8.6, 4.1, 0.5, brick);
     box('Projecting central entry block', -15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Projecting east entry block', 15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Entry block crosshead above hall', 0, 9.5, -0.15, 9, 9.3, 1.2, brick);
@@ -259,6 +293,7 @@
     const mural = new THREE.MeshStandardMaterial({ color: 0x99715e, roughness: 0.82 });
     const archDark = new THREE.MeshStandardMaterial({ color: 0x514a44, roughness: 0.84 });
     const warmLight = new THREE.MeshBasicMaterial({ color: 0xffe8b4 });
+    const yellow = new THREE.MeshStandardMaterial({ color: 0xf0c331, roughness: 0.65 });
     // A single contiguous 44 m wide, 34 m deep public floor, with the
     // central Cordova entrance aligned to the east pedestrian connector.
     box('Waterfront public concourse tiled floor', 0, 0.046, -16.0, 44.4, 0.09, 35.7, hallFloor);
@@ -330,7 +365,7 @@
     // The dark openings indicate onward transit circulation, not walkable
     // fare-paid space. Their backs are beyond the publicly walkable boundary.
     for (const x of [-12.0, 0, 12.0]) {
-      box('Concourse arch recessed opening', x, 4.65, -33.36,
+      if (x !== 0) box('Concourse arch recessed opening', x, 4.65, -33.36,
         7.1, 9.3, 0.1, archDark);
       const arch = new THREE.Mesh(
         new THREE.TorusGeometry(3.6, 0.28, 8, 24, Math.PI),
@@ -351,12 +386,95 @@
     heritageClock.position.set(0, 12.1, -33.07);
     heritageClock.rotation.x = Math.PI / 2;
     root.add(heritageClock);
-    sign('WATERFRONT', 0, 9.2, -33.0, 3.0, 0.43, '#f5f0e3',
-      'bold 62px Arial, sans-serif');
-    sign('WATERFRONT STATION', 0, 3.5, -33.0, 5, 0.42, '#f7e7c4',
-      'bold 70px Georgia, serif');
-    sign('PUBLIC CONCOURSE', 0, 2.8, -32.99, 4.6, 0.32, '#e9d8b5',
-      'bold 65px Arial, sans-serif');
+    // Modern transit wayfinding lives beneath the restored CPR arches.
+    // Contrasting navy/cream panels stay above head height on the public side.
+    const transitNavy = new THREE.MeshStandardMaterial({ color: 0x193849, roughness: 0.72 });
+    const transitBlue = new THREE.MeshStandardMaterial({ color: 0x266a9d, roughness: 0.66 });
+    const fareBlue = new THREE.MeshStandardMaterial({ color: 0x2c7b86, roughness: 0.7 });
+    const displayGlass = new THREE.MeshStandardMaterial({ color: 0x152938, roughness: 0.16, metalness: 0.15 });
+    for (const [x, label, tone] of [
+      [-12, 'EXPO LINE / SEABUS', transitBlue],
+      [0, 'WEST COAST EXPRESS', transitNavy],
+      [12, 'CANADA LINE', fareBlue]
+    ]) {
+      box('Waterfront blue directional fascia', x, 8.85, -33.0, 7.4, 1.0, 0.14, tone);
+      sign(label, x, 8.87, -32.89, 7.0, 0.55, '#ffffff', 'bold 68px Arial, sans-serif');
+    }
+    sign('WATERFRONT STATION', 0, 12.0, -33.06, 8.0, 0.47,
+      '#ead8bd', 'bold 66px Georgia, serif');
+
+    // The hall in the photographs has visible ticketing and circulation,
+    // not a black wall. These tactile machines flank a broad clear aisle.
+    for (const x of [-15, -11, 11, 15]) {
+      box('Waterfront fare gate narrow housing', x, 0.60, -27.6,
+        0.47, 1.2, 1.45, stoneShadow);
+      box('Waterfront Compass green fare reader', x, 1.22, -27.25,
+        0.33, 0.18, 0.36, fareBlue);
+      box('Waterfront fare gate glass wing', x + (x < 0 ? 0.52 : -0.52),
+        0.86, -27.4, 0.7, 0.85, 0.08, glass);
+    }
+    for (const x of [-16.8, 16.8]) {
+      box('Waterfront ticket machine enclosure', x, 1.25, -20.7,
+        1.48, 2.48, 0.9, transitNavy);
+      box('Waterfront ticket machine display', x, 1.71, -20.16,
+        1.05, 0.8, 0.08, displayGlass);
+      box('Waterfront ticket machine green reader', x, 0.98, -20.15,
+        0.44, 0.18, 0.09, fareBlue);
+    }
+
+    // Historic skylight impression: luminous glazing between the coffers,
+    // still entirely original procedural materials (no Street View texture).
+    const clerestory = new THREE.MeshBasicMaterial({ color: 0xdce8e7 });
+    for (const x of [-13.75, 13.75]) {
+      for (const z of [-27.5, -17.5, -7.5]) {
+        box('Waterfront luminous upper concourse glazing', x, 14.0, z,
+          6.8, 0.022, 3.35, clerestory);
+        for (const dx of [-2.35, 0, 2.35]) {
+          box('Waterfront skylight mullion', x + dx, 13.98, z,
+            0.10, 0.06, 3.35, hallTrim);
+        }
+      }
+    }
+    // Far-left/right retail fascia provides storefront scale and warm color.
+    for (const x of [-18.15, 18.15]) {
+      box('Waterfront concourse retail display', x, 2.45, -12,
+        1.75, 3.15, 5.5, displayGlass);
+      box('Waterfront concourse retail timber header', x, 4.28, -12,
+        1.85, 0.48, 5.7, brass);
+    }
+
+    // WCE connection: visibly pass through the centre arch to an illuminated
+    // sloped passage and onto the existing separate commuter platform. The
+    // player can walk it in both directions; no ungrounded rail-yard shortcut.
+    const transferTile = new THREE.MeshStandardMaterial({ color: 0xc9d2d1, roughness: 0.85 });
+    const transferRail = new THREE.MeshStandardMaterial({ color: 0xb0babe, roughness: 0.36, metalness: 0.5 });
+    const transferGlass = new THREE.MeshBasicMaterial({ color: 0xdce9ef, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+    const ramp = box('West Coast Express concourse-to-platform continuous ramp',
+      0, -0.50, -37.1, 6.2, 0.17, 8.5, transferTile);
+    ramp.rotation.x = -Math.atan2(1, 8);
+    for (const x of [-3.25, 3.25]) {
+      box('WCE access glazed corridor wall', x, 2.45, -37.25,
+        0.16, 4.9, 8.3, transferGlass);
+      box('WCE passage handrail', x * 0.92, 0.77, -37.0,
+        0.08, 0.1, 8.2, transferRail).rotation.x = -Math.atan2(1, 8);
+      for (const z of [-33.5, -35.5, -37.5, -39.5, -40.9]) {
+        box('WCE sloped passage handrail post', x * 0.92,
+          0.7 - Math.max(0, Math.min(1, (-z - 33.1) / 8)), z,
+          0.095, 1.4, 0.095, transferRail);
+      }
+    }
+    box('West Coast Express white overhead passage', 0, 4.82, -37.1,
+      7.1, 0.27, 8.5, hallTrim);
+    for (const z of [-34.8, -37.0, -39.2]) {
+      box('West Coast Express passage strip light', 0, 4.65, z,
+        4.4, 0.05, 0.19, clerestory);
+    }
+    box('West Coast Express fare-paid threshold canopy', 0, 5.17, -34.0,
+      6.7, 0.34, 0.65, yellow);
+    sign('WEST COAST EXPRESS / PLATFORMS', 0, 4.77, -33.55,
+      6.4, 0.43, '#ffffff', 'bold 61px Arial, sans-serif');
+    root.userData.westCoastExpressConnection = 'walkable rear arcade, ramp and platform';
+    root.userData.wceConnectionSurveyed = false;
     root.userData.interiorApproximate = true;
     root.userData.publicHallOnly = true;
     root.userData.heritageHallReference = 'SRA renovation / user-supplied interior photos';
@@ -675,6 +793,56 @@
     });
   }
 
+  // Interior crowds use the same deterministic NPC system and idle sway as
+  // outdoor commuters, but remain on connected, public pedestrian pathways.
+  function interiorCommutersFor(world) {
+    if (!world || !world.spawn) return [];
+    const paths = [
+      [[-7,-5],[-7,-13],[-6,-22],[-8,-27]],
+      [[8,-28],[7,-20],[8,-11],[7,-4]],
+      [[-3,-26],[-2,-18],[0,-10],[1,-5]],
+      [[4,-6],[5,-12],[4,-20],[3,-26]],
+      [[-11,-14],[-9,-19],[-10,-24],[-12,-19]],
+      [[12,-24],[13,-17],[11,-10],[10,-6]],
+      [[-5,-17],[0,-15],[6,-17],[2,-21]],
+      [[-9,-9],[-5,-8],[-2,-11],[-6,-13]],
+      [[9,-10],[6,-8],[4,-13],[8,-15]],
+      [[-2,-29],[-2,-31],[0,-32],[2,-31]]
+    ];
+    return paths.map((route,index) => {
+      const patrol=route.map(([x,z])=>toWorld(world,x,z));
+      return {
+        id:'waterfront-indoor-commuter-'+index,
+        role:'commuter', behavior:'route_walk',
+        dialogId:'pedestrian_route_tip',
+        silhouetteScale:0.84+(index%4)*0.045,
+        interactRadius:1.75, idleSpot:patrol[0], patrol,
+        yaw:index%2?0.25:-0.25
+      };
+    });
+  }
+
+  function platformCommutersFor(world) {
+    if (!world || !world.spawn) return [];
+    // The original illustrative long platform overlaps the rear heritage
+    // footprint at its western end; use only the clear east boarding apron.
+    const patrols = [
+      [[8,-9.3],[12,-9.5],[18,-9.1]],
+      [[23,-10.2],[29,-10.0],[33,-10.3]],
+      [[4,-11.1],[7,-10.7],[11,-10.9]]
+    ];
+    return patrols.map((route,index)=>{
+      const patrol=route.map(([x,z])=>({x,z}));
+      return {
+        id:'waterfront-wce-platform-commuter-'+index,
+        role:'commuter',behavior:'route_walk',
+        dialogId:'pedestrian_route_tip',
+        silhouetteScale:0.87+index*0.03,interactRadius:1.8,
+        idleSpot:patrol[0],patrol,yaw:0.4
+      };
+    });
+  }
+
   window.GastownWaterfrontStation = Object.freeze({
     reference: REFERENCE,
     anchorFor,
@@ -683,8 +851,12 @@
     arrivalPitch: () => 0.095,
     isWalkableForecourt,
     isWalkableInterior,
+    isWalkableWestCoastExpress,
+    surfaceYFor,
     sideEntranceFor,
     create,
-    commutersFor
+    commutersFor,
+    interiorCommutersFor,
+    platformCommutersFor
   });
 })(window);

@@ -158,7 +158,7 @@ test('station and parking NPCs are adult-scale beside the Suzy avatar and stay a
     const height = 1.72 * factorFor({ silhouetteScale: authored });
     assert.ok(height >= 1.85 && height <= 2.16, 'commuter height is comparable to Suzy: ' + height);
   }
-  assert.match(sim, /onRaisedLot \? 0\.19 : 0/,
+  assert.match(sim, /onRaisedLot \? 0\.19 : onPlatform \? -1 : 0/,
     'parking pedestrians use the public deck, not the below-grade service lane');
   assert.match(sim, /baseY, baseYaw: startYaw/,
     'NPC movement preserves the deck-height foot placement');

@@ -25,7 +25,8 @@ test('Cordova central doorway leads into a bounded public hall and back outside'
     assert.equal(station.isWalkableInterior(world, point), true, 'walkable at local z=' + z);
   }
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -30)), true);
-  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -32)), false);
+  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -32)), true);
+  assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, -42)), false);
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 8, -6)), true);
   assert.equal(station.isWalkableInterior(world, station.toWorld(world, 0, 8)), false);
   assert.equal(station.isWalkableForecourt(world, station.toWorld(world, 0, 6)), true);
@@ -109,7 +110,7 @@ test('expanded hall and Station East public corridor form one traversable route'
       true, 'hall blocked at local z=' + z
     );
   }
-  for (const point of [[60, -4], [38, -10], [22, -12], [0, -33], [-22, -4]]) {
+  for (const point of [[60, -4], [38, -10], [22, -12], [0, -42], [-22, -4]]) {
     assert.equal(station.isWalkableInterior(world, station.toWorld(world, ...point)), false);
   }
 });
