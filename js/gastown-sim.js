@@ -1570,7 +1570,7 @@
     if(data&&data.securityHighFiveArm){
       const t=nowSeconds-(lab.guardHighFiveAt||0);
       const raise=t>=0&&t<2.2?Math.min(1,t*5,(2.2-t)*5):0;
-      data.securityHighFiveArm.rotation.z=-2.3*Math.max(0,raise);
+      data.securityHighFiveArm.rotation.z=raise>0?-2.3*raise:0;
     }
     setDoors();
   }
