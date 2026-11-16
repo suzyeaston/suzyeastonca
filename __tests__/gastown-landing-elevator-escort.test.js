@@ -44,7 +44,9 @@ test('player cannot roam beyond lobby, elevator car or sixth-floor lab boundarie
   assert.match(game,/minX:878\.4,maxX:881\.6,minZ:848\.5,maxZ:851\.8/);
   assert.match(game,/minX:792\.75,maxX:807\.25,minZ:791\.1,maxZ:809\.25/);
   assert.match(game,/function interactWithLanding\(\)/);
-  assert.match(game,/if \(state\.landingLab\.inside\) \{ event\.preventDefault\(\); return; \}/);
+  assert.match(game,/if \(state\.landingLab\.inside\) \{/);
+  assert.match(game,/if\(!interactWithLanding\(\)\)/);
+  assert.match(game,/function exitLandingToWaterStreet\(portal\)/);
 });
 
 test('KK journey is proximity driven with speech, wait-for-player and animated physical doors',()=>{
