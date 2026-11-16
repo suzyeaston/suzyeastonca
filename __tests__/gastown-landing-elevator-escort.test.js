@@ -86,7 +86,7 @@ test('Suzy starts in rear third person and secret suzyfly enables cape and fligh
   assert.match(game,/fly\.altitude=THREE\.MathUtils\.clamp/);
   assert.match(game,/state\.flight\.enabled \? 0 : getGroundY\(\) - player\.position\.y/);
   assert.match(game,/if\(code==='Space'\)state\.flight\.up=pressed/);
-  assert.match(game,/if\(code==='ControlLeft'\|\|code==='ControlRight'\)state\.flight\.down=pressed/);
+  assert.match(game,/if\(code==='KeyQ'\|\|code==='ControlLeft'\|\|code==='ControlRight'\)/);
 });
 
 test('third-person backpack camera survives staged lobby, elevator and lab arrival',()=>{
