@@ -95,6 +95,7 @@ jobs:
           node --test __tests__/gastown-landing-elevator-escort.test.js
           node --test __tests__/gastown-landing-lab-clock.test.js
           node --test __tests__/gastown-landing-lobby-exit-vista.test.js
+          node --test __tests__/gastown-yangos-voluntary-elevator-highfive.test.js
           node --test __tests__/gastown-station-east-v2.test.js
           node --test __tests__/gastown-suzy-film-avatar.test.js
           node --test __tests__/gastown-cordova-architecture.test.js

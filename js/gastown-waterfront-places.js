@@ -605,7 +605,7 @@
     return {door,threshold:{x:door.x+outward.x*4.0,z:door.z+outward.z*4.0},
       outward,lobbySpawn:{x:850,z:858},lobbyExit:{x:850,z:859},
       elevatorLobby:{x:845,z:851},elevatorCar:{x:880,z:850},
-      roomSpawn:{x:800,z:808},roomExit:{x:800,z:809.2}};
+      roomSpawn:{x:800,z:804.9},roomExit:{x:800,z:809.2}};
   }
 
   // One small, photo-informed, low-poly likeness for the street, lobby and lab.
@@ -832,6 +832,44 @@
     cube('Multimodal Lab laptop luminous code display',801.5,1.32,801.59,0.89,0.49,0.012,screenGlow);
     root.userData.coder=coder;
     root.userData.coderHands=coderHands;
+    // A fictional, stylized named host (not a portrait/voice likeness).
+    // Yangos is the lab greeter after KK exits by himself.
+    const yangos=new THREE.Group();
+    yangos.name='Yangos | fictional Multimodal Lab welcome host';
+    yangos.position.set(804.1,0,804.7);
+    yangos.rotation.y=-Math.PI/3;
+    root.add(yangos);
+    const hostSkin=new THREE.MeshStandardMaterial({color:0xb68162,roughness:0.9});
+    const hostTop=new THREE.MeshStandardMaterial({color:0x336b73,roughness:0.88});
+    const hostTrousers=new THREE.MeshStandardMaterial({color:0x292c3c,roughness:0.92});
+    const hostHair=new THREE.MeshStandardMaterial({color:0x29252b,roughness:0.91});
+    function hostPart(name,x,y,z,w,h,d,material){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      m.name=name;m.position.set(x,y,z);yangos.add(m);return m;
+    }
+    hostPart('Yangos teal shirt',0,1.38,0,0.74,0.89,0.40,hostTop);
+    for(const x of [-0.18,0.18]){
+      hostPart('Yangos dark trousers',x,0.52,0,0.28,1.04,0.34,hostTrousers);
+      hostPart('Yangos shoe',x,0.10,-0.07,0.31,0.15,0.55,dark);
+    }
+    const hostHead=new THREE.Mesh(new THREE.SphereGeometry(0.27,10,8),hostSkin);
+    hostHead.name='Yangos stylized face';hostHead.position.set(0,2.03,0);yangos.add(hostHead);
+    hostPart('Yangos short hair',0,2.28,0.025,0.49,0.12,0.43,hostHair);
+    hostPart('Yangos left sleeve',-0.47,1.55,0,0.23,0.48,0.29,hostTop);
+    hostPart('Yangos left hand',-0.48,1.14,0,0.16,0.24,0.18,hostSkin);
+    const yangosWave=new THREE.Group();
+    yangosWave.name='Yangos animated welcome arm';
+    yangosWave.position.set(0.48,1.69,0);
+    yangos.add(yangosWave);
+    const sleeve=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.48,0.29),hostTop);
+    sleeve.name='Yangos right sleeve';sleeve.position.set(0,-0.24,0);yangosWave.add(sleeve);
+    const hand=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.24,0.18),hostSkin);
+    hand.name='Yangos welcoming hand';hand.position.set(0,-0.58,0);yangosWave.add(hand);
+    sign(THREE,root,'YANGOS · WELCOME',
+      {x:804.1,y:2.77,z:804.7},2.4,0.36,0,
+      {background:'#1e454f',color:'#e9f5ee'});
+    root.userData.yangos=yangos;
+    root.userData.yangosWave=yangosWave;
     // Reuse the same recognizable model used on the street and in the lobby.
     const greeter=createKrisAvatar(THREE);
     greeter.name='KK | fictional welcoming lab NPC';
@@ -954,6 +992,41 @@
     const kk=createKrisAvatar(THREE);
     kk.name='KK fictional lobby escort';
     kk.position.set(851.3,0,855.1);root.add(kk);
+    // Fictional lobby security host, positioned near reception rather than
+    // across the green-carpet route or elevator entrance.
+    const securityGuard=new THREE.Group();
+    securityGuard.name='The Landing friendly security guard';
+    securityGuard.position.set(853.1,0,855.0);
+    securityGuard.rotation.y=-Math.PI/4;
+    root.add(securityGuard);
+    const uniform=new THREE.MeshStandardMaterial({color:0x283949,roughness:0.88});
+    const darkUniform=new THREE.MeshStandardMaterial({color:0x222b34,roughness:0.9});
+    const guardSkin=new THREE.MeshStandardMaterial({color:0xc19372,roughness:0.9});
+    function guardPart(name,x,y,z,w,h,d,material,parent=securityGuard){
+      const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      m.name=name;m.position.set(x,y,z);parent.add(m);return m;
+    }
+    guardPart('Security guard uniform torso',0,1.40,0,0.76,0.91,0.42,uniform);
+    for(const x of [-0.18,0.18]){
+      guardPart('Security guard uniform leg',x,0.53,0,0.29,1.04,0.33,darkUniform);
+      guardPart('Security guard shoe',x,0.09,-0.06,0.31,0.14,0.48,dark);
+    }
+    const guardHead=new THREE.Mesh(new THREE.SphereGeometry(0.26,10,8),guardSkin);
+    guardHead.name='Security guard stylized head';guardHead.position.set(0,2.08,0);
+    securityGuard.add(guardHead);
+    guardPart('Security guard cap',0,2.34,0,0.53,0.12,0.47,darkUniform);
+    guardPart('Security guard badge',-0.23,1.59,-0.231,0.13,0.15,0.04,gold);
+    guardPart('Security guard left sleeve',-0.48,1.49,0,0.24,0.58,0.28,uniform);
+    guardPart('Security guard left hand',-0.49,1.08,0,0.18,0.22,0.18,guardSkin);
+    const securityHighFiveArm=new THREE.Group();
+    securityHighFiveArm.name='Security guard interactive high-five arm';
+    securityHighFiveArm.position.set(0.48,1.69,0);
+    securityGuard.add(securityHighFiveArm);
+    guardPart('Security guard right sleeve',0,-0.25,0,0.25,0.51,0.29,uniform,securityHighFiveArm);
+    guardPart('Security guard raised high-five hand',0,-0.61,0,0.19,0.23,0.19,guardSkin,securityHighFiveArm);
+    sign(THREE,root,'SECURITY',
+      {x:853.1,y:2.84,z:855.0},1.8,0.35,0,
+      {background:'#233641',color:'#e8f1e4'});
     // The lift cabin is off-map so the street remains uninterrupted.
     block('The Landing elevator car floor',880,-0.12,850,5,0.23,5,tile);
     block('Elevator cabin left panel',877.5,2.15,850,0.18,4.3,5,metal);
@@ -973,7 +1046,8 @@
       carLeftX:carLeft.position.x,carRightX:carRight.position.x,
       exitDoor:{x:850,z:858.25},entranceWalkway:{x:850,z:856.4},
       floorTreatment:'heritage stone with green 375 Water entry carpet',
-      exteriorSightline:'harbour-facing north lobby glazing'};
+      exteriorSightline:'harbour-facing north lobby glazing',
+      securityGuard,securityHighFiveArm,securityGuardPosition:{x:853.1,z:855.0}};
     return root;
   }
 
