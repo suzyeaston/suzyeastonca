@@ -208,37 +208,148 @@
       const rust=mat(0x873c36),red=mat(0xc85a45),darkGlass=mat(0x344b58,0.27,0.17);
       const frame=mat(0x737c7b,0.61,0.24),heritage=mat(0x945346),wRed=mat(0xf04b32,0.58,0.08);
       const balcony=mat(0xc5c6be,0.74,0.11),warmGlass=mat(0x486775,0.35,0.16);
-      block(g,"Woodward's W43 glazed residential shaft",0,61.15,0,23,122.3,21,darkGlass);
-      for(const x of [-11.7,11.7]){
-        block(g,"Woodward's red vertical corner spine",x,60.7,0,0.75,121.4,22.3,rust);
+      // W43's real footprint is a triangular flatiron between converging
+      // old/new city grids. The previous 23x21m BLOCK created the notorious
+      // featureless blade in the screenshot, even after facade decorations.
+      // This thin, tapered six-vertex outline has a gently rounded Cordova
+      // nose, and is extruded vertically. In simple test environments without
+      // ExtrudeGeometry, retain a box fallback but flag the geometry mode.
+      let flatironOutline=null;
+      if(THREE.Shape&&THREE.ExtrudeGeometry){
+        flatironOutline=new THREE.Shape();
+        flatironOutline.moveTo(-10.5,4.5);
+        flatironOutline.quadraticCurveTo(-13.1,6.4,-12.6,8.0);
+        flatironOutline.quadraticCurveTo(-12.1,11.0,-8.6,11.5);
+        flatironOutline.lineTo(10.4,11.2);
+        flatironOutline.lineTo(12.1,-9.9);
+        flatironOutline.quadraticCurveTo(11.6,-12.3,7.2,-12.2);
+        flatironOutline.closePath();
+        const shape=new THREE.ExtrudeGeometry(flatironOutline,{
+          depth:122.3,steps:1,bevelEnabled:false,curveSegments:6
+        });
+        // Shape XY -> world XZ; extrusion local +Z -> world +Y.
+        shape.rotateX(-Math.PI/2);
+        const shaft=new THREE.Mesh(shape,darkGlass);
+        shaft.name="Woodward's W43 glazed residential shaft";
+        shaft.castShadow=false;shaft.receiveShadow=false;
+        g.add(shaft);
+      } else {
+        block(g,"Woodward's W43 glazed residential shaft",0,61.15,0,23,122.3,21,darkGlass);
       }
-      for(const z of [-10.8,10.8]){
-        block(g,"Woodward's red rear/front corner spine",0,60.7,z,23.4,121.4,0.65,red);
+      g.userData.woodwardsPlan='triangular flatiron with rounded Cordova corner';
+      g.userData.woodwardsUsesExtrudedMassing=!!flatironOutline;
+      const glassSkin=mat(0x567482,0.30,0.21);
+      function facadeStrip(name,x1,z1,x2,z2,y,h,thickness,material){
+        const dx=x2-x1,dz=z2-z1;
+        const mesh=block(g,name,(x1+x2)/2,y,(z1+z2)/2,
+          Math.hypot(dx,dz),h,thickness,material);
+        mesh.rotation.y=-Math.atan2(dz,dx);
+        return mesh;
       }
-      for(let y=8;y<121;y+=11){
-        block(g,"Woodward's stacked residential balcony rail",0,y,-11.0,23,0.23,0.28,frame);
-        block(g,"Woodward's stacked residential south fascia",0,y,11.0,23,0.23,0.28,red);
+      // Glass is on three visible elevations rather than only the "front"
+      // of an opaque rectangle. Orange metal fins evoke the real screen.
+      facadeStrip("Woodward's W43 north glazed curtainwall",-8.8,-11.59,
+        10.2,-11.32,63,112,0.17,glassSkin);
+      facadeStrip("Woodward's W43 diagonal south glazed curtainwall",-10.25,-4.55,
+        7.10,12.25,63,112,0.17,glassSkin);
+      facadeStrip("Woodward's W43 east return glazing",12.20,-9.3,
+        12.20,9.4,63,112,0.17,glassSkin);
+      for(const [x,z] of [[-12.2,-8.0],[-8.7,-11.55],[10.4,-11.20],
+        [12.16,-9.9],[12.16,9.9],[7.2,12.25]]){
+        block(g,"Woodward's rust red vertical outside corner frame",x,61,z,
+          0.31,120,0.31,rust);
       }
-      // Curved curtain wall is the W43 silhouette's defining feature.
-      // Nine stepped glass facets and slender brick-red piers approximate its
-      // bowed facade without licensed photogrammetry or costly CSG meshes.
+      for(let i=0;i<8;i++){
+        const t=(i+0.5)/8;
+        block(g,"Woodward's orange north steel screen mullion",
+          -8.6+19.0*t,62,-11.67,0.22,116,0.22,red);
+        block(g,"Woodward's orange diagonal steel screen mullion",
+          -10.25+(17.35*t),62,-4.55+(16.8*t),
+          0.22,116,0.22,red);
+      }
+      // Nine beveled-looking glass bays at the rounded corner instead of
+      // a rectangular slab with stripes stuck to its face.
       for(let bay=-4;bay<=4;bay++){
-        const x=bay*2.55;
-        const bow=1.35*Math.sqrt(Math.max(0,1-(x/12.8)**2));
-        block(g,"Woodward's bowed north facade glass bay",
-          x,63.3,-10.98-bow,2.24,112.5,0.13,warmGlass);
+        const x=-10.55+bay*0.52;
+        const z=-7.8-1.55*Math.sqrt(Math.max(0,1-(bay/5)**2));
+        const panel=block(g,"Woodward's bowed north facade glass bay",
+          x,63,z,0.43,111.5,0.14,warmGlass);
+        panel.rotation.y=-bay*0.13;
         block(g,"Woodward's curved brick mullion",
-          x+1.15,63.3,-11.01-bow,0.22,112.5,0.20,rust);
+          x+0.24,62.9,z-0.06,0.12,112,0.20,rust);
       }
-      // Real tower photos show repetitive pale balcony ribs, not an
-      // uninterrupted solid red slab. Keep both exposed elevations legible.
-      for(let y=8;y<120;y+=11){
-        block(g,"Woodward's curved pale balcony fascia",0,y,-12.16,
-          24.2,0.34,0.38,balcony);
-        block(g,"Woodward's east elevation pale balcony return",11.86,y,0,
-          0.38,0.30,21.8,balcony);
+      // Floor-by-floor crescent balconies wrapped around the rounded nose.
+      // Instancing is essential: 35 balconies cost ONE draw call on a small
+      // MacBook, instead of 35 expensive standalone meshes.
+      const balconySlab=new THREE.CylinderGeometry(2.25,2.25,0.18,12,1,
+        false,-Math.PI*0.12,Math.PI*1.20);
+      if(THREE.InstancedMesh&&THREE.Object3D){
+        const floors=35;
+        const stack=new THREE.InstancedMesh(balconySlab,balcony,floors);
+        stack.name="Woodward's rounded corner balcony stack";
+        stack.castShadow=false;stack.receiveShadow=false;
+        const marker=new THREE.Object3D();
+        for(let i=0;i<floors;i++){
+          marker.position.set(-11.0,8.4+i*3.17,-7.55);
+          marker.rotation.y=0.28;
+          marker.updateMatrix();
+          stack.setMatrixAt(i,marker.matrix);
+        }
+        stack.instanceMatrix.needsUpdate=true;
+        g.add(stack);
+      } else {
+        for(let y=8.4;y<120;y+=9.52){
+          const slab=new THREE.Mesh(balconySlab,balcony);
+          slab.name="Woodward's rounded corner balcony stack fallback";
+          slab.position.set(-11.0,y,-7.55);
+          slab.rotation.y=0.28;slab.castShadow=false;slab.receiveShadow=false;
+          g.add(slab);
+        }
       }
-      block(g,"Woodward's planted tower roof edge",0,122.4,0,25.2,0.55,23.5,heritage);
+      // Thin white balconies emphasize the real W43's rhythm; avoid thick
+      // 11-metre-spaced full-red facades, which made it read as a red slab.
+      for(let y=9;y<120;y+=10.3){
+        facadeStrip("Woodward's curved pale balcony fascia",-8.5,-11.82,
+          10.5,-11.52,y,0.28,0.38,balcony);
+        facadeStrip("Woodward's east elevation pale balcony return",12.35,-9.4,
+          12.35,9.1,y,0.28,0.37,balcony);
+      }
+      // The main horizontal balcony ribbons have 3.17m storey spacing.
+      // Do not allocate one mesh per storey when Three can instance them.
+      if(THREE.InstancedMesh&&THREE.Object3D){
+        for(const edge of [
+          {name:"Woodward's north horizontal balcony lattice",
+            a:[-8.6,-11.76],b:[10.35,-11.49]},
+          {name:"Woodward's angled horizontal balcony lattice",
+            a:[-10.3,-4.75],b:[7.25,12.42]}
+        ]){
+          const dx=edge.b[0]-edge.a[0],dz=edge.b[1]-edge.a[1];
+          const rail=new THREE.InstancedMesh(
+            new THREE.BoxGeometry(Math.hypot(dx,dz),0.15,0.23),red,35);
+          rail.name=edge.name;
+          rail.castShadow=false;rail.receiveShadow=false;
+          const dummy=new THREE.Object3D();
+          for(let floor=0;floor<35;floor++){
+            dummy.position.set((edge.a[0]+edge.b[0])/2,8.5+floor*3.17,
+              (edge.a[1]+edge.b[1])/2);
+            dummy.rotation.y=-Math.atan2(dz,dx);
+            dummy.updateMatrix();rail.setMatrixAt(floor,dummy.matrix);
+          }
+          rail.instanceMatrix.needsUpdate=true;g.add(rail);
+        }
+      }
+      if(flatironOutline){
+        const roofGeometry=new THREE.ExtrudeGeometry(flatironOutline,{
+          depth:0.60,steps:1,bevelEnabled:false,curveSegments:6
+        });
+        roofGeometry.rotateX(-Math.PI/2);
+        const roof=new THREE.Mesh(roofGeometry,heritage);
+        roof.name="Woodward's planted tower roof edge";
+        roof.position.y=122.3;
+        roof.castShadow=false;roof.receiveShadow=false;g.add(roof);
+      } else {
+        block(g,"Woodward's planted tower roof edge",0,122.4,0,25.2,0.55,23.5,heritage);
+      }
       // Rebuilt brick frontage and supported W are a separate low-rise
       // element, not an out-of-scale sign painted across the glass shaft.
       block(g,"Woodward's heritage brick base",-24,11.6,0,28,23.2,24,heritage);
