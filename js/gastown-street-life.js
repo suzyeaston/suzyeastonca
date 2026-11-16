@@ -401,6 +401,7 @@
     // Keep the lot central aisle open: do not generate a marker pillar or lantern.
     const centerline = world && world.route && world.route.centerline;
     let buses=[], segments=[], total=0, cars=[], lotCar=null, stop=null;
+    let waterCars=[], waterSegments=[], waterTotal=0;
     if(Array.isArray(centerline) && centerline.length>=3) {
       const first=centerline.slice(0,9);
       const points=first.map((pt,i)=>{
@@ -417,6 +418,30 @@
       cars=Array.from({length:4},(_,i)=>makeStreetCar(THREE,i));
       cars.forEach(car=>root.add(car));
       stop=makeHarbourCentreStop(THREE,root,segments,world);
+
+      // Water Street is NOT the Cordova trolley corridor. Run separate
+      // mapped one-way WESTBOUND traffic from the Cambie/Steam Clock end
+      // back toward Waterfront. No eastbound motor vehicles are spawned.
+      const waterRoute=centerline.slice(7);
+      for(let i=1;i<waterRoute.length;i++){
+        const a=waterRoute[i-1],b=waterRoute[i];
+        const length=Math.hypot(b.x-a.x,b.z-a.z);
+        waterSegments.push({a,b,from:waterTotal,length});
+        waterTotal+=length;
+      }
+      if(waterTotal>15){
+        waterCars=Array.from({length:3},(_,i)=>makeStreetCar(THREE,i+5));
+        waterCars.forEach((car,i)=>{
+          car.name='Water Street one-way westbound car '+(i+1);
+          car.userData.travelDirection='westbound';
+          root.add(car);
+        });
+        root.userData.waterStreetTraffic={
+          direction:'westbound',oneWay:true,
+          start:'Water & Cambie',end:'Waterfront / Water Street',
+          laneOffsetMetres:1.75
+        };
+      }
     }
     if(world && world.parkingLot && world.parkingLot.center && world.parkingLot.polygon && world.parkingLot.polygon.length>=2) {
       const lot=world.parkingLot;
@@ -435,6 +460,21 @@
       const norm=Math.hypot(dx,dz)||1;
       mesh.position.set(segment.a.x+dx*t+dz/norm*lateral,0.12,segment.a.z+dz*t-dx/norm*lateral);
       mesh.rotation.y=Math.atan2(-dx,-dz)+(reverse?Math.PI:0);
+    }
+    function alongWaterWestbound(progress,mesh){
+      if(!waterTotal||!waterSegments.length)return;
+      const travel=((progress%waterTotal)+waterTotal)%waterTotal;
+      const distance=waterTotal-travel;
+      const seg=waterSegments.find(s=>distance<=s.from+s.length)||
+        waterSegments[waterSegments.length-1];
+      const t=Math.max(0,Math.min(1,(distance-seg.from)/(seg.length||1)));
+      const dx=seg.b.x-seg.a.x,dz=seg.b.z-seg.a.z;
+      const norm=Math.hypot(dx,dz)||1;
+      // Westbound travel's right-hand lane is the NORTH curb.
+      const northOffset=1.75;
+      mesh.position.set(seg.a.x+dx*t+dz/norm*northOffset,0.12,
+        seg.a.z+dz*t-dx/norm*northOffset);
+      mesh.rotation.y=Math.atan2(-dx,-dz)+Math.PI;
     }
     function update(seconds) {
       // Eastbound trolleys keep right (south side) on W Cordova.
@@ -467,6 +507,10 @@
         along(total-distance,6.4,true,car);
       });
       updateHarbourCentrePassengers(stop,visiting);
+      waterCars.forEach((car,index)=>{
+        // Spacing and speeds vary, but ALL cars remain westbound.
+        alongWaterWestbound(seconds*(3.1+index*0.35)+index*waterTotal/3,car);
+      });
       if(lotCar) {
         const cycle=(seconds*0.115)%2, inbound=cycle<1;
         const t=inbound?cycle:2-cycle;
