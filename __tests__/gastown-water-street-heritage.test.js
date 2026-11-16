@@ -18,7 +18,7 @@ function stub(){
  class Vector3 extends Vec{constructor(x,y,z){super();this.set(x,y,z)}normalize(){const n=Math.hypot(this.x,this.y,this.z)||1;this.x/=n;this.y/=n;this.z/=n;return this}}
  const CanvasTexture=class{constructor(){this.repeat={set(){}}}};
  return{Group,Mesh,Vector3,BoxGeometry:Geo,CylinderGeometry:Geo,
- PlaneGeometry:Geo,SphereGeometry:Geo,MeshStandardMaterial:Mat,CanvasTexture,
+ PlaneGeometry:Geo,SphereGeometry:Geo,MeshStandardMaterial:Mat,MeshBasicMaterial:Mat,CanvasTexture,
  RepeatWrapping:1000,SRGBColorSpace:'srgb'};
 }
 function scene(){
