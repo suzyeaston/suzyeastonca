@@ -5202,7 +5202,10 @@
         clockRoot.userData.clockWhistles=5;
         clockRoot.userData.placement='Water and Cambie north-side brick corner';
 
-        const plazaRadius = (hero.plaza && hero.plaza.radius) || (hero.ground_emphasis_radius || 4.2);
+        // The plaza belongs around the sculpture's sidewalk base, not as a
+        // 5.5m circle spreading into the Water Street road. Keep it small.
+        const plazaRadius = Math.min(2.2,((hero.plaza && hero.plaza.radius)
+          || (hero.ground_emphasis_radius || 4.2))*0.40);
         const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.74, 0.84, 16), accentMaterial);
         plinth.position.y = 0.36;
         clockArtwork.add(plinth);
@@ -5329,11 +5332,17 @@
 
         const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 40), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
         plaza.rotation.x = -Math.PI / 2;
-        plaza.position.y = 0.03;
+        // Raise the clock plinth/paving above the separately layered
+        // Water/Cambie street meshes. 0.001m gaps caused Z-fighting.
+        plaza.position.y = 0.155;
+        plaza.renderOrder=6;
+        plaza.name='Steam Clock small brick plaza base';
         clockRoot.add(plaza);
-        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius * 0.62, plazaRadius + 1.1, 40), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
+        const plazaApron = new THREE.Mesh(new THREE.RingGeometry(plazaRadius, plazaRadius + 0.58, 40), new THREE.MeshStandardMaterial({ color: 0x7a6a5b, roughness: 0.96, metalness: 0.01 }));
         plazaApron.rotation.x = -Math.PI / 2;
-        plazaApron.position.y = 0.031;
+        plazaApron.position.y = 0.155;
+        plazaApron.renderOrder=6;
+        plazaApron.name='Steam Clock non-overlapping plaza ring';
         clockRoot.add(plazaApron);
 
         const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.12, depthWrite: false, depthTest: true });
