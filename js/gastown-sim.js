@@ -1320,7 +1320,7 @@
     lab.lastGreeting='';
     lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
     lab.nearLobbyExit=false;
-    lab.yangosGreeted=false;lab.yangosTalked=false;
+    lab.yangosGreeted=false;lab.yangosTalked=false;lab.lastNearLabLift=false;
     lab.guardHighFiveAt=0;lab.lastGuardNear=false;
     if(lab.roomRoot&&lab.roomRoot.userData.yangosWave)
       lab.roomRoot.userData.yangosWave.rotation.z=0;
