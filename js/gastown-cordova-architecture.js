@@ -212,7 +212,14 @@
           color:0x3d606c,roughness:0.22,metalness:0.18});
         const doorFrame=new THREE.MeshStandardMaterial({color:0x343e43,roughness:0.55,metalness:0.2});
         const yellow=new THREE.MeshBasicMaterial({color:0xe9d44f});
-        const shopGreen=new THREE.MeshBasicMaterial({color:0x23613b});
+        const signPalette={
+          '#e9d44f':new THREE.MeshBasicMaterial({color:0xe9d44f}),
+          '#dfe4e6':new THREE.MeshBasicMaterial({color:0xdfe4e6}),
+          '#254a69':new THREE.MeshBasicMaterial({color:0x254a69}),
+          '#1b3145':new THREE.MeshBasicMaterial({color:0x1b3145})
+        };
+        const cobalt=new THREE.MeshStandardMaterial({color:0x2b6893,roughness:0.62,metalness:0.16});
+        const brushedMetal=new THREE.MeshStandardMaterial({color:0xb7c5cc,roughness:0.45,metalness:0.42});
 
         // PR #795 correctly reoriented the glazing, but the 0.34 m-wide
         // facades were still free-standing planes. The mapped Harbour Centre
@@ -302,8 +309,8 @@
         function shopSign(parent,name,text,x,y,face,width,height,bg,fg) {
           const z=face*0.52;
           const backing=addBox(parent,name+' fascia panel',x,y,z,width,height,0.12,
-            bg==='#e9d44f'?yellow:shopGreen);
-          backing.userData={signText:text,facesParkingLot:true};
+            signPalette[bg] || signPalette['#254a69']);
+          backing.userData={signText:text,facesParkingLot:true,palette:bg,lettering:fg};
           // Procedural lettering keeps this a standalone, locally rendered
           // original asset. Node's Three.js test stub has no document/canvas.
           if(typeof document!=='undefined'&&THREE.CanvasTexture&&THREE.PlaneGeometry){
@@ -413,10 +420,12 @@
                 addBox(frontage,name+' narrow door jamb',
                   x+side*1.69,1.59,face*0.45,0.11,3.14,0.13,doorFrame);
               addBox(frontage,name+' projecting entrance awning',
-                x,3.77,face*0.88,5.1,0.28,1.25,charcoal);
+                x,3.77,face*0.88,5.1,0.28,1.25,brushedMetal);
+              addBox(frontage,name+' cobalt awning leading edge',
+                x,3.63,face*1.43,5.0,0.12,0.10,cobalt);
               shopSign(frontage,name+' Cordova entry',text,
                 x,4.45,face,Math.min(11.8,len*0.40),0.88,
-                '#23613b','#f1f1d9');
+                name==='Food Court'?'#1b3145':'#254a69','#f5f7f8');
             }
           }
           return frontage;
@@ -446,8 +455,14 @@
           for(const x of [-entryLen*0.31,0,entryLen*0.31])
             addBox(entry,'Harbour Centre lobby metal door mullion',
               x,1.9,face*0.19,0.11,3.8,0.11,mullion);
+          // The actual raised Harbour Centre name is metallic on a pale
+          // field above a recessed glass lobby, not a green shop banner.
+          addBox(entry,'Harbour Centre silver entry canopy',
+            0,3.91,face*0.90,entryLen+0.3,0.34,1.54,brushedMetal);
+          addBox(entry,'Harbour Centre cobalt canopy reveal',
+            0,3.72,face*1.65,entryLen+0.18,0.10,0.16,cobalt);
           shopSign(entry,'Harbour Centre Cordova main entrance','HARBOUR CENTRE',
-            0,4.33,face,entryLen-0.4,0.77,'#23613b','#f1f1d9');
+            0,4.58,face,entryLen-0.4,0.75,'#dfe4e6','#38546b');
           addBox(entry,'Harbour Centre glass lobby upper band',
             0,9.1,0,entryLen-0.3,8.6,0.32,darkGlazing);
           addBox(entry,'Harbour Centre recessed lobby roof coping',
@@ -457,6 +472,8 @@
         group.userData.cordovaFrontFacesComputedFromLot=true;
         group.userData.cordovaRetailLandmark='Food Court / Shops (542 W Cordova) to Dollarama (540 W Cordova)';
         group.userData.cordovaRetailOrder=['Food Court','Shops','Harbour Centre','Dollarama'];
+        group.userData.cordovaSignPalette={harbour:'#dfe4e6',shops:'#254a69',
+          foodCourt:'#1b3145',dollarama:'#e9d44f'};
         group.userData.landmark='Harbour Centre / Spencer Building';
         group.userData.architectureSource='https://harbourcentre.com/';
         group.userData.civicAnchor={lat:49.284697,lon:-123.111935};
