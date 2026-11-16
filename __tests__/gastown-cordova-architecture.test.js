@@ -249,7 +249,7 @@ test('Harbour Centre, Shops and Food Court have distinct photographed sign palet
  assert.deepEqual(JSON.parse(JSON.stringify(harbour.userData.cordovaSignPalette)),{
   harbour:'#dfe4e6',shops:'#254a69',foodCourt:'#1b3145',dollarama:'#e9d44f'
  });
- const retail=harbour.children.find(g=>g.userData.streetLevelRetail==='Food Court / Shops');
+ const retail=harbour.children.find(g=>g.userData?.streetLevelRetail==='Food Court / Shops');
  const entry=harbour.children.find(g=>g.name==='Harbour Centre Cordova recessed connecting lobby');
  assert.ok(retail.children.some(n=>n.name==='Food Court cobalt awning leading edge'));
  assert.ok(retail.children.some(n=>n.name==='Shops cobalt awning leading edge'));
