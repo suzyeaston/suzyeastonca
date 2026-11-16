@@ -207,6 +207,7 @@
       const g=newLandmark(LANDMARKS[4]);
       const rust=mat(0x873c36),red=mat(0xc85a45),darkGlass=mat(0x344b58,0.27,0.17);
       const frame=mat(0x737c7b,0.61,0.24),heritage=mat(0x945346),wRed=mat(0xf04b32,0.58,0.08);
+      const balcony=mat(0xc5c6be,0.74,0.11),warmGlass=mat(0x486775,0.35,0.16);
       block(g,"Woodward's W43 glazed residential shaft",0,61.15,0,23,122.3,21,darkGlass);
       for(const x of [-11.7,11.7]){
         block(g,"Woodward's red vertical corner spine",x,60.7,0,0.75,121.4,22.3,rust);
@@ -218,6 +219,25 @@
         block(g,"Woodward's stacked residential balcony rail",0,y,-11.0,23,0.23,0.28,frame);
         block(g,"Woodward's stacked residential south fascia",0,y,11.0,23,0.23,0.28,red);
       }
+      // Curved curtain wall is the W43 silhouette's defining feature.
+      // Nine stepped glass facets and slender brick-red piers approximate its
+      // bowed facade without licensed photogrammetry or costly CSG meshes.
+      for(let bay=-4;bay<=4;bay++){
+        const x=bay*2.55;
+        const bow=1.35*Math.sqrt(Math.max(0,1-(x/12.8)**2));
+        block(g,"Woodward's bowed north facade glass bay",
+          x,63.3,-10.98-bow,2.24,112.5,0.13,warmGlass);
+        block(g,"Woodward's curved brick mullion",
+          x+1.15,63.3,-11.01-bow,0.22,112.5,0.20,rust);
+      }
+      // Real tower photos show repetitive pale balcony ribs, not an
+      // uninterrupted solid red slab. Keep both exposed elevations legible.
+      for(let y=8;y<120;y+=11){
+        block(g,"Woodward's curved pale balcony fascia",0,y,-12.16,
+          24.2,0.34,0.38,balcony);
+        block(g,"Woodward's east elevation pale balcony return",11.86,y,0,
+          0.38,0.30,21.8,balcony);
+      }
       block(g,"Woodward's planted tower roof edge",0,122.4,0,25.2,0.55,23.5,heritage);
       // Rebuilt brick frontage and supported W are a separate low-rise
       // element, not an out-of-scale sign painted across the glass shaft.
@@ -226,6 +246,17 @@
       for(let floor=0;floor<4;floor++){
         block(g,"Woodward's heritage upper-storey window band",-24,6+floor*4.0,-12.1,24,2.0,0.12,shadow);
       }
+      // Articulated restored 1903/08 storefront rather than a generic slab.
+      for(const x of [-34,-27,-20,-14]){
+        block(g,"Woodward's restored heritage brick pier",x,12.3,-12.17,
+          0.50,20.2,0.34,heritage);
+        block(g,"Woodward's lower retail entrance glazing",x+2.2,2.5,-12.20,
+          3.7,4.2,0.13,warmGlass);
+      }
+      block(g,"Woodward's heritage retail canopy",-24,4.96,-13.3,
+        28.2,0.42,2.3,balcony);
+      block(g,"Woodward's heritage podium roof pavilion",-24,25.7,0,
+        22,3.2,19,heritage);
       const signX=-25,signZ=-13;
       for(const x of [-5,5])block(g,"Woodward's W steel lattice upright",
         signX+x,34.4,signZ,0.30,21.0,0.35,frame);
@@ -242,7 +273,21 @@
       const wp=[[-5,51],[-2.5,45],[0,49],[2.5,45],[5,51]];
       for(let i=0;i<wp.length-1;i++)stroke("Woodward's replica red W sign",
         wp[i][0],wp[i][1],wp[i+1][0],wp[i+1][1],1.1,wRed);
-      g.userData.landmarkDetails='128 W Cordova W43, historic brick base, supported W';
+      // The red W must read in silhouette from BOTH directions, including
+      // the Steam Clock/Water Street approach. Offset a second face slightly.
+      const frontSign=4;
+      for(let i=0;i<frontSign;i++){
+        const before=wp[i],after=wp[i+1];
+        const dx=after[0]-before[0],dy=after[1]-before[1];
+        const length=Math.hypot(dx,dy);
+        const back=block(g,"Woodward's W backlit reverse face",
+          signX+(before[0]+after[0])/2,(before[1]+after[1])/2,
+          signZ+0.70,length,1.1,0.12,wRed);
+        back.rotation.z=Math.atan2(dy,dx);
+      }
+      g.userData.landmarkDetails='W43 curved residential glass tower, pale balcony ribbons, heritage podium and two-sided rooftop W';
+      g.userData.woodwardsCurvedFacade=true;
+      g.userData.woodwardsWVisibleBothSides=true;
     }
     // Dominion Trust Building, 207 West Hastings: 1909-10 brick and
     // cream-stone vertical rhythm, and a dark green mansard crown.

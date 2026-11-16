@@ -135,3 +135,29 @@ test('Water Street has three moving westbound cars and no eastbound motor traffi
  assert.ok(original[0].x>first.x && original[0].x>last.x-3,
    'first westbound car spawns at Steam Clock eastern end');
 });
+
+
+test('Water and Cambie no longer ends in a void, with mapped corner shop frontages',()=>{
+ const root=scene();
+ const intersection=root.children.find(g=>g.name==='Water and Cambie open brick intersection');
+ assert.ok(intersection);
+ assert.equal(intersection.userData.openWestboundVehicleLane,true);
+ assert.equal(intersection.userData.navmeshUnchanged,true);
+ const surfaces=intersection.children.map(n=>n.name);
+ assert.equal(surfaces.filter(n=>n==='Water Street east-of-Cambie paved continuation').length,2);
+ assert.ok(surfaces.includes('Cambie Street northbound connection to the waterfront'));
+ assert.ok(surfaces.includes('Cambie Street southbound connection to W Cordova'));
+ assert.ok(surfaces.includes('Water and Cambie brick raised intersection apron'));
+ const facades=root.children.find(g=>g.name==='Water and Cambie feature-aligned heritage corner shops');
+ assert.equal(facades.userData.gisAlignedStorefronts,true);
+ assert.deepEqual(Array.from(facades.userData.mappedIds),['feature-86','feature-57']);
+ for(const g of facades.children){
+  const mapped=world.buildings.find(b=>b.id===g.userData.sourceFootprintId);
+  const [a,b]=g.userData.civicEdge;
+  const p=mapped.footprint[a],q=mapped.footprint[b];
+  assert.ok(Math.hypot(g.position.x-(p.x+q.x)/2,
+   g.position.z-(p.z+q.z)/2)<0.01,'shop front must align to civic parcel');
+  assert.ok(g.children.some(n=>n.name.endsWith('heritage sash windows')));
+  assert.ok(g.children.some(n=>n.name.endsWith('ground-floor shop window')));
+ }
+});

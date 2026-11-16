@@ -726,6 +726,130 @@
     }
     root.add(delivery);
 
+    // The old route abruptly stopped at Cambie: the camera saw a hard
+    // white void between the Steam Clock and the mapped buildings. Extend
+    // illustrative road surfaces along the real public street corridors,
+    // without changing navmesh, GIS footprints or collision boundaries.
+    const clock=(world.landmarks||[]).find(p=>p.id==='steam-clock');
+    if(clock){
+      const intersection=new THREE.Group();
+      intersection.name='Water and Cambie open brick intersection';
+      const asphalt=new THREE.MeshStandardMaterial({color:0x6c6158,roughness:0.97});
+      const brickCorner=new THREE.MeshStandardMaterial({color:0x89574a,roughness:0.93});
+      function pavement(name,a,b,width,material){
+        const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);
+        if(length<0.1)return;
+        const pane=new THREE.Mesh(new THREE.PlaneGeometry(width,length),material);
+        pane.name=name;
+        pane.rotation.set(-Math.PI/2,Math.atan2(-dx,-dz),0,'YXZ');
+        pane.position.set((a.x+b.x)/2,0.046,(a.z+b.z)/2);
+        pane.receiveShadow=true;pane.renderOrder=2;intersection.add(pane);
+      }
+      const end=route[route.length-1],prior=route[route.length-2];
+      const dir={x:(end.x-prior.x)/Math.hypot(end.x-prior.x,end.z-prior.z),
+        z:(end.z-prior.z)/Math.hypot(end.x-prior.x,end.z-prior.z)};
+      // Continue the Water Street brick road from the Steam Clock toward
+      // Abbott rather than ending at a featureless cliff.
+      const waterBeyond=[
+        end,
+        {x:end.x+dir.x*24,z:end.z+dir.z*24},
+        {x:end.x+dir.x*51,z:end.z+dir.z*51}
+      ];
+      for(let i=1;i<waterBeyond.length;i++)
+        pavement('Water Street east-of-Cambie paved continuation',
+          waterBeyond[i-1],waterBeyond[i],10.4,paving);
+      // Cambie runs north to the waterfront and south to W Cordova.
+      // These shallow planes replace the void while retaining open views.
+      pavement('Cambie Street northbound connection to the waterfront',
+        {x:214,z:112},{x:203,z:173},10.3,asphalt);
+      pavement('Cambie Street southbound connection to W Cordova',
+        {x:203,z:172},{x:189,z:220},10.3,asphalt);
+      pavement('Water and Cambie brick raised intersection apron',
+        {x:end.x-dir.x*4,z:end.z-dir.z*4},
+        {x:end.x+dir.x*12,z:end.z+dir.z*12},15.2,brickCorner);
+      // Small sidewalk corner aprons stay beside, not across, the road.
+      const side={x:-dir.z,z:dir.x};
+      for(const sign of [-1,1]){
+        const a={x:end.x+side.x*sign*8,z:end.z+side.z*sign*8};
+        const b={x:a.x+dir.x*8,z:a.z+dir.z*8};
+        pavement('Water and Cambie pedestrian corner sidewalk',a,b,3.2,stone);
+      }
+      intersection.userData={
+        reference:'Water Street continues toward Abbott; Cambie crosses north-south',
+        openWestboundVehicleLane:true,navmeshUnchanged:true,
+        surfaceOnly:true,sourceRouteTerminal:route[route.length-1].id
+      };
+      root.add(intersection);
+
+      // Grounded storefront overlays use ACTUAL City GIS footprint edges,
+      // rather than introducing unrelated boxes in the intersection.
+      const corner=new THREE.Group();
+      corner.name='Water and Cambie feature-aligned heritage corner shops';
+      const redBrick=new THREE.MeshStandardMaterial({color:0x9b5145,roughness:0.92});
+      const creamBrick=new THREE.MeshStandardMaterial({color:0xc2b49f,roughness:0.94});
+      const darkSash=new THREE.MeshStandardMaterial({color:0x33464b,roughness:0.46});
+      const metal=new THREE.MeshStandardMaterial({color:0x444b49,roughness:0.71});
+      const awningGlass=new THREE.MeshStandardMaterial({color:0x536d6e,roughness:0.27,metalness:0.15});
+      function facade(id,edgeA,edgeB,label,bodyMaterial) {
+        const building=(world.buildings||[]).find(b=>b.id===id);
+        if(!building||!Array.isArray(building.footprint))return;
+        const pa=building.footprint[edgeA],pb=building.footprint[edgeB];
+        if(!pa||!pb)return;
+        const dx=pb.x-pa.x,dz=pb.z-pa.z,len=Math.hypot(dx,dz);
+        if(len<5)return;
+        const g=new THREE.Group();
+        g.name='Water & Cambie mapped '+label+' frontage';
+        g.position.set((pa.x+pb.x)/2,0,(pa.z+pb.z)/2);
+        g.rotation.y=Math.atan2(-dz,dx);
+        g.userData={
+          sourceFootprintId:id,civicEdge:[edgeA,edgeB],
+          shopName:label,referenceApproximation:true,nonCollidable:true
+        };
+        corner.add(g);
+        // Extend a deliberately shallow layer OUTWARD from the mapped wall;
+        // no free-standing billboard or building mass intersects the street.
+        box(g,label+' warm heritage pier base',0,7.0,0,len,14,0.11,bodyMaterial);
+        box(g,label+' ground-floor plate glass',0,1.82,0.14,len*0.88,2.9,0.12,glass);
+        box(g,label+' dark storefront fascia',0,3.64,0.21,len*0.93,0.55,0.13,metal);
+        const bays=Math.max(3,Math.min(7,Math.floor(len/3.1)));
+        const bayWidth=len/bays;
+        for(let bay=0;bay<bays;bay++){
+          const x=(bay+0.5)*bayWidth-len/2;
+          for(const y of [5.6,8.85,11.9])
+            box(g,label+' heritage sash windows',x,y,0.18,bayWidth-0.47,1.85,0.13,darkSash);
+          box(g,label+' ground-floor shop window',x,1.65,0.24,bayWidth-0.30,2.30,0.1,awningGlass);
+        }
+        for(let bay=1;bay<bays;bay++){
+          const x=bay*bayWidth-len/2;
+          box(g,label+' brick pilaster',x,8.25,0.24,0.30,10.8,0.15,bodyMaterial);
+        }
+        box(g,label+' projecting heritage cornice',0,14.05,0.12,len+0.26,0.37,0.46,creamBrick);
+        box(g,label+' recessed doorway',0,1.60,0.36,Math.min(2.4,len/4),3.05,0.09,darkSash);
+        box(g,label+' entrance awning',0,3.92,0.68,Math.min(5.5,len*0.7),0.20,1.32,metal);
+        // Storefront sign follows the sightline of the original user
+        // Street View photos. No third-party Google textures embedded.
+        if(typeof document!=='undefined'&&THREE.CanvasTexture&&THREE.PlaneGeometry){
+          const canvas=document.createElement('canvas');canvas.width=768;canvas.height=112;
+          const ctx=canvas.getContext('2d');
+          if(ctx){
+            ctx.fillStyle='#2f3b3c';ctx.fillRect(0,0,768,112);
+            ctx.fillStyle='#f4e9d9';ctx.textBaseline='middle';ctx.textAlign='center';
+            ctx.font='bold 54px Georgia,serif';ctx.fillText(label.toUpperCase(),384,56,710);
+            const tx=new THREE.CanvasTexture(canvas);tx.colorSpace=THREE.SRGBColorSpace;
+            const panel=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(8,len*0.82),0.53),
+              new THREE.MeshBasicMaterial({map:tx,side:THREE.DoubleSide}));
+            panel.name=label+' legible storefront lettering';
+            panel.position.set(0,3.69,0.32);g.add(panel);
+          }
+        }
+      }
+      facade('feature-86',2,3,'The Latest Scoop',redBrick);
+      facade('feature-57',2,3,'Water St Cafe',creamBrick);
+      corner.userData.gisAlignedStorefronts=true;
+      corner.userData.mappedIds=['feature-86','feature-57'];
+      root.add(corner);
+    }
+
     // The earlier Water Street was a canyon of anonymous, dark extrusions.
     // Dress ACTUAL mapped wall edges rather than adding free-standing blocks.
     // These thin architectural skins carry no collision geometry. This is

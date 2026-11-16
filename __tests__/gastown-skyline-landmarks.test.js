@@ -107,3 +107,21 @@ test('Woodward and Dominion are on their real southeast anchors, not beside the 
   assert.ok(Math.abs(w.userData.heightApprox-122.3)<0.01);
   assert.ok(w.position.x>d.position.x,'Woodward lies east of Dominion');
 });
+ 
+
+test('Woodward’s curves toward Water Street with balcony bands and a readable reverse W',()=>{
+ const landmark=boot().create(stub(),world).children
+   .find(g=>g.userData.landmarkId==='woodwards-w43');
+ assert.ok(landmark.userData.woodwardsCurvedFacade);
+ assert.equal(landmark.userData.woodwardsWVisibleBothSides,true);
+ const names=landmark.children.map(n=>n.name);
+ assert.equal(names.filter(n=>n==="Woodward's bowed north facade glass bay").length,9);
+ assert.equal(names.filter(n=>n==="Woodward's curved brick mullion").length,9);
+ assert.ok(names.filter(n=>n==="Woodward's curved pale balcony fascia").length>=10);
+ assert.ok(names.filter(n=>n==="Woodward's east elevation pale balcony return").length>=10);
+ assert.equal(names.filter(n=>n==="Woodward's W backlit reverse face").length,4);
+ assert.ok(names.includes("Woodward's heritage retail canopy"));
+ assert.ok(names.includes("Woodward's heritage podium roof pavilion"));
+ const all=boot().create(stub(),world).children.flatMap(g=>g.children);
+ assert.ok(all.length<350,'W43 improvements must fit original 8GB low-poly budget');
+});

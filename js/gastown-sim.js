@@ -5190,83 +5190,141 @@
         const clockRoot = new THREE.Group();
         clockRoot.position.set(hero.x, 0, hero.z);
         clockRoot.rotation.y = hero.yaw || 0;
+        clockRoot.name = 'Gastown Steam Clock / Water and Cambie landmark';
+        // Raymond Saunders' 1977 clock is 16 feet (4.9m), not a 9.5m
+        // monument. Scale the clock itself while retaining the wider plaza.
+        const clockArtwork = new THREE.Group();
+        clockArtwork.name = 'Gastown Steam Clock 4.9m bronze four-dial sculpture';
+        clockArtwork.scale.set(0.52, 0.52, 0.52);
+        clockRoot.add(clockArtwork);
+        clockRoot.userData.clockHeightMetres=4.94;
+        clockRoot.userData.clockFaces=4;
+        clockRoot.userData.clockWhistles=5;
+        clockRoot.userData.placement='Water and Cambie north-side brick corner';
 
         const plazaRadius = (hero.plaza && hero.plaza.radius) || (hero.ground_emphasis_radius || 4.2);
         const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.74, 0.84, 16), accentMaterial);
         plinth.position.y = 0.36;
-        clockRoot.add(plinth);
+        clockArtwork.add(plinth);
         const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.54, 1.28, 1.54), ironMaterial);
         pedestal.position.y = 1.26;
-        clockRoot.add(pedestal);
+        clockArtwork.add(pedestal);
         const pedestalTrim = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.22, 1.76), brassMaterial);
         pedestalTrim.position.y = 1.88;
-        clockRoot.add(pedestalTrim);
+        clockArtwork.add(pedestalTrim);
         const shaft = new THREE.Mesh(new THREE.BoxGeometry(1.08, 5.56, 1.08), ironMaterial);
         shaft.position.y = 4.32;
-        clockRoot.add(shaft);
+        clockArtwork.add(shaft);
         const glassCore = new THREE.Mesh(new THREE.BoxGeometry(0.82, 2.92, 0.82), glassMaterial);
         glassCore.position.y = 4.16;
-        clockRoot.add(glassCore);
+        clockArtwork.add(glassCore);
         const cagePosts = [
           [-0.38, -0.38], [0.38, -0.38], [-0.38, 0.38], [0.38, 0.38],
         ];
         cagePosts.forEach((post) => {
           const cage = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.8, 0.08), brassMaterial);
           cage.position.set(post[0], 4.18, post[1]);
-          clockRoot.add(cage);
+          clockArtwork.add(cage);
         });
         const clockHousing = new THREE.Mesh(new THREE.BoxGeometry(1.94, 1.62, 1.94), ironMaterial);
         clockHousing.position.y = 6.74;
-        clockRoot.add(clockHousing);
+        clockArtwork.add(clockHousing);
         const clockCornice = new THREE.Mesh(new THREE.BoxGeometry(2.18, 0.24, 2.18), brassMaterial);
         clockCornice.position.y = 7.44;
-        clockRoot.add(clockCornice);
+        clockArtwork.add(clockCornice);
         const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 1.24, 0.58, 14), brassMaterial);
         crown.position.y = 7.88;
-        clockRoot.add(crown);
+        clockArtwork.add(crown);
         const cap = new THREE.Mesh(new THREE.ConeGeometry(1.08, 1.26, 14), ironMaterial);
         cap.position.y = 8.74;
-        clockRoot.add(cap);
+        clockArtwork.add(cap);
         const finial = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), brassMaterial);
         finial.position.set(0, 9.5, 0);
-        clockRoot.add(finial);
+        clockArtwork.add(finial);
         const steamStack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 1.18, 8), brassMaterial);
         steamStack.position.set(0, 9.06, 0);
-        clockRoot.add(steamStack);
+        clockArtwork.add(steamStack);
 
-        [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach((rotation) => {
+        // One hand-painted, reusable clock face texture for all four sides.
+        // Canvas is optional: non-DOM scene tests still build the bronze mesh.
+        let dialMaterial=new THREE.MeshStandardMaterial({color:0xf3ebd6,
+          roughness:0.6,metalness:0.04,emissive:0x756042,emissiveIntensity:0.10});
+        if(typeof document!=='undefined' && THREE.CanvasTexture){
+          const canvas=document.createElement('canvas');
+          canvas.width=256;canvas.height=256;
+          const ctx=canvas.getContext('2d');
+          if(ctx){
+            const cx=128,cy=128;
+            ctx.fillStyle='#eee3bd';ctx.beginPath();ctx.arc(cx,cy,120,0,Math.PI*2);ctx.fill();
+            ctx.strokeStyle='#3b352c';ctx.lineWidth=5;
+            ctx.beginPath();ctx.arc(cx,cy,115,0,Math.PI*2);ctx.stroke();
+            for(let n=0;n<12;n++){
+              const a=n*Math.PI/6-Math.PI/2;
+              ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*95,cy+Math.sin(a)*95);
+              ctx.lineTo(cx+Math.cos(a)*108,cy+Math.sin(a)*108);ctx.stroke();
+            }
+            ctx.fillStyle='#30291e';ctx.font='bold 26px Georgia,serif';
+            ctx.textAlign='center';ctx.textBaseline='middle';
+            for(const [numeral,a] of [['XII',-Math.PI/2],['III',0],['VI',Math.PI/2],['IX',Math.PI]])
+              ctx.fillText(numeral,cx+Math.cos(a)*78,cy+Math.sin(a)*78);
+            const texture=new THREE.CanvasTexture(canvas);
+            if(THREE.SRGBColorSpace)texture.colorSpace=THREE.SRGBColorSpace;
+            dialMaterial=new THREE.MeshStandardMaterial({map:texture,roughness:0.64,
+              metalness:0.02,side:THREE.DoubleSide});
+          }
+        }
+                [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach((rotation) => {
           const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 24), brassMaterial);
           frame.rotation.x = Math.PI / 2;
           frame.rotation.z = rotation;
           frame.position.set(Math.sin(rotation) * 1.02, 6.76, Math.cos(rotation) * 1.02);
-          clockRoot.add(frame);
+          clockArtwork.add(frame);
 
-          const face = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshStandardMaterial({ color: 0xf2e4b6, emissive: 0x7d6639, emissiveIntensity: 0.28, roughness: 0.62, metalness: 0.04 }));
+          const face = new THREE.Mesh(new THREE.CircleGeometry(0.53, 32), dialMaterial);
+          face.name='Steam Clock cream Roman-numeral clock face';
           face.position.set(Math.sin(rotation) * 1.04, 6.76, Math.cos(rotation) * 1.04);
           face.rotation.y = rotation;
-          clockRoot.add(face);
+          clockArtwork.add(face);
 
           const hand = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.4, 0.03), new THREE.MeshStandardMaterial({ color: 0x2b2420, roughness: 0.5, metalness: 0.22 }));
           hand.position.set(Math.sin(rotation) * 1.08, 6.76, Math.cos(rotation) * 1.08);
           hand.rotation.set(0, rotation, Math.PI / 5);
-          clockRoot.add(hand);
+          hand.name='Steam Clock brass-rimmed dial minute hand';
+          clockArtwork.add(hand);
+          const hourHand=new THREE.Mesh(new THREE.BoxGeometry(0.065,0.27,0.026),
+            new THREE.MeshStandardMaterial({color:0x302a24,roughness:0.55}));
+          hourHand.name='Steam Clock dial hour hand';
+          hourHand.position.set(Math.sin(rotation)*1.10,6.78,Math.cos(rotation)*1.10);
+          hourHand.rotation.set(0,rotation,-Math.PI/3);
+          clockArtwork.add(hourHand);
         });
 
-        const steamVents = Array.isArray(hero.steamVentOffsets) && hero.steamVentOffsets.length
+        // Five small rooftop whistles: one central and one at each corner,
+        // the distinctive arrangement visible in close-up Gastown photos.
+        [[0,0],[-0.57,-0.57],[-0.57,0.57],[0.57,-0.57],[0.57,0.57]]
+          .forEach(([x,z],i)=>{
+            const whistle=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.095,
+              i===0?0.72:0.44,8),brassMaterial);
+            whistle.name='Steam Clock rooftop steam whistle';
+            whistle.position.set(x,i===0?9.37:8.97,z);
+            clockArtwork.add(whistle);
+          });
+
+                const steamVents = Array.isArray(hero.steamVentOffsets) && hero.steamVentOffsets.length
           ? hero.steamVentOffsets
           : [{ x: -0.42, z: 0.64, y: 8.72 }, { x: 0.42, z: -0.64, y: 8.72 }];
         steamVents.forEach((vent, index) => {
           const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.8, 8), brassMaterial);
           pipe.position.set(vent.x, 5.62, index % 2 === 0 ? 0.82 : -0.82);
           pipe.rotation.x = Math.PI / 2.45;
-          clockRoot.add(pipe);
+          clockArtwork.add(pipe);
           const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 8, 16, Math.PI), brassMaterial);
           elbow.position.set(vent.x, 5.02, index % 2 === 0 ? 1.2 : -1.2);
           elbow.rotation.y = index % 2 === 0 ? -Math.PI / 2 : Math.PI / 2;
-          clockRoot.add(elbow);
+          clockArtwork.add(elbow);
           const ventCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.3, 8), brassMaterial);
           ventCap.position.set(vent.x, vent.y, vent.z);
-          clockRoot.add(ventCap);
+          clockArtwork.add(ventCap);
         });
 
         const plaza = new THREE.Mesh(new THREE.CircleGeometry(plazaRadius, 40), new THREE.MeshStandardMaterial({ color: 0x4c3d32, roughness: 0.92, metalness: 0.02 }));
@@ -5281,7 +5339,7 @@
         const steamMaterial = new THREE.MeshBasicMaterial({ color: 0xd8dfdf, transparent: true, opacity: 0.12, depthWrite: false, depthTest: true });
         const steamPlume = new THREE.Mesh(new THREE.SphereGeometry(0.62, 10, 10), steamMaterial);
         steamPlume.position.set(0, 9.72, 0.08);
-        clockRoot.add(steamPlume);
+        clockArtwork.add(steamPlume);
 
         // Multiple lightweight, translucent puffs rise from the brass vents.
         // No sprite raycasts, so the NPC interaction system remains stable.
@@ -5296,7 +5354,7 @@
           mist.userData.vent=vent;
           mist.userData.offset=i/15;
           mist.position.set(vent.x,vent.y,vent.z);
-          clockRoot.add(mist);
+          clockArtwork.add(mist);
           wisps.push(mist);
         }
         worldGroup.add(clockRoot);
