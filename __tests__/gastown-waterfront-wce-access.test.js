@@ -49,7 +49,7 @@ test('WCE transition follows continuous floor surface rather than teleporting',(
   const sample=z=>station.surfaceYFor(world,station.toWorld(world,0,z));
   assert.equal(sample(-33),0);
   assert.ok(sample(-37)<-0.4 && sample(-37)>-0.6);
-  assert.equal(sample(-41),-0.9875);
+  assert.ok(Math.abs(sample(-41)+0.9875)<1e-8);
   assert.equal(station.surfaceYFor(world,{x:12,z:-10}),-1);
   assert.equal(station.surfaceYFor(world,station.toWorld(world,0,-10)),0);
 });
