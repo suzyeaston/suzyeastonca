@@ -125,3 +125,54 @@ test('Woodward’s curves toward Water Street with balcony bands and a readable 
  const all=boot().create(stub(),world).children.flatMap(g=>g.children);
  assert.ok(all.length<350,'W43 improvements must fit original 8GB low-poly budget');
 });
+
+
+test('W43 has a truly extruded Flatiron plan and instanced 35-floor balcony rhythm',()=>{
+ const actual=stub();
+ class Shape{
+  constructor(){this.commands=[];}
+  moveTo(...xy){this.commands.push(['moveTo',...xy]);}
+  lineTo(...xy){this.commands.push(['lineTo',...xy]);}
+  quadraticCurveTo(...xy){this.commands.push(['quadraticCurveTo',...xy]);}
+  closePath(){this.commands.push(['closePath']);}
+ }
+ class ExtrudeGeometry{
+  constructor(shape,options){this.shape=shape;this.options=options;
+   this.args=[options.depth,options.steps,options.curveSegments];}
+  rotateX(angle){this.orientation=angle;return this;}
+ }
+ class FlightMatrix{
+  constructor(){this.position={x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z;}};
+   this.rotation={y:0};this.matrix=null;}
+  updateMatrix(){this.matrix={position:{...this.position},yaw:this.rotation.y};}
+ }
+ class InstancedMesh extends actual.Mesh{
+  constructor(geo,mat,count){super(geo,mat);this.count=count;
+   this.instanceMatrix={needsUpdate:false};this.instances=[];}
+  setMatrixAt(index,matrix){this.instances[index]=matrix;}
+ }
+ actual.Shape=Shape;
+ actual.ExtrudeGeometry=ExtrudeGeometry;
+ actual.Object3D=FlightMatrix;
+ actual.InstancedMesh=InstancedMesh;
+ const scene=boot().create(actual,world);
+ const woodwards=scene.children.find(g=>g.userData.landmarkId==='woodwards-w43');
+ assert.equal(woodwards.userData.woodwardsUsesExtrudedMassing,true);
+ assert.match(woodwards.userData.woodwardsPlan,/triangular flatiron/);
+ const core=woodwards.children.find(g=>g.name==="Woodward's W43 glazed residential shaft");
+ assert.ok(core.geometry instanceof ExtrudeGeometry);
+ assert.equal(core.geometry.options.depth,122.3);
+ assert.equal(core.geometry.orientation,-Math.PI/2);
+ const p=core.geometry.shape.commands;
+ assert.ok(p.some(x=>x[0]==='quadraticCurveTo'),'W43 tip must curve');
+ const xs=p.flatMap(x=>x.slice(1).filter((_,i)=>i%2===0));
+ assert.ok(Math.max(...xs)-Math.min(...xs)>20);
+ const balconies=woodwards.children.find(g=>g.name==="Woodward's rounded corner balcony stack");
+ assert.ok(balconies instanceof InstancedMesh);
+ assert.equal(balconies.count,35);
+ assert.equal(balconies.instances.length,35);
+ assert.ok(woodwards.children.some(n=>n.name==="Woodward's W43 diagonal south glazed curtainwall"));
+ assert.ok(woodwards.children.some(n=>n.name==="Woodward's W43 east return glazing"));
+ assert.equal(woodwards.children.filter(n=>n.name==="Woodward's replica red W sign").length,4);
+ assert.ok(scene.children.flatMap(g=>g.children).length<350,'8GB laptop mesh budget');
+});
