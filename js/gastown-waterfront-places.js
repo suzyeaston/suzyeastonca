@@ -690,6 +690,26 @@
     const bill=rounded('KK backwards cap bill',0,2.125,0.259,0.205,0.025,0.17,black);
     bill.rotation.x=-0.09;
     box('KK vest zip pull',0,1.58,-0.299,0.028,0.088,0.018,metal);
+    // Reparent KK's actual right sleeve, tattooed arm and hand to a shoulder
+    // pivot so the on-screen shoulder tap is a visible physical gesture,
+    // not a detached extra hand overlapping his original arm.
+    const tapArm=new THREE.Group();
+    tapArm.name='KK right-arm shoulder tap pivot';
+    tapArm.position.set(0.48,1.56,0);
+    const rightArmParts=avatar.children.filter(part=>
+      part.position.x>0.34 && [
+        'KK dark sleeve','KK tattooed forearm','KK tattoo bands',
+        'KK forearm geometric tattoo','KK turquoise wrist bracelet','KK hand'
+      ].includes(part.name));
+    for(const part of rightArmParts){
+      if(typeof avatar.remove==='function')avatar.remove(part);
+      else avatar.children.splice(avatar.children.indexOf(part),1);
+      tapArm.add(part);
+      part.position.x-=0.48;
+      part.position.y-=1.56;
+    }
+    avatar.add(tapArm);
+    avatar.userData.tapArm=tapArm;
     avatar.userData.photoInspired=true;
     return avatar;
   }

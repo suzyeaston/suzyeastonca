@@ -181,7 +181,7 @@
       stageSince:0, greetPlayed:false, lastGreeting:'', indoorPreviousView:null,
       doorProgress:1, liftDoorProgress:0, carDoorProgress:0, escortPaused:false,
       outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false, reentryBlockedUntil:0,
-      yangosGreeted:false,yangosTalked:false,lastNearLabLift:false,
+      yangosGreeted:false,yangosTalked:false,kkCoveredByYangos:false,lastNearLabLift:false,
       guardHighFiveAt:0,lastGuardNear:false },
     dialogData: {},
     activeDialogNpcId: '',
@@ -1321,6 +1321,7 @@
     lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
     lab.nearLobbyExit=false;
     lab.yangosGreeted=false;lab.yangosTalked=false;lab.lastNearLabLift=false;
+    lab.kkCoveredByYangos=false;
     lab.guardHighFiveAt=0;lab.lastGuardNear=false;
     if(lab.roomRoot&&lab.roomRoot.userData.yangosWave)
       lab.roomRoot.userData.yangosWave.rotation.z=0;
@@ -1502,16 +1503,18 @@
         landingTravel('lab',portal.roomSpawn,'Sixth floor. Welcome to the Multimodal Media Lab.');
         lab.farewellAt=nowSeconds;
         lab.farewellSpoken=false;lab.yangosGreeted=false;
+        lab.kkCoveredByYangos=false;
         if(lab.roomRoot&&lab.roomRoot.userData.greeter){
           const kk=lab.roomRoot.userData.greeter;
           kk.visible=true;kk.position.set(800.9,0,807);
         }
       }
     }else if(lab.stage==='lab'){
+      const handoffTime=nowSeconds-lab.farewellAt;
       if(!lab.farewellSpoken&&elapsed>1.05){
         lab.farewellSpoken=true;
         lab.lastGreeting='';
-        landingSpeak('bye snoooozie!');
+        landingSpeak('Yangos, could you cover for me for a bit?');
       }
       if(lab.roomRoot&&lab.roomRoot.userData.coderHands){
         // Small alternating typing rhythm, no repeated full-scene rebuild.
@@ -1521,20 +1524,32 @@
       }
       if(lab.roomRoot&&lab.roomRoot.userData.greeter){
         const kk=lab.roomRoot.userData.greeter;
-        const t=nowSeconds-lab.farewellAt;
-        if(t>1.25&&t<5.6){
-          kk.position.z=Math.min(809,807+(t-1.25)*0.5);
-          kk.rotation.y=Math.PI;
-        }else if(t>=5.6)kk.visible=false;
+        // KK approaches Yangos instead of walking back into the elevator.
+        // He stays on the sixth floor after their handoff.
+        const walkProgress=Math.max(0,Math.min(1,(handoffTime-1.2)/2.7));
+        const ease=walkProgress*walkProgress*(3-2*walkProgress);
+        kk.position.set(800.9+(803.2-800.9)*ease,0,
+          807+(805.35-807)*ease);
+        kk.rotation.y=-Math.PI/2*ease;
+        kk.visible=true;
+        if(kk.userData.tapArm){
+          const tapping=handoffTime>=3.85&&handoffTime<5.35;
+          const pulse=tapping?Math.min(1,(handoffTime-3.85)*4,(5.35-handoffTime)*4):0;
+          kk.userData.tapArm.rotation.z=pulse>0
+            ?1.25*pulse+Math.sin((handoffTime-3.85)*13)*0.09*pulse:0;
+        }
       }
-      // KK leaves alone. Suzy stays upstairs for a separate welcome.
-      if(!lab.yangosGreeted&&nowSeconds-lab.farewellAt>=5.6){
+      if(!lab.kkCoveredByYangos&&handoffTime>=4.2){
+        lab.kkCoveredByYangos=true;
+        setStatus('KK taps Yangos on the shoulder to cover for him.');
+      }
+      if(!lab.yangosGreeted&&lab.kkCoveredByYangos&&handoffTime>=5.6){
         lab.yangosGreeted=true;
-        landingNpcSpeak('Yangos','Hey Suzy! Welcome to the Multi-Modal Lab. Come have a look around!');
+        landingNpcSpeak('Yangos','Of course! Hey Suzy, welcome to the Multi-Modal Lab. Come have a look around!');
       }
       if(lab.roomRoot&&lab.roomRoot.userData.yangosWave){
         const arm=lab.roomRoot.userData.yangosWave;
-        const waveTime=nowSeconds-lab.farewellAt-5.6;
+        const waveTime=handoffTime-5.6;
         arm.rotation.z=waveTime>=0&&waveTime<3.0
           ?-2.15+Math.sin(waveTime*9)*0.18:0;
       }

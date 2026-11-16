@@ -34,7 +34,7 @@ test('lobby is separate, walkable, lift is on left and escort shares journey',()
   assert.match(game,/state\.landingLab\.journeyRoot=journey/);
   assert.match(game,/!state\.landingLab\.inside && !isPlayerInsideWaterfront/);
   assert.match(game,/if\(state\.landingLab\.inside\)\{/);
-  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
+  assert.match(game,/landingSpeak\('Yangos, could you cover for me for a bit\?'\)/);
 });
 
 test('player cannot roam beyond lobby, elevator car or sixth-floor lab boundaries',()=>{
@@ -58,7 +58,7 @@ test('KK journey is proximity driven with speech, wait-for-player and animated p
   assert.match(game,/if\(near\(\{x:845,z:851\},2\.4\)/);
   assert.match(game,/lab\.escort\.position\.set\(879\.35,0,849\.45\)/);
   assert.match(game,/lab\.farewellSpoken=true/);
-  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
+  assert.match(game,/landingSpeak\('Yangos, could you cover for me for a bit\?'\)/);
   assert.match(game,/state\.thirdPerson=lab\.indoorPreviousView\.thirdPerson/);
   assert.match(game,/lab\.indoorPreviousView/);
   for (const name of ['entranceLeft','entranceRight','liftLeft','liftRight','carLeft','carRight']){
@@ -113,9 +113,9 @@ test('sustained walking enables sprint with a visible run cycle',()=>{
   assert.match(game,/state\.motion\.runHoldSeconds >= HOLD_TO_RUN_THRESHOLD_SECONDS/);
   assert.match(avatar,/const running=mode==='running'/);
 });
-test('lab worker types and KK says goodbye upon arrival',()=>{
+test('lab worker types and KK requests a Yangos handoff on arrival',()=>{
   assert.match(places,/MML fictional creative technologist at computer/);
   assert.match(places,/Creative technologist typing hand/);
   assert.match(game,/lab\.roomRoot\.userData\.coderHands\.forEach/);
-  assert.match(game,/landingSpeak\('bye snoooozie!'\)/);
+  assert.match(game,/landingSpeak\('Yangos, could you cover for me for a bit\?'\)/);
 });
