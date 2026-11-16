@@ -76,7 +76,7 @@ test('Landing doors remain clear, KK greets outdoors, and exiting requires walki
   assert.match(game,/outsideEscort=outdoor/);
   assert.match(game,/lab\.outdoorGreeting=true/);
   assert.match(game,/lab\.hasLeftEntry=true/);
-  assert.match(game,/if\(lab\.hasLeftEntry&&elapsed>1\.0/);
+  assert.match(game,/if\(atExit&&lab\.hasLeftEntry&&elapsed>0\.65\)/);
   assert.match(game,/const maleNames=/);
 });
 
