@@ -241,3 +241,23 @@ test('Harbour Centre has one physically connected three-dimensional podium, not 
   assert.equal(world.parkingLot.center.x,46,'raised parking lot and all movement geometry remain unchanged');
   assert.equal(world.station.x,-22.92);
 });
+
+
+test('Harbour Centre, Shops and Food Court have distinct photographed sign palettes',()=>{
+ const harbour=model().create(threeStub(),world).children
+   .find(g=>g.userData.landmark==='Harbour Centre / Spencer Building');
+ assert.deepEqual(JSON.parse(JSON.stringify(harbour.userData.cordovaSignPalette)),{
+  harbour:'#dfe4e6',shops:'#254a69',foodCourt:'#1b3145',dollarama:'#e9d44f'
+ });
+ const retail=harbour.children.find(g=>g.userData.streetLevelRetail==='Food Court / Shops');
+ const entry=harbour.children.find(g=>g.name==='Harbour Centre Cordova recessed connecting lobby');
+ assert.ok(retail.children.some(n=>n.name==='Food Court cobalt awning leading edge'));
+ assert.ok(retail.children.some(n=>n.name==='Shops cobalt awning leading edge'));
+ assert.equal(retail.children.find(n=>n.name==='Food Court Cordova entry fascia panel')
+   .userData.palette,'#1b3145');
+ assert.equal(retail.children.find(n=>n.name==='Shops Cordova entry fascia panel')
+   .userData.palette,'#254a69');
+ assert.equal(entry.children.find(n=>n.name==='Harbour Centre Cordova main entrance fascia panel')
+   .userData.palette,'#dfe4e6');
+ assert.ok(entry.children.some(n=>n.name==='Harbour Centre silver entry canopy'));
+});
