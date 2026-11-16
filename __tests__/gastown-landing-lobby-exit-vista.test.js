@@ -21,7 +21,7 @@ function mockThree(){
   add(n){this.children.push(n);}
  }
  class Tex{constructor(){this.repeat={set(){}};}}
- return {Group:Node,Mesh:Node,BoxGeometry:Geo,SphereGeometry:Geo,
+ return {Group:Node,Mesh:Node,BoxGeometry:Geo,PlaneGeometry:Geo,SphereGeometry:Geo,
   CylinderGeometry:Geo,TorusGeometry:Geo,ExtrudeGeometry:Geo,Shape,
   MeshStandardMaterial:Material,MeshBasicMaterial:Material,CanvasTexture:Tex,
   SRGBColorSpace:'srgb',DoubleSide:2};
