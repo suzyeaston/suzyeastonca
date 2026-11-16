@@ -1312,21 +1312,62 @@
     if(lab.escort)lab.escort.position.set(851.3,0,855.1);
     lab.lastGreeting='';
     lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
+    lab.nearLobbyExit=false;
     lab.doorProgress=1;lab.liftDoorProgress=0;lab.carDoorProgress=0;
     return landingTravel('lobby',portal.lobbySpawn,
       'The Landing doors are open. KK is waiting inside. Follow him to the elevator.');
   }
 
+  function isLandingLobbyStage() {
+    return ['lobby','escort','lobby-return'].includes(state.landingLab.stage);
+  }
+
+  function exitLandingToWaterStreet(portal) {
+    const lab=state.landingLab;
+    if(!portal||!isLandingLobbyStage())return false;
+    const exit={x:850,z:858.25};
+    if(Math.hypot(player.position.x-exit.x,player.position.z-exit.z)>2.25){
+      return false;
+    }
+    const outside={x:portal.threshold.x+portal.outward.x*2.6,
+      z:portal.threshold.z+portal.outward.z*2.6};
+    landingTravel('street',outside,
+      'Exited The Landing through the glass doors. Back on Water Street.');
+    // Always restore KK outdoors, including if the escort began before Suzy
+    // turned around. Reset the greeting and prevent immediate re-entry loops.
+    lab.hasLeftEntry=false;
+    lab.greetPlayed=false;lab.lastGreeting='';lab.outdoorGreeting=false;
+    lab.calledLift=false;lab.escortPaused=false;lab.lastNear=false;
+    lab.reentryBlockedUntil=performance.now()/1000+5;
+    if(lab.outsideEscort){
+      lab.outsideEscort.position.set(
+        portal.threshold.x+portal.outward.x*0.25,0,
+        portal.threshold.z+portal.outward.z*0.25);
+      lab.outsideEscort.visible=true;
+    }
+    return true;
+  }
+
+  function returnLandingLabToLift(portal){
+    if(state.landingLab.stage!=='lab'||!portal)return false;
+    if(Math.hypot(player.position.x-portal.roomExit.x,
+      player.position.z-portal.roomExit.z)>2.3)return false;
+    return landingTravel('return-lift',portal.elevatorCar,
+      'Taking the elevator down to The Landing ground-floor lobby.');
+  }
+
   function interactWithLanding() {
-    // This is a legacy fallback for players who still press E.
-    // All progression in The Landing also works with ordinary walking.
+    // E is an explicit alternative to walking out through the lobby exit.
+    // The old handler swallowed E throughout every indoor stage.
     if(!waterfrontPlaces||!waterfrontPlaces.landingEntranceFor||!state.world)return false;
     const portal=waterfrontPlaces.landingEntranceFor(state.world);
     if(!portal)return false;
     const lab=state.landingLab;
+    if(isLandingLobbyStage())return exitLandingToWaterStreet(portal);
+    if(lab.stage==='lab')return returnLandingLabToLift(portal);
     if(lab.stage==='street'&&Math.hypot(player.position.x-portal.threshold.x,
       player.position.z-portal.threshold.z)<2.3)return startLandingJourney(portal);
-    return lab.inside;
+    return false;
   }
 
   function updateLandingEscort(delta,nowSeconds) {
@@ -1355,6 +1396,22 @@
       data.carLeft.position.x=data.carLeftX-1.2*lab.carDoorProgress;
       data.carRight.position.x=data.carRightX+1.2*lab.carDoorProgress;
     };
+    // Lobby/escort must allow a return to Water Street at any point.
+    // Mark arrival past the vestibule before allowing a walk-through exit;
+    // otherwise the initial lobby spawn near z=858 triggers an instant exit.
+    if(isLandingLobbyStage()){
+      if(player.position.z<855.8)lab.hasLeftEntry=true;
+      const atExit=near({x:850,z:858.25},1.20);
+      if(atExit&&!lab.nearLobbyExit){
+        setStatus('Glass doors to Water Street: press E or walk out.');
+      }
+      lab.nearLobbyExit=atExit;
+      if(atExit&&lab.hasLeftEntry&&elapsed>0.65){
+        exitLandingToWaterStreet(portal);
+        setDoors();
+        return;
+      }
+    }else lab.nearLobbyExit=false;
     if(lab.stage==='lobby'){
       if(near({x:851.3,z:855.1},6.0)&&!lab.greetPlayed){
         lab.greetPlayed=true;
@@ -1363,15 +1420,6 @@
       if(lab.greetPlayed&&elapsed>2.2&&near({x:851.3,z:855.1},3.0)){
         lab.stage='escort';lab.stageSince=nowSeconds;
         setStatus('KK is leading the way. Stay close; he waits for you.');
-      }
-      // Avoid immediate exit: the spawn is only 1m from the threshold.
-      // The player has to walk into the lobby first and then turn back.
-      if(player.position.z<855.6)lab.hasLeftEntry=true;
-      if(lab.hasLeftEntry&&elapsed>1.0&&near(portal.lobbyExit,1.55)){
-        const outside={x:portal.threshold.x+portal.outward.x*2.6,
-          z:portal.threshold.z+portal.outward.z*2.6};
-        landingTravel('street',outside,
-          'Back on Water Street outside The Landing.');
       }
     }else if(lab.stage==='escort'&&lab.escort){
       const kk=lab.escort;
@@ -1437,10 +1485,8 @@
         }else if(t>=5.6)kk.visible=false;
       }
       if(elapsed>2.7&&near(portal.roomExit,1.55)){
-        // Sixth-floor return door leads to the same elevator car, never an
-        // instant outdoor teleport through the sixth-floor exterior wall.
-        landingTravel('return-lift',portal.elevatorCar,
-          'The lift doors open. Riding back down to Water Street.');
+        // Walk to the door or press E: both travel via the elevator.
+        returnLandingLabToLift(portal);
       }
     }else if(lab.stage==='return-lift'){
       if(elapsed>1.6){
@@ -1454,18 +1500,8 @@
           'Ground floor. Walk out through The Landing glass entrance onto Water Street.');
       }
     }else if(lab.stage==='lobby-return'){
-      if(elapsed>0.8&&near(portal.lobbyExit,1.8)){
-        const outside={x:portal.threshold.x+portal.outward.x*2.6,
-          z:portal.threshold.z+portal.outward.z*2.6};
-        landingTravel('street',outside,'Back on Water Street. KK is waiting outside again.');
-        lab.greetPlayed=false;lab.lastGreeting='';lab.outdoorGreeting=false;
-        lab.lastNear=false;lab.reentryBlockedUntil=nowSeconds+8;
-        if(lab.outsideEscort){
-          lab.outsideEscort.position.set(portal.threshold.x+portal.outward.x*0.25,0,
-            portal.threshold.z+portal.outward.z*0.25);
-          lab.outsideEscort.visible=true;
-        }
-      }
+      // Shared lobby exit above handles both E and walking back through
+      // the main entrance. No separate unreachable elevator-return branch.
     }
     setDoors();
   }
@@ -7623,7 +7659,18 @@
         return;
       }
       if (state.cameraMode === 'street' && event.code === 'KeyE') {
-        if (state.landingLab.inside) { event.preventDefault(); return; }
+        if (state.landingLab.inside) {
+          event.preventDefault();
+          if(!interactWithLanding()){
+            const here=state.landingLab.stage;
+            setStatus(here==='lab'
+              ? 'Return elevator: walk toward the door marked ELEVATOR DOWN and press E.'
+              : isLandingLobbyStage()
+                ? 'To leave, walk back to the green carpet and glass entrance, then press E.'
+                : 'Elevator in motion; the lobby exit is on the ground floor.');
+          }
+          return;
+        }
         if (interactWithHoveredNpc()) { event.preventDefault(); return; }
         if (collectNearbyProp()) { event.preventDefault(); return; }
         if (interactWithStationSideEntrance()) { event.preventDefault(); return; }
