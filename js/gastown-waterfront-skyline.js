@@ -298,7 +298,7 @@
         stack.instanceMatrix.needsUpdate=true;
         g.add(stack);
       } else {
-        for(let y=8.4;y<120;y+=9.52){
+        for(let y=8.4;y<120;y+=12){
           const slab=new THREE.Mesh(balconySlab,balcony);
           slab.name="Woodward's rounded corner balcony stack fallback";
           slab.position.set(-11.0,y,-7.55);
