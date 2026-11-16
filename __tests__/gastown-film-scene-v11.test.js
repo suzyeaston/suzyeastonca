@@ -83,3 +83,22 @@ test('Suzyfly toggle is discoverable in HUD, tutorial, and controls without capt
  assert.match(css,/\.gastown-flight-tip\s*\{[^}]*pointer-events:\s*none/);
  assert.match(css,/\.gastown-flight-tip\[data-flying="true"\]/);
 });
+
+
+test('instructions distinguish arrow-key turning from WASD sidestepping',()=>{
+  const page=read('page-gastown-sim.php');
+  const sim=read('js/gastown-sim.js');
+  assert.match(page,/Arrow keys:<\/strong> ↑ forward, ↓ backward, ← turn left, → turn right/);
+  assert.match(page,/WASD:<\/strong> W forward, S backward, A sidestep left, D sidestep right/);
+  assert.match(page,/A\/D do not turn Suzy/);
+  assert.match(page,/Both control schemes work while flying/);
+  assert.match(page,/data-sim-pointer-hint>Click to look · ↑\/↓ move · ←\/→ turn · W\/S move · A\/D sidestep/);
+  assert.match(sim,/Mouse captured · ↑\/↓ move · ←\/→ turn · W\/S move · A\/D sidestep/);
+  assert.match(sim,/if \(code === 'KeyW' \|\| code === 'ArrowUp'\) state\.move\.forward = pressed/);
+  assert.match(sim,/if \(code === 'KeyS' \|\| code === 'ArrowDown'\) state\.move\.backward = pressed/);
+  assert.match(sim,/if \(code === 'KeyA'\) state\.move\.left = pressed/);
+  assert.match(sim,/if \(code === 'KeyD'\) state\.move\.right = pressed/);
+  assert.match(sim,/if \(code === 'ArrowLeft'\) state\.turn\.left = pressed/);
+  assert.match(sim,/if \(code === 'ArrowRight'\) state\.turn\.right = pressed/);
+  assert.match(page,/<strong>Space bar<\/strong> to ascend/);
+});
