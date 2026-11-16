@@ -852,11 +852,13 @@
     cube('Multimodal Lab laptop luminous code display',801.5,1.32,801.59,0.89,0.49,0.012,screenGlow);
     root.userData.coder=coder;
     root.userData.coderHands=coderHands;
-    // A fictional, stylized named host (not a portrait/voice likeness).
-    // Yangos is the lab greeter after KK exits by himself.
+    // Yangos is his own significant figure within the lab, not a backup
+    // greeter or volunteer staffer. This is a stylized NPC, not a likeness.
     const yangos=new THREE.Group();
-    yangos.name='Yangos | fictional Multimodal Lab welcome host';
-    yangos.position.set(804.1,0,804.7);
+    yangos.name='Yangos | independent Multi-Modal Lab guest';
+    // He has a separate place by the skyline-facing windows and never
+    // participates in KK's staffing handoff.
+    yangos.position.set(805.0,0,797.4);
     yangos.rotation.y=-Math.PI/3;
     root.add(yangos);
     const hostSkin=new THREE.MeshStandardMaterial({color:0xb68162,roughness:0.9});
@@ -885,11 +887,48 @@
     sleeve.name='Yangos right sleeve';sleeve.position.set(0,-0.24,0);yangosWave.add(sleeve);
     const hand=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.24,0.18),hostSkin);
     hand.name='Yangos welcoming hand';hand.position.set(0,-0.58,0);yangosWave.add(hand);
-    sign(THREE,root,'YANGOS · WELCOME',
-      {x:804.1,y:2.77,z:804.7},2.4,0.36,0,
+    sign(THREE,root,'YANGOS',
+      {x:805.0,y:2.77,z:797.4},1.65,0.36,0,
       {background:'#1e454f',color:'#e9f5ee'});
     root.userData.yangos=yangos;
     root.userData.yangosWave=yangosWave;
+    // An unnamed fictional volunteer, separate from Yangos, can cover for
+    // KK. No assumption about a real person's identity, role or appearance.
+    const coverHost=new THREE.Group();
+    coverHost.name='MML volunteer | KK handoff and welcome';
+    coverHost.position.set(804.3,0,805.35);
+    coverHost.rotation.y=Math.PI/2;
+    root.add(coverHost);
+    const coverShirt=new THREE.MeshStandardMaterial({color:0x786d9d,roughness:0.9});
+    const coverPants=new THREE.MeshStandardMaterial({color:0x35434c,roughness:0.9});
+    function volunteerPart(name,x,y,z,w,h,d,material,parent=coverHost){
+      const part=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+      part.name=name;part.position.set(x,y,z);parent.add(part);return part;
+    }
+    volunteerPart('MML volunteer shirt',0,1.39,0,0.75,0.88,0.41,coverShirt);
+    for(const x of [-0.18,0.18]){
+      volunteerPart('MML volunteer trousers',x,0.55,0,0.28,1.07,0.32,coverPants);
+      volunteerPart('MML volunteer shoes',x,0.10,-0.08,0.31,0.15,0.48,dark);
+    }
+    const coverHead=new THREE.Mesh(new THREE.SphereGeometry(0.26,10,8),hostSkin);
+    coverHead.name='MML volunteer stylized face';
+    coverHead.position.set(0,2.04,0);coverHost.add(coverHead);
+    volunteerPart('MML volunteer short hair',0,2.27,0.02,0.49,0.12,0.44,hostHair);
+    volunteerPart('MML volunteer left sleeve',-0.47,1.48,0,0.22,0.54,0.28,coverShirt);
+    volunteerPart('MML volunteer left hand',-0.47,1.09,0,0.17,0.21,0.18,hostSkin);
+    const coverHostWave=new THREE.Group();
+    coverHostWave.name='MML volunteer greeting arm';
+    coverHostWave.position.set(0.48,1.65,0);
+    coverHost.add(coverHostWave);
+    volunteerPart('MML volunteer right sleeve',0,-0.24,0,0.23,0.49,0.28,
+      coverShirt,coverHostWave);
+    volunteerPart('MML volunteer greeting hand',0,-0.59,0,0.18,0.24,0.18,
+      hostSkin,coverHostWave);
+    sign(THREE,root,'LAB VOLUNTEER',
+      {x:804.3,y:2.76,z:805.35},2.08,0.34,0,
+      {background:'#474053',color:'#f3eaf9'});
+    root.userData.coverHost=coverHost;
+    root.userData.coverHostWave=coverHostWave;
     // Reuse the same recognizable model used on the street and in the lobby.
     const greeter=createKrisAvatar(THREE);
     greeter.name='KK | fictional welcoming lab NPC';

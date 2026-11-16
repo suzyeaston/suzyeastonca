@@ -181,7 +181,8 @@
       stageSince:0, greetPlayed:false, lastGreeting:'', indoorPreviousView:null,
       doorProgress:1, liftDoorProgress:0, carDoorProgress:0, escortPaused:false,
       outsideEscort:null, outdoorGreeting:false, outdoorWalkStarted:false, reentryBlockedUntil:0,
-      yangosGreeted:false,yangosTalked:false,kkCoveredByYangos:false,lastNearLabLift:false,
+      coverHostGreeted:false,yangosTalked:false,yangosWaveAt:0,
+      kkCoveredByVolunteer:false,lastNearLabLift:false,
       guardHighFiveAt:0,lastGuardNear:false },
     dialogData: {},
     activeDialogNpcId: '',
@@ -1320,11 +1321,14 @@
     lab.lastGreeting='';
     lab.greetPlayed=lab.outdoorGreeting;lab.farewellSpoken=false;lab.lastNear=false;lab.hasLeftEntry=false;
     lab.nearLobbyExit=false;
-    lab.yangosGreeted=false;lab.yangosTalked=false;lab.lastNearLabLift=false;
-    lab.kkCoveredByYangos=false;
+    lab.coverHostGreeted=false;lab.yangosTalked=false;lab.yangosWaveAt=0;
+    lab.lastNearLabLift=false;
+    lab.kkCoveredByVolunteer=false;
     lab.guardHighFiveAt=0;lab.lastGuardNear=false;
     if(lab.roomRoot&&lab.roomRoot.userData.yangosWave)
       lab.roomRoot.userData.yangosWave.rotation.z=0;
+    if(lab.roomRoot&&lab.roomRoot.userData.coverHostWave)
+      lab.roomRoot.userData.coverHostWave.rotation.z=0;
     if(lab.journeyRoot&&lab.journeyRoot.userData.securityHighFiveArm)
       lab.journeyRoot.userData.securityHighFiveArm.rotation.z=0;
     lab.doorProgress=1;lab.liftDoorProgress=0;lab.carDoorProgress=0;
@@ -1388,11 +1392,13 @@
   function talkToYangos() {
     const lab=state.landingLab;
     const yangos=lab.roomRoot&&lab.roomRoot.userData.yangos;
-    if(lab.stage!=='lab'||!yangos||!lab.yangosGreeted)return false;
+    // Yangos is an independent participant, not the volunteer covering for KK.
+    if(lab.stage!=='lab'||!yangos)return false;
     if(Math.hypot(player.position.x-yangos.position.x,
       player.position.z-yangos.position.z)>2.0)return false;
     lab.yangosTalked=true;
-    landingNpcSpeak('Yangos','Glad you made it! Have a look around the lab. The windows face the harbour.');
+    lab.yangosWaveAt=performance.now()/1000;
+    landingNpcSpeak('Yangos',"Good to see you, Suzy. There's a great view toward Woodward's from here.");
     return true;
   }
 
@@ -1502,8 +1508,9 @@
       if(elapsed>3.8){
         landingTravel('lab',portal.roomSpawn,'Sixth floor. Welcome to the Multimodal Media Lab.');
         lab.farewellAt=nowSeconds;
-        lab.farewellSpoken=false;lab.yangosGreeted=false;
-        lab.kkCoveredByYangos=false;
+        lab.farewellSpoken=false;lab.coverHostGreeted=false;
+        lab.yangosTalked=false;lab.yangosWaveAt=0;
+        lab.kkCoveredByVolunteer=false;
         if(lab.roomRoot&&lab.roomRoot.userData.greeter){
           const kk=lab.roomRoot.userData.greeter;
           kk.visible=true;kk.position.set(800.9,0,807);
@@ -1514,7 +1521,7 @@
       if(!lab.farewellSpoken&&elapsed>1.05){
         lab.farewellSpoken=true;
         lab.lastGreeting='';
-        landingSpeak('Yangos, could you cover for me for a bit?');
+        landingSpeak('One sec, Suzy. I’ll ask someone to cover for me.');
       }
       if(lab.roomRoot&&lab.roomRoot.userData.coderHands){
         // Small alternating typing rhythm, no repeated full-scene rebuild.
@@ -1524,8 +1531,9 @@
       }
       if(lab.roomRoot&&lab.roomRoot.userData.greeter){
         const kk=lab.roomRoot.userData.greeter;
-        // KK approaches Yangos instead of walking back into the elevator.
-        // He stays on the sixth floor after their handoff.
+        // KK approaches a fictional lab volunteer, not Yangos. Yangos
+        // remains by the distant windows as an independent participant.
+        // KK still stays on this floor after the staffing handoff.
         const walkProgress=Math.max(0,Math.min(1,(handoffTime-1.2)/2.7));
         const ease=walkProgress*walkProgress*(3-2*walkProgress);
         kk.position.set(800.9+(803.2-800.9)*ease,0,
@@ -1539,19 +1547,26 @@
             ?1.25*pulse+Math.sin((handoffTime-3.85)*13)*0.09*pulse:0;
         }
       }
-      if(!lab.kkCoveredByYangos&&handoffTime>=4.2){
-        lab.kkCoveredByYangos=true;
-        setStatus('KK taps Yangos on the shoulder to cover for him.');
+      if(!lab.kkCoveredByVolunteer&&handoffTime>=4.2){
+        lab.kkCoveredByVolunteer=true;
+        setStatus('KK taps the lab volunteer on the shoulder: “Could you cover for me?”');
       }
-      if(!lab.yangosGreeted&&lab.kkCoveredByYangos&&handoffTime>=5.6){
-        lab.yangosGreeted=true;
-        landingNpcSpeak('Yangos','Of course! Hey Suzy, welcome to the Multi-Modal Lab. Come have a look around!');
+      if(!lab.coverHostGreeted&&lab.kkCoveredByVolunteer&&handoffTime>=5.6){
+        lab.coverHostGreeted=true;
+        landingNpcSpeak('Lab volunteer','Sure! Welcome, Suzy. Make yourself at home!');
       }
-      if(lab.roomRoot&&lab.roomRoot.userData.yangosWave){
-        const arm=lab.roomRoot.userData.yangosWave;
+      if(lab.roomRoot&&lab.roomRoot.userData.coverHostWave){
+        const arm=lab.roomRoot.userData.coverHostWave;
         const waveTime=handoffTime-5.6;
         arm.rotation.z=waveTime>=0&&waveTime<3.0
           ?-2.15+Math.sin(waveTime*9)*0.18:0;
+      }
+      // Yangos only waves when Suzy actually approaches and interacts.
+      if(lab.roomRoot&&lab.roomRoot.userData.yangosWave){
+        const arm=lab.roomRoot.userData.yangosWave;
+        const t=nowSeconds-(lab.yangosWaveAt||0);
+        arm.rotation.z=lab.yangosTalked&&t>=0&&t<2.4
+          ?-2.15+Math.sin(t*9)*0.18:0;
       }
       const nearLabLift=near(portal.roomExit,1.55);
       if(nearLabLift&&!lab.lastNearLabLift){
