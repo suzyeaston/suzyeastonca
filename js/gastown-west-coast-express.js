@@ -119,13 +119,23 @@
     // station's rear wall. Tracks and train route remain independent.
     const apronWest=3,apronEast=78,apronWidth=apronEast-apronWest;
     const apronMid=(apronWest+apronEast)/2;
+    // Keep the LOWER station platform along the stopped commuter consist;
+    // only roof, canopy fascia and signs need to be cut away from the hall.
     box(THREE,root,'West Coast Express Waterfront boarding platform',
-      apronMid,0.19,-10.35,apronWidth,0.31,9.15,concrete);
+      -20,0.19,-10.35,114,0.31,9.15,concrete);
     box(THREE,root,'West Coast Express yellow tactile safety strip',
-      apronMid,0.371,-14.65,apronWidth-1.5,0.045,0.62,yellow);
+      -20,0.371,-14.65,111,0.045,0.62,yellow);
     box(THREE,root,'West Coast Express platform roof canopy',
       apronMid,5.91,-9.6,apronWidth,0.33,9.1,cream);
-    for(const x of [7,23,40,57,74]){
+    // One separate west canopy covers the existing first two coaches,
+    // without a 40m-long roof slicing diagonally through the 1914 hall.
+    box(THREE,root,'WCE covered west boarding canopy',
+      -56,5.91,-9.6,42,0.33,9.1,cream);
+    box(THREE,root,'WCE west south fascia',
+      -56,5.57,-5.8,42,0.4,0.25,maroon);
+    box(THREE,root,'WCE west rail fascia',
+      -56,5.57,-14.9,42,0.4,0.25,maroon);
+    for(const x of [-73,-59,-45,7,23,40,57,74]){
       for(const z of [-6.7,-13.1]){
         box(THREE,root,'Waterfront platform maroon canopy post',
           x,3.02,z,0.27,5.75,0.27,maroon);
