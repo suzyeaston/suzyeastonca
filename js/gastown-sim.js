@@ -6218,7 +6218,7 @@
       if (routeSegmentEl) routeSegmentEl.textContent='Waterfront Station interior';
       if (minimapLandmarkEl) {
         minimapLandmarkEl.textContent=
-          'Historic concourse · Station East parking via Cordova exit';
+          'Historic concourse · left arcade to Station East (illustrative) · Rogue right';
       }
       updateMinimapContext();
       return;
