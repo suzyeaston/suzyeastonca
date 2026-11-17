@@ -82,9 +82,11 @@
   function isWalkableInterior(world, point) {
     if (!world || !world.spawn || !point) return false;
     const { x, z } = localFor(world, point);
-    const grandHall = Math.abs(x) <= 18.9 && z >= -33.6 && z <= 5.1;
+    // Rogue occupies the centre/right arches. Stop before its glass wall,
+    // instead of allowing walking straight through the restaurant facade.
+    const grandHall = Math.abs(x) <= 18.9 && z >= -32.2 && z <= 5.1;
     const eastPassage = x >= 18.3 && x <= 56.5 && z >= -6.15 && z <= -1.85;
-    const westCoastConnector = Math.abs(x) <= 3.3 && z >= -41.1 && z < -31.5;
+    const westCoastConnector = Math.abs(x) <= 3.3 && z >= -41.1 && z < -35.0;
     // Photo reference: the LEFT rear arch is a separate short exit vestibule.
     // Its illustrated transition connects to the already-modeled Station East
     // doorway outside, rather than inventing a pedestrian rail-yard shortcut.
@@ -114,8 +116,8 @@
     const local = localFor(world, point);
     // An eight-metre sloped internal passage joins the 0m heritage hall
     // to the platform at -1m without a camera or character teleport.
-    if (Math.abs(local.x) <= 3.3 && local.z <= -33.1 && local.z >= -41.1) {
-      return -Math.max(0, Math.min(1, (-local.z - 33.1) / 8));
+    if (Math.abs(local.x) <= 3.3 && local.z <= -35.0 && local.z >= -41.1) {
+      return -Math.max(0, Math.min(1, (-local.z - 35.0) / 6.1));
     }
     if (isWalkableInterior(world, point)) return 0;
     return isWalkableWestCoastExpress(world, point) ? -1 : 0;
@@ -531,10 +533,10 @@
       7.1,0.17,3.0,exitLight);
     // Lighted transverse circulation to the existing WCE platform path.
     // This is a film-set connector, not a claim about the actual public route.
-    box('WCE separate connecting spur terrazzo floor',-5.9,0.09,-35.95,
-      12.4,0.14,2.95,terrazzo);
-    box('WCE separate connecting spur ceiling',-5.9,5.5,-35.95,
-      12.4,0.19,2.95,exitLight);
+    box('WCE separate connecting spur terrazzo floor',-5.9,0.09,-35.25,
+      12.4,0.14,1.8,terrazzo);
+    box('WCE separate connecting spur ceiling',-5.9,5.5,-35.25,
+      12.4,0.19,1.8,exitLight);
     box('WCE separate connecting spur back wall',-5.9,2.7,-37.55,
       12.4,5.3,0.12,exitWall);
     const wceSpurSign=sign('WCE TRANSFER',-5.6,4.8,-35.51,
@@ -647,28 +649,28 @@
     const transferRail = new THREE.MeshStandardMaterial({ color: 0xb0babe, roughness: 0.36, metalness: 0.5 });
     const transferGlass = new THREE.MeshBasicMaterial({ color: 0xdce9ef, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
     const ramp = box('West Coast Express concourse-to-platform continuous ramp',
-      0, -0.50, -37.1, 6.2, 0.17, 8.5, transferTile);
-    ramp.rotation.x = -Math.atan2(1, 8);
+      0, -0.50, -38.05, 6.2, 0.17, 6.1, transferTile);
+    ramp.rotation.x = -Math.atan2(1, 6.1);
     for (const x of [-3.25, 3.25]) {
       box('WCE access glazed corridor wall', x, 2.45, -37.25,
         0.16, 4.9, 8.3, transferGlass);
-      box('WCE passage handrail', x * 0.92, 0.77, -37.0,
-        0.08, 0.1, 8.2, transferRail).rotation.x = -Math.atan2(1, 8);
-      for (const z of [-33.5, -35.5, -37.5, -39.5, -40.9]) {
+      box('WCE passage handrail', x * 0.92, 0.77, -38.05,
+        0.08, 0.1, 6.1, transferRail).rotation.x = -Math.atan2(1, 6.1);
+      for (const z of [-35.1, -36.3, -37.5, -39.2, -40.9]) {
         box('WCE sloped passage handrail post', x * 0.92,
-          0.7 - Math.max(0, Math.min(1, (-z - 33.1) / 8)), z,
+          0.7 - Math.max(0, Math.min(1, (-z - 35.0) / 6.1)), z,
           0.095, 1.4, 0.095, transferRail);
       }
     }
-    box('West Coast Express white overhead passage', 0, 4.82, -37.1,
-      7.1, 0.27, 8.5, hallTrim);
-    for (const z of [-34.8, -37.0, -39.2]) {
+    box('West Coast Express white overhead passage', 0, 4.82, -38.05,
+      7.1, 0.27, 6.1, hallTrim);
+    for (const z of [-35.7, -37.5, -39.2]) {
       box('West Coast Express passage strip light', 0, 4.65, z,
         4.4, 0.05, 0.19, clerestory);
     }
-    box('West Coast Express fare-paid threshold canopy', 0, 5.17, -37.5,
+    box('West Coast Express fare-paid threshold canopy', 0, 5.17, -38.0,
       6.7, 0.34, 0.65, yellow);
-    sign('WEST COAST EXPRESS / PLATFORMS', 0, 4.77, -37.11,
+    sign('WEST COAST EXPRESS / PLATFORMS', 0, 4.77, -37.61,
       6.4, 0.43, '#ffffff', 'bold 61px Arial, sans-serif');
     root.userData.westCoastExpressConnection = 'illustrative left passage spur and ramp to platform';
     root.userData.realStationExitUnverified = true;
