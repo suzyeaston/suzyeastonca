@@ -105,6 +105,7 @@ jobs:
           node --test __tests__/home-gastown-lookout.test.js
           node --test __tests__/gastown-waterfront-station.test.js
           node --test __tests__/gastown-waterfront-concourse.test.js
+          node --test __tests__/gastown-waterfront-heritage-photo-pass.test.js
           node --test __tests__/gastown-waterfront-wce-access.test.js
           node --test __tests__/gastown-sim-config.test.js
           node --test __tests__/gastown-audio-assets.test.js
