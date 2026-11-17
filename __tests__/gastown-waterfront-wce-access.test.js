@@ -16,11 +16,24 @@ function loadStation() {
   return win.GastownWaterfrontStation;
 }
 
-test('continuous Cordova to heritage hall to WCE rear arcade walking route',()=>{
+test('heritage arcade route bypasses Rogue via the left passage to the WCE apron',()=>{
   const station=loadStation();
-  for(let z=5;z>=-41;z-=0.25){
-    const pt=station.toWorld(world,0,z);
-    assert.equal(station.isWalkableInterior(world,pt),true,'hall/passage at '+z);
+  for(let z=5;z>=-35.1;z-=0.25){
+    const pt=station.toWorld(world,-12,z);
+    assert.equal(station.isWalkableInterior(world,pt),true,'left arcade at '+z);
+  }
+  for(let x=-12;x<=0;x+=0.25){
+    assert.equal(station.isWalkableInterior(world,station.toWorld(world,x,-35.1)),
+      true,'behind-Rogue transfer at local x='+x);
+  }
+  for(let z=-35.1;z>=-41;z-=0.25){
+    assert.equal(station.isWalkableInterior(world,station.toWorld(world,0,z)),
+      true,'WCE ramp at local z='+z);
+  }
+  // Do not walk through either of Rogue's front doors to reach the train.
+  for (const x of [0,12]) {
+    assert.equal(station.isWalkableInterior(world,station.toWorld(world,x,-33)),
+      false,'Rogue facade is not transit access at local x='+x);
   }
   // The portal ends directly on the covered eastern WCE boarding apron.
   const exit=station.toWorld(world,0,-41);
@@ -48,8 +61,8 @@ test('WCE transition follows continuous floor surface rather than teleporting',(
   const station=loadStation();
   const sample=z=>station.surfaceYFor(world,station.toWorld(world,0,z));
   assert.equal(sample(-33),0);
-  assert.ok(sample(-37)<-0.4 && sample(-37)>-0.6);
-  assert.ok(Math.abs(sample(-41)+0.9875)<1e-8);
+  assert.ok(sample(-38)<-0.4 && sample(-38)>-0.6);
+  assert.ok(Math.abs(sample(-41)+(6/6.1))<1e-8);
   assert.equal(station.surfaceYFor(world,{x:12,z:-10}),-1);
   assert.equal(station.surfaceYFor(world,station.toWorld(world,0,-10)),0);
 });
@@ -82,7 +95,7 @@ test('station geometry and simulator implement the actual platform access',()=>{
     'West Coast Express fare-paid threshold canopy'
   ];
   for(const name of names)assert.ok(station.includes(name),name);
-  assert.match(station,/if \(x !== 0\) box\('Concourse arch recessed opening'/);
+  assert.match(station,/if \(x !== -12\) box\('Concourse arch recessed opening'/);
   assert.match(sim,/stationModel\.interiorCommutersFor\(world\)/);
   assert.match(sim,/stationModel\.platformCommutersFor\(world\)/);
   assert.match(sim,/stationModel\.surfaceYFor\(state\.world,here\)/);

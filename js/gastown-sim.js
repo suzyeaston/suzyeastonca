@@ -1662,9 +1662,58 @@
     return true;
   }
 
+  function interactWithStationParkingExit(force) {
+    if (!state.world || !stationModel || !stationModel.parkingExitFor ||
+        state.flight.enabled || state.landingLab.inside) return false;
+    const doorway=stationModel.parkingExitFor(state.world);
+    if (!doorway) return false;
+    const here={x:player.position.x,z:player.position.z};
+    const within=Math.hypot(here.x-doorway.threshold.x,
+      here.z-doorway.threshold.z) < (force ? 3.2 : 4.8);
+    if (!within || (!force && (!stationModel.isAtParkingExit ||
+        !stationModel.isAtParkingExit(state.world,here)))) return false;
+    // The east lot itself is georeferenced; the illustrated short heritage
+    // corridor is NOT an officially documented public access route.
+    // Use an explicit scene transition at its end rather than a fictional
+    // continuous hall-to-rail-yard path through historic brickwork.
+    const destination=doorway.destination;
+    if (!destination || !stationModel.isWalkableForecourt ||
+        !stationModel.isWalkableForecourt(state.world,destination)) return false;
+    clearMovementInput();
+    player.position.set(destination.x,getGroundY(destination),destination.z);
+    state.lastSafePosition.copy(player.position);
+    state.velocity.set(0,0,0);
+    const lot=state.world.parkingLot && state.world.parkingLot.center;
+    if (lot) state.yaw=Math.atan2(-(lot.x-destination.x),
+      -(lot.z-destination.z));
+    player.rotation.y=state.yaw;
+    state.followCameraDistance=undefined;
+    state.followCameraShoulder=undefined;
+    state.avatarCameraNextRefresh=0;
+    state.nearStationSideDoor=false;
+    state.nearStationParkingExit=false;
+    applyStreetCameraPose();
+    setStatus('Station East surface parking (illustrative passage transition). Rogue remains inside to the right of the arch.');
+    return true;
+  }
+
   function updateStationSideEntranceHint() {
     if (!stationModel || !stationModel.sideEntranceFor || !state.world) return;
     const doorway = stationModel.sideEntranceFor(state.world);
+    const parkingExit=stationModel.parkingExitFor && stationModel.parkingExitFor(state.world);
+    if (parkingExit && !state.flight.enabled) {
+      const d=Math.hypot(player.position.x-parkingExit.threshold.x,
+        player.position.z-parkingExit.threshold.z);
+      if (stationModel.isAtParkingExit &&
+          stationModel.isAtParkingExit(state.world,
+            {x:player.position.x,z:player.position.z})) {
+        if (interactWithStationParkingExit(false)) return;
+      }
+      if(d<6.5 && !state.nearStationParkingExit) {
+        setStatus('Left heritage arch: illustrated Station East lot exit. Walk into passage or press E. Rogue is to the right.');
+      }
+      state.nearStationParkingExit=d<6.5;
+    }
     const near = doorway && Math.hypot(player.position.x - doorway.threshold.x,
       player.position.z - doorway.threshold.z) < 4.6;
     if (near && !state.nearStationSideDoor) {
@@ -4228,6 +4277,17 @@
       setInteractPrompt('');
       return;
     }
+    const parkingExit=state.world && stationModel && stationModel.parkingExitFor
+      ? stationModel.parkingExitFor(state.world) : null;
+    if(parkingExit && stationModel.isWalkableInterior &&
+      stationModel.isWalkableInterior(state.world,
+        {x:player.position.x,z:player.position.z}) &&
+      Math.hypot(player.position.x-parkingExit.threshold.x,
+        player.position.z-parkingExit.threshold.z)<5.6) {
+      state.hoveredNpcId='';
+      setInteractPrompt('E: Station East parking exit (illustrative route)');
+      return;
+    }
     const npcTarget = findLookedAtNpc();
     const collectible = findNearbyCollectible();
     state.hoveredNpcId = npcTarget ? npcTarget.npc.id : '';
@@ -6158,7 +6218,7 @@
       if (routeSegmentEl) routeSegmentEl.textContent='Waterfront Station interior';
       if (minimapLandmarkEl) {
         minimapLandmarkEl.textContent=
-          'Historic concourse · Station East parking via Cordova exit';
+          'Historic concourse · left arcade to Station East (illustrative) · Rogue right';
       }
       updateMinimapContext();
       return;
@@ -7833,6 +7893,7 @@
           }
           return;
         }
+        if (interactWithStationParkingExit(true)) { event.preventDefault(); return; }
         if (interactWithHoveredNpc()) { event.preventDefault(); return; }
         if (collectNearbyProp()) { event.preventDefault(); return; }
         if (interactWithStationSideEntrance()) { event.preventDefault(); return; }

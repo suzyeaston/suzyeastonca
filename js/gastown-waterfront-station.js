@@ -82,10 +82,23 @@
   function isWalkableInterior(world, point) {
     if (!world || !world.spawn || !point) return false;
     const { x, z } = localFor(world, point);
-    const grandHall = Math.abs(x) <= 18.9 && z >= -33.6 && z <= 5.1;
+    // Rogue occupies the centre/right arches. Stop before its glass wall,
+    // instead of allowing walking straight through the restaurant facade.
+    const grandHall = Math.abs(x) <= 18.9 && z >= -32.2 && z <= 5.1;
     const eastPassage = x >= 18.3 && x <= 56.5 && z >= -6.15 && z <= -1.85;
-    const westCoastConnector = Math.abs(x) <= 3.3 && z >= -41.1 && z < -31.5;
-    return grandHall || eastPassage || westCoastConnector;
+    const westCoastConnector = Math.abs(x) <= 3.3 && z >= -41.1 && z < -35.0;
+    // Photo reference: the LEFT rear arch is a separate short exit vestibule.
+    // Its illustrated transition connects to the already-modeled Station East
+    // doorway outside, rather than inventing a pedestrian rail-yard shortcut.
+    const stationEastExitVestibule = x >= -15.5 && x <= -8.5
+      && z >= -35.4 && z <= -31.5;
+    // Branch toward WCE behind the left public passage, keeping the two
+    // eastern Rogue shopfront arches free of misleading transit doorways.
+    // This spur is illustrative: the true fare-gated circulation differs.
+    const wceSpur = x >= -12.1 && x <= 0.5
+      && z >= -37.4 && z <= -34.6;
+    return grandHall || eastPassage || westCoastConnector ||
+      stationEastExitVestibule || wceSpur;
   }
 
   function isWalkableWestCoastExpress(world, point) {
@@ -103,11 +116,29 @@
     const local = localFor(world, point);
     // An eight-metre sloped internal passage joins the 0m heritage hall
     // to the platform at -1m without a camera or character teleport.
-    if (Math.abs(local.x) <= 3.3 && local.z <= -33.1 && local.z >= -41.1) {
-      return -Math.max(0, Math.min(1, (-local.z - 33.1) / 8));
+    if (Math.abs(local.x) <= 3.3 && local.z <= -35.0 && local.z >= -41.1) {
+      return -Math.max(0, Math.min(1, (-local.z - 35.0) / 6.1));
     }
     if (isWalkableInterior(world, point)) return 0;
     return isWalkableWestCoastExpress(world, point) ? -1 : 0;
+  }
+
+  function parkingExitFor(world) {
+    if (!world || !world.spawn) return null;
+    const sideDoor = sideEntranceFor(world);
+    return {
+      threshold: toWorld(world, -12.0, -32.0),
+      approach: toWorld(world, -12.0, -30.5),
+      destination: sideDoor.approach,
+      label: 'Station East surface parking exit (left rear arch)',
+      approximateTransition: true
+    };
+  }
+
+  function isAtParkingExit(world, point) {
+    if (!world || !point) return false;
+    const {x,z}=localFor(world,point);
+    return x >= -15.3 && x <= -8.7 && z <= -34.0 && z >= -35.4;
   }
 
   function sideEntranceFor(world) {
@@ -261,12 +292,14 @@
       }
     }
     box('CPR station hall upper masonry', 0, 15.4, -17, 46, 2.2, 34, brick);
-    // Open the middle rear arcade for a real WCE connection; flankers stay
-    // structurally enclosed instead of exposing the rail yard.
-    for (const x of [-13.65, 13.65]) {
-      box('CPR station hall rear masonry', x, 7.8, -33.75, 18.7, 15.6, 0.5, brick);
+    // The rear wall has TWO genuine apertures: left station-side parking exit
+    // and centre WCE transfer. Only the RIGHT bay is backed by masonry/retail.
+    // Preserve all historic exterior brick; cut the left interior doorway.
+    for (const [x,width] of [[-19.45,7.1],[-6.25,4.1],[13.65,18.7]]) {
+      box('CPR station hall rear masonry', x, 7.8, -33.75, width, 15.6, 0.5, brick);
     }
     box('Waterfront rear arcade heritage lintel', 0, 13.55, -33.75, 8.6, 4.1, 0.5, brick);
+    box('Waterfront station-side left arcade lintel', -12.0, 13.55, -33.75, 8.6, 4.1, 0.5, brick);
     box('Projecting central entry block', -15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Projecting east entry block', 15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Entry block crosshead above hall', 0, 9.5, -0.15, 9, 9.3, 1.2, brick);
@@ -468,24 +501,60 @@
     const minute=box('Waterfront heritage clock minute hand',
       -0.12,12.25,-32.72,0.04,0.49,0.025,hallDark);
     minute.rotation.z=-0.38;
-    for (const x of [-12,12]) {
-      box('Waterfront Rogue illuminated arcade window',x,4.38,-33.03,
+    // Rogue is ONE restaurant occupying the TWO RIGHT arches, as clearly
+    // shown in the user's photo and the 2018 east-facing historical view.
+    // The left arch is a distinct bright passage, not a second restaurant.
+    for (const rogueX of [0,12]) {
+      box('Waterfront Rogue illuminated arcade window',rogueX,4.38,-33.03,
         6.8,8.65,0.06,timber);
-      box('Waterfront Rogue amber restaurant interior',x,4.4,-32.94,
+      box('Waterfront Rogue amber restaurant interior',rogueX,4.4,-32.94,
         6.1,7.75,0.055,gilding);
-      sign('ROGUE',x,5.4,-32.80,5.6,0.88,'#422b20',
+      sign('ROGUE',rogueX,5.4,-32.80,5.6,0.88,'#422b20',
         'bold 90px Georgia, serif');
-      box('Waterfront Rogue dark timber base',x,0.9,-32.82,
+      box('Waterfront Rogue dark timber base',rogueX,0.9,-32.82,
         6.6,1.65,0.19,timber);
     }
-    // When heading back toward the Cordova doors the pedestrian way to
-    // Station East's surface lot is on the left. The lot itself remains
-    // correctly east of the heritage station in mapped world coordinates.
-    const lotDirection=sign('CORDOVA EXIT / STATION EAST LOT',7.0,4.71,0.0,
-      6.4,0.42,'#f6f1e5','bold 62px Arial, sans-serif');
-    lotDirection.rotation.y=Math.PI;
+
+    // A real opening at x=-12 leads to a luminous short vestibule. The
+    // simulator transitions at its far threshold to the mapped Station East
+    // side door. No black wall or inaccessible fake doorway.
+    const exitWall=new THREE.MeshBasicMaterial({color:0xece6d9});
+    const exitLight=new THREE.MeshBasicMaterial({color:0xf5f0e5});
+    const exitSky=new THREE.MeshBasicMaterial({color:0xcbdfe4});
+    box('Station East left-arch exit vestibule floor',-12,0.08,-34.35,
+      6.8,0.14,3.0,terrazzo);
+    for (const x of [-15.4,-8.6]) {
+      box('Station East left-arch ivory vestibule side wall',x,3.6,-34.4,
+        0.13,7.2,3.0,exitWall);
+      box('Station East left-arch timber handrail',x+(x<0?0.12:-0.12),1.0,-34.4,
+        0.08,0.14,2.5,timber);
+    }
+    box('Station East left-arch vestibule ceiling',-12,7.55,-34.4,
+      7.1,0.17,3.0,exitLight);
+    // Lighted transverse circulation to the existing WCE platform path.
+    // This is a film-set connector, not a claim about the actual public route.
+    box('WCE separate connecting spur terrazzo floor',-5.9,0.09,-35.25,
+      12.4,0.14,1.8,terrazzo);
+    box('WCE separate connecting spur ceiling',-5.9,5.5,-35.25,
+      12.4,0.19,1.8,exitLight);
+    box('WCE separate connecting spur back wall',-5.9,2.7,-37.55,
+      12.4,5.3,0.12,exitWall);
+    const wceSpurSign=sign('WCE TRANSFER',-5.6,4.8,-35.51,
+      4.5,0.38,'#eef6f7','bold 58px Arial, sans-serif');
+    wceSpurSign.rotation.y=Math.PI;
+    box('Station East left-arch exit daylight beyond threshold',-12,3.8,-35.82,
+      6.65,7.3,0.06,exitSky);
+    box('Station East left-arch exterior door frame',-12,3.7,-35.72,
+      6.8,0.18,0.19,upperIvory);
+    const parkingWayfinding=sign('EXIT  /  STATION EAST PARKING',-12,8.48,-32.79,
+      6.95,0.50,'#fff7df','bold 57px Arial, sans-serif');
+    parkingWayfinding.name='Station East parking exit left-arch wayfinding';
+    const cordovaDirection=sign('CORDOVA MAIN EXIT',0.0,4.71,0.0,
+      5.3,0.42,'#f6f1e5','bold 62px Arial, sans-serif');
+    cordovaDirection.rotation.y=Math.PI;
     root.userData.heritageInteriorPhotoPass2026=true;
-    root.userData.stationEastLotWayfinding='left via Cordova doors when facing the street';
+    root.userData.stationEastLotWayfinding='left rear arch next to Rogue on the right';
+    root.userData.parkingExitInteractiveTransition=true;
     for (const z of [-24.4, -13.2, -2.0]) {
       cylinder('Waterfront concourse pendant stem', 0, 13.05, z,
         0.075, 0.075, 2.0, brass, 10);
@@ -494,11 +563,10 @@
       lamp.position.set(0, 11.7, z);
       root.add(lamp);
     }
-    // Arched rear arcade and clock are part of a *deeper* visual terminus.
-    // The dark openings indicate onward transit circulation, not walkable
-    // fare-paid space. Their backs are beyond the publicly walkable boundary.
+    // Only the leftmost arch is a public walkway. The two arches to the
+    // right are glazed Rogue dining bays, never a central WCE portal.
     for (const x of [-12.0, 0, 12.0]) {
-      if (x !== 0) box('Concourse arch recessed opening', x, 4.65, -33.36,
+      if (x !== -12) box('Concourse arch recessed opening', x, 4.65, -33.36,
         7.1, 9.3, 0.1, archDark);
       const arch = new THREE.Mesh(
         new THREE.TorusGeometry(3.6, 0.28, 8, 24, Math.PI),
@@ -526,9 +594,7 @@
     const fareBlue = new THREE.MeshStandardMaterial({ color: 0x2c7b86, roughness: 0.7 });
     const displayGlass = new THREE.MeshStandardMaterial({ color: 0x152938, roughness: 0.16, metalness: 0.15 });
     for (const [x, label, tone] of [
-      [-12, 'EXPO LINE / SEABUS', transitBlue],
-      [0, 'WEST COAST EXPRESS', transitNavy],
-      [12, 'CANADA LINE', fareBlue]
+      [-12, 'STATION EAST / WCE', transitBlue]
     ]) {
       box('Waterfront blue directional fascia', x, 8.85, -33.0, 7.4, 1.0, 0.14, tone);
       sign(label, x, 8.87, -32.89, 7.0, 0.55, '#ffffff', 'bold 68px Arial, sans-serif');
@@ -583,30 +649,33 @@
     const transferRail = new THREE.MeshStandardMaterial({ color: 0xb0babe, roughness: 0.36, metalness: 0.5 });
     const transferGlass = new THREE.MeshBasicMaterial({ color: 0xdce9ef, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
     const ramp = box('West Coast Express concourse-to-platform continuous ramp',
-      0, -0.50, -37.1, 6.2, 0.17, 8.5, transferTile);
-    ramp.rotation.x = -Math.atan2(1, 8);
+      0, -0.50, -38.05, 6.2, 0.17, 6.1, transferTile);
+    ramp.rotation.x = -Math.atan2(1, 6.1);
     for (const x of [-3.25, 3.25]) {
       box('WCE access glazed corridor wall', x, 2.45, -37.25,
         0.16, 4.9, 8.3, transferGlass);
-      box('WCE passage handrail', x * 0.92, 0.77, -37.0,
-        0.08, 0.1, 8.2, transferRail).rotation.x = -Math.atan2(1, 8);
-      for (const z of [-33.5, -35.5, -37.5, -39.5, -40.9]) {
+      box('WCE passage handrail', x * 0.92, 0.77, -38.05,
+        0.08, 0.1, 6.1, transferRail).rotation.x = -Math.atan2(1, 6.1);
+      for (const z of [-35.1, -36.3, -37.5, -39.2, -40.9]) {
         box('WCE sloped passage handrail post', x * 0.92,
-          0.7 - Math.max(0, Math.min(1, (-z - 33.1) / 8)), z,
+          0.7 - Math.max(0, Math.min(1, (-z - 35.0) / 6.1)), z,
           0.095, 1.4, 0.095, transferRail);
       }
     }
-    box('West Coast Express white overhead passage', 0, 4.82, -37.1,
-      7.1, 0.27, 8.5, hallTrim);
-    for (const z of [-34.8, -37.0, -39.2]) {
+    box('West Coast Express white overhead passage', 0, 4.82, -38.05,
+      7.1, 0.27, 6.1, hallTrim);
+    for (const z of [-35.7, -37.5, -39.2]) {
       box('West Coast Express passage strip light', 0, 4.65, z,
         4.4, 0.05, 0.19, clerestory);
     }
-    box('West Coast Express fare-paid threshold canopy', 0, 5.17, -34.0,
+    box('West Coast Express fare-paid threshold canopy', 0, 5.17, -38.0,
       6.7, 0.34, 0.65, yellow);
-    sign('WEST COAST EXPRESS / PLATFORMS', 0, 4.77, -33.55,
+    sign('WEST COAST EXPRESS / PLATFORMS', 0, 4.77, -37.61,
       6.4, 0.43, '#ffffff', 'bold 61px Arial, sans-serif');
-    root.userData.westCoastExpressConnection = 'walkable rear arcade, ramp and platform';
+    root.userData.westCoastExpressConnection = 'illustrative left passage spur and ramp to platform';
+    root.userData.realStationExitUnverified = true;
+    root.userData.rogueEastWingBays = [0,12];
+    root.userData.leftArcadeSeparateFromRogue = true;
     root.userData.wceConnectionSurveyed = false;
     root.userData.interiorApproximate = true;
     root.userData.publicHallOnly = true;
@@ -984,6 +1053,8 @@
     arrivalPitch: () => 0.095,
     isWalkableForecourt,
     isWalkableInterior,
+    parkingExitFor,
+    isAtParkingExit,
     isWalkableWestCoastExpress,
     surfaceYFor,
     sideEntranceFor,
