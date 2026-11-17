@@ -3,6 +3,27 @@
 2026-11-16. Follow-up to #809 and #810, after comparing user gameplay screenshots
 with current and historical station photography and station/parking documents.
 
+## Screenshot orientation correction (late November 16)
+
+The follow-up in-game screenshot (10:15 p.m.) revealed that the previous
+implementation had mistakenly placed Rogue at the **far rear wall**
+(local z≈-33). In the photographed east-facing view, Rogue's frontage
+belongs to the **LONG RIGHT-SIDE wall** (local +X, facing down the
+concourse), with the left-hand heritage passage separate.
+
+This update physically relocates both Rogue shopfront bays to the
+right/east longitudinal wall at local x≈20.6, z≈-27.2 and -19.3.
+The former rear Rogue planes at x=0 and x=12 are eliminated. The far
+rear wall is now a light heritage arcade termination with its clock,
+while the real station-side arcade / parking transition remains in the
+left rear opening. The existing east-side station entrance at local
+x≈55 is unchanged. Regression tests assert the wall-plane geometry,
+side-facing sign rotation and independence of the left passage.
+
+This direction is based on the user's screenshot comparison. The
+full station footprint remains an illustrative arrangement rather
+than measured BIM or a surveyed indoor model.
+
 ## Verified spatial relationships
 
 1. **One Rogue restaurant covers two adjacent arched storefront bays.**
@@ -37,11 +58,12 @@ permitted evacuation route, accessible route, or current official entrance.
 
 - The left rear arch at local x=-12 is a full opening with a short pale
   passage instead of a black wall.
-- Rogue occupies the next two arches at local x=0 and x=12 as **one**
-  restaurant with two storefront portals, framed beneath the heritage clock.
-- The main hall no longer treats either Rogue glass storefront as a
-  West Coast Express turnstile. Separate WCE circulation bends behind the
-  left arcade (illustrative spur to existing platform ramp).
+- Rogue occupies two arches **along the right longitudinal wall**
+  at x≈20.6 and z≈-27.2/-19.3, rather than being pasted onto the far
+  rear wall below the heritage clock.
+- The main hall no longer treats Rogue glass storefronts as a West Coast
+  Express turnstile. The station's separate WCE path remains behind the
+  left arcade (illustrative spur to the existing platform ramp).
 - A player entering the left-hand vestibule can make a clearly disclosed
   illustrative transition to the existing Station East side forecourt;
   E also works near the threshold. The lot and exterior entrance remain
