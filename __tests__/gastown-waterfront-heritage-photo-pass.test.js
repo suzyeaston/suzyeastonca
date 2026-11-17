@@ -40,7 +40,9 @@ test('photo-led hall has bright cream plaster walls, rose upper panels and natur
   assert.ok(named('Heritage landscape mural inset').length>=8);
   assert.ok(named('Waterfront tall station window daylight').length>=5);
   assert.ok(named('Waterfront sash window white mullion').length>=10);
-  assert.ok(named('Waterfront shopfront glass doors').length>=3);
+  assert.ok(named('Waterfront shopfront glass doors').length +
+    named('Waterfront Rogue sidewall glazed doors').length>=3,
+    'one independent storefront and both Rogue sidewall entrance bays have glass');
   assert.ok(named('Waterfront gold-rimmed heritage clock face').length===1);
   assert.ok(named('Waterfront Rogue amber restaurant interior').length===2,
     'one Rogue spans two RIGHT arches, not a mirrored pair around transit');
@@ -62,7 +64,22 @@ test('photographed retail side is opposite tall windows and parking stays east o
   assert.ok(cordova && Math.abs(cordova.rotation.y-Math.PI)<1e-8,
     'Cordova street entrance keeps its own exit signage');
   const rogueBays=root.children.filter(n=>n.name==='Waterfront Rogue amber restaurant interior');
-  assert.deepEqual(rogueBays.map(n=>n.position.x),[0,12]);
+  assert.equal(rogueBays.length,2,'one restaurant with two bays');
+  assert.ok(rogueBays.every(n=>n.position.x>20),
+    'Rogue must occupy RIGHT sidewall, not rear wall at local z=-33');
+  assert.deepEqual(rogueBays.map(n=>n.position.z),[-27.2,-19.3]);
+  assert.ok(root.children.filter(n=>n.name==='Waterfront Rogue right sidewall classical arch').length===2);
+  const rogueSigns=root.children.filter(n=>n.name==='ROGUE');
+  assert.equal(rogueSigns.length,2,'no duplicated Rogue signs at the wrong end');
+  assert.ok(rogueSigns.every(n=>n.position.x>20 &&
+    Math.abs(n.rotation.y+Math.PI/2)<1e-8),
+    'Rogue signs face across the hall from the right sidewall');
+  const leftArcade=root.children.filter(n=>n.name==='Historic concourse arcade arch')
+    .find(n=>n.position.x===-12);
+  assert.ok(leftArcade && leftArcade.position.z<-30,
+    'left rear passage remains independent of the Rogue sidewall');
+  assert.equal(root.userData.rogueSidewallOrientation,'local +X east wall');
+  assert.equal(root.userData.rogueDoesNotOccupyRearWall,true);
   assert.ok(root.userData.leftArcadeSeparateFromRogue);
   const p=model.sideEntranceFor(world);
   assert.ok(p.approach.x>world.station.x,

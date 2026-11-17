@@ -446,9 +446,11 @@
             0.11,0.22,3.8,roseShadow);
         }
       } else {
-        // The real east concourse has glazed retail frontage, not a huge
-        // uninterrupted masonry wall. Keep displays behind the column line.
-        for (const [z,shop] of [[-27,'ROGUE'],[-19,'STATION NEWS'],[-11,'STARBUCKS']]) {
+        // Put the retail arches on the long RIGHT (east) side wall.
+        // The user screenshot reveals that the far-end z=-33 wall was the
+        // WRONG plane for Rogue. Keep the closest Starbucks/news bay here
+        // while two Rogue restaurant arches are modeled farther downwall.
+        for (const [z,shop] of [[-8.0,'STARBUCKS']]) {
           box('Waterfront shopfront wooden arcade',20.98,4.6,z,
             0.22,6.65,4.30,upperIvory);
           box('Waterfront shopfront glass doors',20.78,3.3,z,
@@ -501,19 +503,57 @@
     const minute=box('Waterfront heritage clock minute hand',
       -0.12,12.25,-32.72,0.04,0.49,0.025,hallDark);
     minute.rotation.z=-0.38;
-    // Rogue is ONE restaurant occupying the TWO RIGHT arches, as clearly
-    // shown in the user's photo and the 2018 east-facing historical view.
-    // The left arch is a distinct bright passage, not a second restaurant.
-    for (const rogueX of [0,12]) {
-      box('Waterfront Rogue illuminated arcade window',rogueX,4.38,-33.03,
-        6.8,8.65,0.06,timber);
-      box('Waterfront Rogue amber restaurant interior',rogueX,4.4,-32.94,
-        6.1,7.75,0.055,gilding);
-      sign('ROGUE',rogueX,5.4,-32.80,5.6,0.88,'#422b20',
-        'bold 90px Georgia, serif');
-      box('Waterfront Rogue dark timber base',rogueX,0.9,-32.82,
-        6.6,1.65,0.19,timber);
+    // The two Rogue arches belong along the RIGHT-hand LONG WALL
+    // (local x-positive), NOT the far-end rear wall (local z=-33).
+    // Rebuild the visible red east masonry as a warm civic plaster arcade.
+    // The side access around z=-4 is left clear for its existing route.
+    box('Waterfront right sidewall ivory arcade plaster backdrop',
+      22.88,6.25,-21.0,0.16,12.5,25.0,plaster);
+    box('Waterfront right sidewall rose heritage fascia',
+      22.63,12.3,-21.0,0.19,1.42,25.0,rose);
+    box('Waterfront right sidewall pale crown molding',
+      22.49,13.15,-21.0,0.40,0.38,25.0,upperIvory);
+    const rogueSidewallX=20.78;
+    const rogueSidewallBays=[-27.2,-19.3];
+    for (const rogueZ of rogueSidewallBays) {
+      // Portal opening is a tall rectangular glazing infill beneath a
+      // semi-circular cream arch set into a classical right-side facade.
+      box('Waterfront Rogue illuminated arcade window',rogueSidewallX,4.55,rogueZ,
+        0.15,8.35,6.80,timber);
+      box('Waterfront Rogue amber restaurant interior',rogueSidewallX-0.15,4.55,rogueZ,
+        0.08,7.7,6.25,gilding);
+      box('Waterfront Rogue sidewall glazed doors',rogueSidewallX-0.22,3.28,rogueZ,
+        0.075,5.6,5.9,interiorGlass);
+      for (const dz of [-3.0,0,3.0]) {
+        box('Waterfront Rogue dark green sidewall mullion',
+          rogueSidewallX-0.29,3.4,rogueZ+dz,
+          0.13,6.8,0.13,timber);
+      }
+      const rogueSign=sign('ROGUE',rogueSidewallX-0.38,6.12,rogueZ,
+        5.65,0.72,'#f5e9d4','bold 82px Georgia, serif');
+      rogueSign.rotation.y=-Math.PI/2;
+      const arch=new THREE.Mesh(
+        new THREE.TorusGeometry(3.32,0.25,9,26,Math.PI),upperIvory);
+      arch.name='Waterfront Rogue right sidewall classical arch';
+      arch.rotation.y=Math.PI/2;
+      arch.position.set(rogueSidewallX-0.43,9.13,rogueZ);
+      root.add(arch);
+      for (const dz of [-3.38,3.38]) {
+        box('Waterfront Rogue right sidewall ivory pilaster',
+          rogueSidewallX-0.43,4.6,rogueZ+dz,
+          0.38,9.2,0.43,upperIvory);
+        box('Waterfront Rogue right sidewall Ionic capital',
+          rogueSidewallX-0.43,9.34,rogueZ+dz,
+          0.58,0.35,0.75,upperIvory);
+      }
+      box('Waterfront Rogue right sidewall timber base',
+        rogueSidewallX-0.36,0.75,rogueZ,
+        0.22,1.45,6.25,timber);
     }
+    // Keep this orientation as scene metadata for future visual tests.
+    root.userData.rogueSidewallOrientation='local +X east wall';
+    root.userData.rogueSidewallBays=rogueSidewallBays.slice();
+    root.userData.rogueDoesNotOccupyRearWall=true;
 
     // A real opening at x=-12 leads to a luminous short vestibule. The
     // simulator transitions at its far threshold to the mapped Station East
@@ -563,11 +603,12 @@
       lamp.position.set(0, 11.7, z);
       root.add(lamp);
     }
-    // Only the leftmost arch is a public walkway. The two arches to the
-    // right are glazed Rogue dining bays, never a central WCE portal.
+    // The far wall remains a heritage three-arch terminus, but Rogue is on
+    // the sidewall to the viewer's RIGHT. The far-right openings are now
+    // pale historic inset panels rather than duplicate restaurant portals.
     for (const x of [-12.0, 0, 12.0]) {
       if (x !== -12) box('Concourse arch recessed opening', x, 4.65, -33.36,
-        7.1, 9.3, 0.1, archDark);
+        7.1, 9.3, 0.1, plaster);
       const arch = new THREE.Mesh(
         new THREE.TorusGeometry(3.6, 0.28, 8, 24, Math.PI),
         hallTrim
@@ -674,7 +715,7 @@
       6.4, 0.43, '#ffffff', 'bold 61px Arial, sans-serif');
     root.userData.westCoastExpressConnection = 'illustrative left passage spur and ramp to platform';
     root.userData.realStationExitUnverified = true;
-    root.userData.rogueEastWingBays = [0,12];
+    root.userData.rogueEastWingBays = [-27.2,-19.3];
     root.userData.leftArcadeSeparateFromRogue = true;
     root.userData.wceConnectionSurveyed = false;
     root.userData.interiorApproximate = true;
