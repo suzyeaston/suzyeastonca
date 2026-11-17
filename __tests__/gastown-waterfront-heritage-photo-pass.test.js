@@ -40,7 +40,9 @@ test('photo-led hall has bright cream plaster walls, rose upper panels and natur
   assert.ok(named('Heritage landscape mural inset').length>=8);
   assert.ok(named('Waterfront tall station window daylight').length>=5);
   assert.ok(named('Waterfront sash window white mullion').length>=10);
-  assert.ok(named('Waterfront shopfront glass doors').length>=3);
+  assert.ok(named('Waterfront shopfront glass doors').length +
+    named('Waterfront Rogue sidewall glazed doors').length>=3,
+    'one independent storefront and both Rogue sidewall entrance bays have glass');
   assert.ok(named('Waterfront gold-rimmed heritage clock face').length===1);
   assert.ok(named('Waterfront Rogue amber restaurant interior').length===2,
     'one Rogue spans two RIGHT arches, not a mirrored pair around transit');
