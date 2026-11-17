@@ -85,7 +85,12 @@
     const grandHall = Math.abs(x) <= 18.9 && z >= -33.6 && z <= 5.1;
     const eastPassage = x >= 18.3 && x <= 56.5 && z >= -6.15 && z <= -1.85;
     const westCoastConnector = Math.abs(x) <= 3.3 && z >= -41.1 && z < -31.5;
-    return grandHall || eastPassage || westCoastConnector;
+    // Photo reference: the LEFT rear arch is a separate short exit vestibule.
+    // Its illustrated transition connects to the already-modeled Station East
+    // doorway outside, rather than inventing a pedestrian rail-yard shortcut.
+    const stationEastExitVestibule = x >= -15.5 && x <= -8.5
+      && z >= -35.4 && z <= -31.5;
+    return grandHall || eastPassage || westCoastConnector || stationEastExitVestibule;
   }
 
   function isWalkableWestCoastExpress(world, point) {
@@ -108,6 +113,24 @@
     }
     if (isWalkableInterior(world, point)) return 0;
     return isWalkableWestCoastExpress(world, point) ? -1 : 0;
+  }
+
+  function parkingExitFor(world) {
+    if (!world || !world.spawn) return null;
+    const sideDoor = sideEntranceFor(world);
+    return {
+      threshold: toWorld(world, -12.0, -32.0),
+      approach: toWorld(world, -12.0, -30.5),
+      destination: sideDoor.approach,
+      label: 'Station East surface parking exit (left rear arch)',
+      approximateTransition: true
+    };
+  }
+
+  function isAtParkingExit(world, point) {
+    if (!world || !point) return false;
+    const {x,z}=localFor(world,point);
+    return x >= -15.3 && x <= -8.7 && z <= -34.0 && z >= -35.4;
   }
 
   function sideEntranceFor(world) {
@@ -261,12 +284,14 @@
       }
     }
     box('CPR station hall upper masonry', 0, 15.4, -17, 46, 2.2, 34, brick);
-    // Open the middle rear arcade for a real WCE connection; flankers stay
-    // structurally enclosed instead of exposing the rail yard.
-    for (const x of [-13.65, 13.65]) {
-      box('CPR station hall rear masonry', x, 7.8, -33.75, 18.7, 15.6, 0.5, brick);
+    // The rear wall has TWO genuine apertures: left station-side parking exit
+    // and centre WCE transfer. Only the RIGHT bay is backed by masonry/retail.
+    // Preserve all historic exterior brick; cut the left interior doorway.
+    for (const [x,width] of [[-19.45,7.1],[-6.25,4.1],[13.65,18.7]]) {
+      box('CPR station hall rear masonry', x, 7.8, -33.75, width, 15.6, 0.5, brick);
     }
     box('Waterfront rear arcade heritage lintel', 0, 13.55, -33.75, 8.6, 4.1, 0.5, brick);
+    box('Waterfront station-side left arcade lintel', -12.0, 13.55, -33.75, 8.6, 4.1, 0.5, brick);
     box('Projecting central entry block', -15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Projecting east entry block', 15.5, 7.2, -0.15, 22, 14.4, 1.2, brick);
     box('Entry block crosshead above hall', 0, 9.5, -0.15, 9, 9.3, 1.2, brick);
@@ -468,24 +493,47 @@
     const minute=box('Waterfront heritage clock minute hand',
       -0.12,12.25,-32.72,0.04,0.49,0.025,hallDark);
     minute.rotation.z=-0.38;
-    for (const x of [-12,12]) {
-      box('Waterfront Rogue illuminated arcade window',x,4.38,-33.03,
-        6.8,8.65,0.06,timber);
-      box('Waterfront Rogue amber restaurant interior',x,4.4,-32.94,
-        6.1,7.75,0.055,gilding);
-      sign('ROGUE',x,5.4,-32.80,5.6,0.88,'#422b20',
-        'bold 90px Georgia, serif');
-      box('Waterfront Rogue dark timber base',x,0.9,-32.82,
-        6.6,1.65,0.19,timber);
+    // Photographic reference: there is ONE Rogue, to the RIGHT of the
+    // station-side exit, not two mirrored restaurants flanking the WCE door.
+    const rogueX=12;
+    box('Waterfront Rogue illuminated arcade window',rogueX,4.38,-33.03,
+      6.8,8.65,0.06,timber);
+    box('Waterfront Rogue amber restaurant interior',rogueX,4.4,-32.94,
+      6.1,7.75,0.055,gilding);
+    sign('ROGUE',rogueX,5.4,-32.80,5.6,0.88,'#422b20',
+      'bold 90px Georgia, serif');
+    box('Waterfront Rogue dark timber base',rogueX,0.9,-32.82,
+      6.6,1.65,0.19,timber);
+
+    // A real opening at x=-12 leads to a luminous short vestibule. The
+    // simulator transitions at its far threshold to the mapped Station East
+    // side door. No black wall or inaccessible fake doorway.
+    const exitWall=new THREE.MeshBasicMaterial({color:0xece6d9});
+    const exitLight=new THREE.MeshBasicMaterial({color:0xf5f0e5});
+    const exitSky=new THREE.MeshBasicMaterial({color:0xcbdfe4});
+    box('Station East left-arch exit vestibule floor',-12,0.08,-34.35,
+      6.8,0.14,3.0,terrazzo);
+    for (const x of [-15.4,-8.6]) {
+      box('Station East left-arch ivory vestibule side wall',x,3.6,-34.4,
+        0.13,7.2,3.0,exitWall);
+      box('Station East left-arch timber handrail',x+(x<0?0.12:-0.12),1.0,-34.4,
+        0.08,0.14,2.5,timber);
     }
-    // When heading back toward the Cordova doors the pedestrian way to
-    // Station East's surface lot is on the left. The lot itself remains
-    // correctly east of the heritage station in mapped world coordinates.
-    const lotDirection=sign('CORDOVA EXIT / STATION EAST LOT',7.0,4.71,0.0,
-      6.4,0.42,'#f6f1e5','bold 62px Arial, sans-serif');
-    lotDirection.rotation.y=Math.PI;
+    box('Station East left-arch vestibule ceiling',-12,7.55,-34.4,
+      7.1,0.17,3.0,exitLight);
+    box('Station East left-arch exit daylight beyond threshold',-12,3.8,-35.82,
+      6.65,7.3,0.06,exitSky);
+    box('Station East left-arch exterior door frame',-12,3.7,-35.72,
+      6.8,0.18,0.19,upperIvory);
+    const parkingWayfinding=sign('EXIT  /  STATION EAST PARKING',-12,8.48,-32.79,
+      6.95,0.50,'#fff7df','bold 57px Arial, sans-serif');
+    parkingWayfinding.name='Station East parking exit left-arch wayfinding';
+    const cordovaDirection=sign('CORDOVA MAIN EXIT',0.0,4.71,0.0,
+      5.3,0.42,'#f6f1e5','bold 62px Arial, sans-serif');
+    cordovaDirection.rotation.y=Math.PI;
     root.userData.heritageInteriorPhotoPass2026=true;
-    root.userData.stationEastLotWayfinding='left via Cordova doors when facing the street';
+    root.userData.stationEastLotWayfinding='left rear arch next to Rogue on the right';
+    root.userData.parkingExitInteractiveTransition=true;
     for (const z of [-24.4, -13.2, -2.0]) {
       cylinder('Waterfront concourse pendant stem', 0, 13.05, z,
         0.075, 0.075, 2.0, brass, 10);
@@ -494,11 +542,10 @@
       lamp.position.set(0, 11.7, z);
       root.add(lamp);
     }
-    // Arched rear arcade and clock are part of a *deeper* visual terminus.
-    // The dark openings indicate onward transit circulation, not walkable
-    // fare-paid space. Their backs are beyond the publicly walkable boundary.
+    // The left and centre arches now lead to active station circulation;
+    // the right arcade contains the Rogue restaurant.
     for (const x of [-12.0, 0, 12.0]) {
-      if (x !== 0) box('Concourse arch recessed opening', x, 4.65, -33.36,
+      if (x === 12) box('Concourse arch recessed opening', x, 4.65, -33.36,
         7.1, 9.3, 0.1, archDark);
       const arch = new THREE.Mesh(
         new THREE.TorusGeometry(3.6, 0.28, 8, 24, Math.PI),
@@ -526,9 +573,8 @@
     const fareBlue = new THREE.MeshStandardMaterial({ color: 0x2c7b86, roughness: 0.7 });
     const displayGlass = new THREE.MeshStandardMaterial({ color: 0x152938, roughness: 0.16, metalness: 0.15 });
     for (const [x, label, tone] of [
-      [-12, 'EXPO LINE / SEABUS', transitBlue],
-      [0, 'WEST COAST EXPRESS', transitNavy],
-      [12, 'CANADA LINE', fareBlue]
+      [-12, 'STATION EAST EXIT', transitBlue],
+      [0, 'WEST COAST EXPRESS', transitNavy]
     ]) {
       box('Waterfront blue directional fascia', x, 8.85, -33.0, 7.4, 1.0, 0.14, tone);
       sign(label, x, 8.87, -32.89, 7.0, 0.55, '#ffffff', 'bold 68px Arial, sans-serif');
@@ -984,6 +1030,8 @@
     arrivalPitch: () => 0.095,
     isWalkableForecourt,
     isWalkableInterior,
+    parkingExitFor,
+    isAtParkingExit,
     isWalkableWestCoastExpress,
     surfaceYFor,
     sideEntranceFor,
