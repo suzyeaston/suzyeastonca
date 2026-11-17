@@ -6107,7 +6107,11 @@
     const nearest = minimapState.nearestGuidance;
     const area = state.world ? getMicroAreaForPoint(player.position, state.world) : null;
     if (minimapContextEl) {
-      minimapContextEl.textContent = 'Facing ' + facing + (nearest ? ' · ' + nearest.text : area ? ' · ' + area.label : '');
+      const insideHeritage = state.world && stationModel && stationModel.isWalkableInterior &&
+        stationModel.isWalkableInterior(state.world,{x:player.position.x,z:player.position.z});
+      minimapContextEl.textContent = insideHeritage
+        ? 'Inside Waterfront Station · ' + facing
+        : 'Facing ' + facing + (nearest ? ' · ' + nearest.text : area ? ' · ' + area.label : '');
     }
     if (minimapModeStatusEl) {
       const isHeadingUp = minimapState.mode === 'heading-up';
@@ -6143,6 +6147,22 @@
   }
 
   function updateNearestNode() {
+    // The outdoor nearest-point guide used to announce the parking lot while
+    // Suzy was standing under Waterfront's historic roof. Inside the hall,
+    // show an indoor destination instead of a misleading street direction.
+    if (state.world && stationModel && stationModel.isWalkableInterior &&
+        stationModel.isWalkableInterior(state.world,
+          {x:player.position.x,z:player.position.z})) {
+      minimapState.nearestGuidance = null;
+      setLandmark('Waterfront Station heritage concourse');
+      if (routeSegmentEl) routeSegmentEl.textContent='Waterfront Station interior';
+      if (minimapLandmarkEl) {
+        minimapLandmarkEl.textContent=
+          'Historic concourse · Station East parking via Cordova exit';
+      }
+      updateMinimapContext();
+      return;
+    }
     const heading = getHeadingVector();
     let nearest = null;
     let nearestDist = Number.POSITIVE_INFINITY;
