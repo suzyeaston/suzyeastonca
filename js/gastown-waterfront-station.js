@@ -284,14 +284,17 @@
     box('Central raised parapet', 0, 17.75, -0.3, 23, 1.25, 0.78, stone);
     box('Lower roof', 0, 16.5, -17.4, 106, 0.25, 33.2, iron);
 
-    const hallFloor = new THREE.MeshStandardMaterial({ color: 0xd2cabc, roughness: 0.83 });
-    const hallTrim = new THREE.MeshStandardMaterial({ color: 0xeee2cf, roughness: 0.8 });
-    const hallDark = new THREE.MeshStandardMaterial({ color: 0x594f46, roughness: 0.8 });
-    const terrazzo = new THREE.MeshStandardMaterial({ color: 0xb7b3a8, roughness: 0.9 });
-    const rose = new THREE.MeshStandardMaterial({ color: 0xa77b81, roughness: 0.86 });
-    const inset = new THREE.MeshStandardMaterial({ color: 0xc3c8c5, roughness: 0.87 });
-    const mural = new THREE.MeshStandardMaterial({ color: 0x99715e, roughness: 0.82 });
-    const archDark = new THREE.MeshStandardMaterial({ color: 0x514a44, roughness: 0.84 });
+    // Inside the 1914 CPR concourse the visible finish is warm plaster,
+    // pale coffered cornices, rose friezes and terrazzo, NOT bare red brick.
+    // Basic materials give the hall a daylight floor even in low graphics.
+    const hallFloor = new THREE.MeshStandardMaterial({ color: 0xe0d8cb, roughness: 0.8, emissive: 0x322c24, emissiveIntensity: 0.23 });
+    const hallTrim = new THREE.MeshBasicMaterial({ color: 0xf4e9d6 });
+    const hallDark = new THREE.MeshStandardMaterial({ color: 0x685f55, roughness: 0.8 });
+    const terrazzo = new THREE.MeshStandardMaterial({ color: 0xd5cec0, roughness: 0.78 });
+    const rose = new THREE.MeshBasicMaterial({ color: 0xb9909d });
+    const inset = new THREE.MeshBasicMaterial({ color: 0xc9d7d8 });
+    const mural = new THREE.MeshBasicMaterial({ color: 0xb08a61 });
+    const archDark = new THREE.MeshBasicMaterial({ color: 0x7b5844 });
     const warmLight = new THREE.MeshBasicMaterial({ color: 0xffe8b4 });
     const yellow = new THREE.MeshStandardMaterial({ color: 0xf0c331, roughness: 0.65 });
     // A single contiguous 44 m wide, 34 m deep public floor, with the
@@ -353,6 +356,136 @@
           1.2, 0.39, 1.2, hallTrim);
       }
     }
+    // Heritage interior finishes. These light-colored veneers live entirely
+    // inside the masonry shell; the public exterior keeps its original brick.
+    // Segmented bays leave the existing east-side circulation opening usable.
+    const plaster = new THREE.MeshBasicMaterial({ color: 0xe8decf });
+    const upperIvory = new THREE.MeshBasicMaterial({ color: 0xf5eddd });
+    const roseShadow = new THREE.MeshBasicMaterial({ color: 0xa77e91 });
+    const gilding = new THREE.MeshBasicMaterial({ color: 0xc7a16d });
+    const daylight = new THREE.MeshBasicMaterial({ color: 0xd9e8e8 });
+    const daylightShade = new THREE.MeshBasicMaterial({ color: 0xb6d2d6 });
+    const timber = new THREE.MeshStandardMaterial({ color: 0x604332, roughness: 0.72 });
+    const interiorGlass = new THREE.MeshStandardMaterial({
+      color: 0x7b9b9d, roughness: 0.16, metalness: 0.17,
+      transparent: true, opacity: 0.56, depthWrite: false
+    });
+
+    // Two longitudinal rows of classical bays. Toward Cordova the east
+    // station-side arcade reads on the LEFT when the camera faces the street.
+    for (const side of [-1,1]) {
+      const surfaceX = side*21.19;
+      for (const z of [-29,-23,-17,-11]) {
+        box('Waterfront ivory interior wall bay',surfaceX,5.7,z,
+          0.17,11.4,5.9,plaster);
+        box('Waterfront rose upper heritage frieze bay',side*21.04,12.20,z,
+          0.12,1.55,5.6,rose);
+        box('Waterfront ivory cornice below pink frieze',side*20.94,11.33,z,
+          0.3,0.26,5.8,upperIvory);
+        box('Waterfront detailed upper crown molding',side*20.94,13.14,z,
+          0.32,0.34,5.85,upperIvory);
+        box('Heritage gilded mural picture frame',side*20.95,12.27,z,
+          0.18,0.91,3.7,gilding);
+        box('Heritage landscape mural inset',side*20.83,12.27,z,
+          0.08,0.70,3.40,mural);
+        // Originally-painted Canadian landscapes: small abstract relief
+        // silhouettes, not an unlicensed reproduction of Langford's work.
+        for (const dz of [-0.9,0.15,1.1]) {
+          box('Canadian landscape mural relief',side*20.75,12.07,z+dz,
+            0.05,0.11,0.82,upperIvory);
+        }
+      }
+      // Daylit tall sash windows on the west side of the photographed hall.
+      // Lit panes are decorative; no corridor or wall bounds are opened here.
+      if (side<0) {
+        for (const z of [-28,-22,-16,-10,-4]) {
+          box('Waterfront tall station window daylight',-20.98,6.4,z,
+            0.09,6.2,3.5,daylight);
+          for (const dz of [-1.78,0,1.78]) {
+            box('Waterfront sash window white mullion',-20.86,6.4,z+dz,
+              0.11,6.32,0.12,upperIvory);
+          }
+          for (const y of [4.3,6.6,8.75]) {
+            box('Waterfront sash window glazing bar',-20.85,y,z,
+              0.11,0.10,3.58,upperIvory);
+          }
+          box('Waterfront tall window lower shadow',-20.76,2.9,z,
+            0.11,0.22,3.8,roseShadow);
+        }
+      } else {
+        // The real east concourse has glazed retail frontage, not a huge
+        // uninterrupted masonry wall. Keep displays behind the column line.
+        for (const [z,shop] of [[-27,'ROGUE'],[-19,'STATION NEWS'],[-11,'STARBUCKS']]) {
+          box('Waterfront shopfront wooden arcade',20.98,4.6,z,
+            0.22,6.65,4.30,upperIvory);
+          box('Waterfront shopfront glass doors',20.78,3.3,z,
+            0.10,4.50,3.35,interiorGlass);
+          for(const dz of [-1.7,0,1.7]){
+            box('Waterfront retail mullion',20.71,3.2,z+dz,
+              0.13,4.65,0.13,timber);
+          }
+          box('Waterfront retail gold-lit fascia',20.63,6.15,z,
+            0.18,0.69,3.90,timber);
+          const shopText=sign(shop,20.52,6.15,z,3.67,0.34,
+            '#fff0ce','bold 62px Arial, sans-serif');
+          shopText.rotation.y=-Math.PI/2;
+          for (const y of [8.05,9.2]) {
+            box('Waterfront upper retail transom glazing',20.87,y,z,
+              0.10,0.88,3.4,daylightShade);
+            box('Waterfront upper retail sash rail',20.68,y+0.43,z,
+              0.11,0.10,3.5,upperIvory);
+          }
+        }
+      }
+    }
+    // The deep rear of the reference concourse is a classical THREE-ARCH
+    // arcade with pink frieze, clock and adjoining retail: no brick bunker.
+    for (const x of [-18.2,-6.2,6.2,18.2]) {
+      box('Waterfront rear plaster pier',x,5.4,-33.18,
+        3.6,10.8,0.13,plaster);
+    }
+    box('Waterfront rear rose clock frieze',0,12.28,-33.15,
+      43.5,1.45,0.12,rose);
+    box('Waterfront rear ivory molded crown',0,13.18,-33.04,
+      43.5,0.34,0.35,upperIvory);
+    box('Waterfront rear ivory picture rail',0,11.25,-33.03,
+      43.5,0.33,0.30,upperIvory);
+    for (const x of [-15.6,-8.2,8.2,15.6]) {
+      box('Waterfront rear golden heritage panel frame',x,12.32,-32.96,
+        4.85,0.93,0.09,gilding);
+      box('Waterfront rear landscape painting',x,12.32,-32.84,
+        4.55,0.72,0.07,mural);
+    }
+    // A recognizable illuminated heritage clock, centered above the arches.
+    const clockFace=new THREE.Mesh(new THREE.CylinderGeometry(0.58,0.58,0.07,24),upperIvory);
+    clockFace.name='Waterfront gold-rimmed heritage clock face';
+    clockFace.rotation.x=Math.PI/2;
+    clockFace.position.set(0,12.12,-32.84);
+    root.add(clockFace);
+    const hour=box('Waterfront heritage clock hour hand',
+      0.13,12.24,-32.73,0.06,0.36,0.025,hallDark);
+    hour.rotation.z=0.65;
+    const minute=box('Waterfront heritage clock minute hand',
+      -0.12,12.25,-32.72,0.04,0.49,0.025,hallDark);
+    minute.rotation.z=-0.38;
+    for (const x of [-12,12]) {
+      box('Waterfront Rogue illuminated arcade window',x,4.38,-33.03,
+        6.8,8.65,0.06,timber);
+      box('Waterfront Rogue amber restaurant interior',x,4.4,-32.94,
+        6.1,7.75,0.055,gilding);
+      sign('ROGUE',x,5.4,-32.80,5.6,0.88,'#422b20',
+        'bold 90px Georgia, serif');
+      box('Waterfront Rogue dark timber base',x,0.9,-32.82,
+        6.6,1.65,0.19,timber);
+    }
+    // When heading back toward the Cordova doors the pedestrian way to
+    // Station East's surface lot is on the left. The lot itself remains
+    // correctly east of the heritage station in mapped world coordinates.
+    const lotDirection=sign('CORDOVA EXIT / STATION EAST LOT',7.0,4.71,0.0,
+      6.4,0.42,'#f6f1e5','bold 62px Arial, sans-serif');
+    lotDirection.rotation.y=Math.PI;
+    root.userData.heritageInteriorPhotoPass2026=true;
+    root.userData.stationEastLotWayfinding='left via Cordova doors when facing the street';
     for (const z of [-24.4, -13.2, -2.0]) {
       cylinder('Waterfront concourse pendant stem', 0, 13.05, z,
         0.075, 0.075, 2.0, brass, 10);
