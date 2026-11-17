@@ -82,6 +82,28 @@ permitted evacuation route, accessible route, or current official entrance.
 8. Verify old Cordova entrance, WCE train, roof, rail-edge, NPCs and The
    Landing journey remain functional.
 
+## Newly located measured-plan research
+
+Andrea Ewanchyna, *Occupying Transitional Space: An Interior Design for a
+Short Stay Hotel* (University of Manitoba, 2010; Library and Archives
+Canada) describes original 1914 and 2009 station main-floor plans with
+key entry points, transit circulation and restaurant/retail areas
+(Figures 5–6). It quotes the original waiting room as approximately
+**60 ft by 150 ft**, with a **40 ft coffered ceiling**, east/west
+barrel-vaulted wing corridors, and north-side transit access. This is
+substantially more elongated than the simulator's approximate
+44.4 m by 35.7 m hall. That deep geometry correction is **not** in
+this small east-arcade PR because it would also move doors, NPCs,
+camera bounds, and the WCE transition.
+
+Source:
+https://central.bac-lac.gc.ca/.item?app=Library&id=MR87182&oclc_number=1019473230&op=pdf
+
+The thesis discusses historic plan adaptations (2009, not a current public
+floorplan), and we have not verified the present-day exit's legal/public
+accessibility. Preserve the confidence boundary, particularly for
+gameplay transitions.
+
 ## Future fidelity
 
 For survey-grade alignment, we need licensed indoor floorplans or on-site
