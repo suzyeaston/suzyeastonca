@@ -112,23 +112,28 @@
       const mesh=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x947b68}));
       mesh.name='WCE batched timber sleeper fallback';root.add(mesh);
     }
-    // Fixed city-grid platform between the station's north wall and the
-    // southernmost WCE track. No yaw inherited from the building facade.
+    // Scene geometry has no surveyed platform footprint. The old -77..+37
+    // west-to-east canopy cut directly THROUGH the rotated heritage hall:
+    // a giant blue WCE sign appeared suspended inside the main concourse.
+    // Stage the visible boarding apron only east of x=3, clear of the
+    // station's rear wall. Tracks and train route remain independent.
+    const apronWest=3,apronEast=78,apronWidth=apronEast-apronWest;
+    const apronMid=(apronWest+apronEast)/2;
     box(THREE,root,'West Coast Express Waterfront boarding platform',
-      -20,0.19,-10.35,114,0.31,9.15,concrete);
+      apronMid,0.19,-10.35,apronWidth,0.31,9.15,concrete);
     box(THREE,root,'West Coast Express yellow tactile safety strip',
-      -20,0.371,-14.65,111,0.045,0.62,yellow);
+      apronMid,0.371,-14.65,apronWidth-1.5,0.045,0.62,yellow);
     box(THREE,root,'West Coast Express platform roof canopy',
-      -20,5.91,-9.6,115,0.33,9.1,cream);
-    for(const x of [-71,-44,-17,10,35]){
+      apronMid,5.91,-9.6,apronWidth,0.33,9.1,cream);
+    for(const x of [7,23,40,57,74]){
       for(const z of [-6.7,-13.1]){
         box(THREE,root,'Waterfront platform maroon canopy post',
           x,3.02,z,0.27,5.75,0.27,maroon);
       }
     }
-    box(THREE,root,'Waterfront platform south fascia',-20,5.57,-5.8,115,0.4,0.25,maroon);
-    box(THREE,root,'Waterfront platform rail-facing fascia',-20,5.57,-14.9,115,0.4,0.25,maroon);
-    sign(THREE,root,'WEST COAST EXPRESS  ·  WATERFRONT',-15,5.05,-5.64,19.2,1.0);
+    box(THREE,root,'Waterfront platform south fascia',apronMid,5.57,-5.8,apronWidth,0.4,0.25,maroon);
+    box(THREE,root,'Waterfront platform rail-facing fascia',apronMid,5.57,-14.9,apronWidth,0.4,0.25,maroon);
+    sign(THREE,root,'WEST COAST EXPRESS · WATERFRONT',26,5.05,-5.64,17.5,0.85);
     // Visible passenger route from the heritage rear arch lands at the
     // eastern boarding apron near x=6, z=-9 (world coordinates). These are
     // light, authored platform cues, never a shortcut across the tracks.
@@ -144,7 +149,7 @@
       20,1.25,-6.75,1.25,2.5,0.65,blue);
     box(THREE,root,'WCE transfer platform information display',
       20,1.85,-6.40,0.96,0.63,0.08,glass);
-    for(const x of [-62,3]){
+    for(const x of [16,57]){
       box(THREE,root,'WCE platform bench seat',x,0.92,-7.8,3.25,0.18,0.65,navy);
       for(const leg of [-1.1,1.1]){
         box(THREE,root,'WCE platform bench leg',x+leg,0.56,-7.8,0.14,0.67,0.12,steelWeb);
@@ -234,6 +239,8 @@
     root.userData.noPublicRailAccess=true; // tracks and N-Yard remain restricted
     root.userData.publicPlatformConnection='rear heritage arcade via sloped pedestrian passage';
     root.userData.platformWalkableEasternApron=true;
+    root.userData.visiblePlatformExtent={west:apronWest,east:apronEast};
+    root.userData.canopyDoesNotIntersectHeritageHall=true;
     animate(root,0);
     return root;
   }
