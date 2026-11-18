@@ -4,11 +4,38 @@ declare(strict_types=1);
 namespace SuzyEaston\LousyOutages;
 
 use SuzyEaston\LousyOutages\Sources\ProviderFeedSource;
+use SuzyEaston\LousyOutages\Sources\PublicIncidentNewsSource;
 use SuzyEaston\LousyOutages\Sources\StatuspageIntelSource;
 
 class SignalCollector {
+    public const PUBLIC_NEWS_HOOK = 'lo_public_incident_news_scan';
+
+    /** A separate, bounded WP-Cron lane; no HTTP calls during page rendering. */
+    public static function bootstrap_public_news(): void {
+        add_filter('cron_schedules', static function(array $schedules): array {
+            $schedules['lo_ten_minutes'] = ['interval'=>10 * MINUTE_IN_SECONDS, 'display'=>'Every 10 minutes (public incident news)'];
+            return $schedules;
+        });
+        add_action('init', static function(): void {
+            if (!wp_next_scheduled(self::PUBLIC_NEWS_HOOK)) {
+                wp_schedule_event(time() + 60, 'lo_ten_minutes', self::PUBLIC_NEWS_HOOK);
+            }
+        });
+        add_action(self::PUBLIC_NEWS_HOOK, static function(): void {
+            try {
+                $result = self::collect_source('public_incident_news', ['collection_trigger'=>'cron']);
+                update_option('lo_public_incident_news_scan_result', array_merge($result, ['finished_at'=>gmdate('c')]), false);
+                if ((int)($result['stored_count'] ?? 0) > 0 && class_exists(Feeds::class)) {
+                    Feeds::clear_status_feed_cache();
+                }
+            } catch (\Throwable $error) {
+                // Do not leak paths/URLs/exception detail into public diagnostics.
+                update_option('lo_public_incident_news_scan_result', ['finished_at'=>gmdate('c'), 'failed'=>true, 'error'=>'scan_failed'], false);
+            }
+        });
+    }
     public static function sources(): array {
-        return [new StatuspageIntelSource(), new ProviderFeedSource()];
+        return [new StatuspageIntelSource(), new ProviderFeedSource(), new PublicIncidentNewsSource()];
     }
 
     public static function collect(array $options=[]): array {
