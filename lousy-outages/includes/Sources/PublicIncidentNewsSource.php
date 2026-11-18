@@ -77,7 +77,7 @@ final class PublicIncidentNewsSource implements SignalSourceInterface {
         $description = trim(strip_tags((string) ($item['description'] ?? '')));
         $published = strtotime((string) ($item['published_at'] ?? ''));
         if ($title === '' || $published === false || $published > $now + 300 || $published < $now - 48 * 3600) return [];
-        if (!preg_match('/\b(?:outage|outages|offline|degrad(?:ed|ation)|disrupt(?:ed|ion|ions)|unavailable|technical (?:issue|issues|glitch|problem)|service (?:interruption|failure)|network (?:down|failure)|systems? (?:down|offline)|(?:website|app|network|banking|internet|services?) (?:is |are |goes? |went )?down)\b/i', $title)) return [];
+        if (!preg_match('/\b(?:outage|outages|offline|degrad(?:ed|ation)|disrupt(?:ed|ion|ions)|unavailable|technical (?:issue|issues|glitch|problem)|service (?:interruption|failure)|network (?:down|failure)|systems? (?:down|offline)|(?:website|app|network|banking|internet|services?|payments?|transfers?|e[\s-]?transfer|debit) (?:is |are |goes? |went )?down)\b/i', $title)) return [];
         if (preg_match('/\b(?:outage drill|mock outage|outage simulation|outage exercise)\b/i', $title)) return [];
         $matches = [];
         $whole = $title . ' ' . $description;
