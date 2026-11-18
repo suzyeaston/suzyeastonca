@@ -13,6 +13,7 @@ class SourceRegistry {
     public static function definitions(): array {
         $defs = [
             'statuspage_intel' => self::def('statuspage_intel','Statuspage official APIs','official_status','official','official incident API',false,false,true,false,true,'cached',true,true,true),
+            'public_incident_news' => self::def('public_incident_news','Public incident news (Canada + agencies)','open_web','unconfirmed','server-side public news RSS',false,true,true,true,true,'bounded',true,true,false),
             'provider_feed' => self::def('provider_feed','Provider RSS/JSON feeds','provider_feed','official','RSS/JSON feed',false,false,true,false,true,'cached',true,true,true),
             'hacker_news_chatter' => self::def('hacker_news_chatter','Hacker News developer chatter','public_chatter','unconfirmed','developer/forum chatter',false,true,true,false,true,'tiny',true,true,false),
             'public_chatter_bluesky' => self::def('public_chatter_bluesky','Bluesky public search','public_chatter','unconfirmed','public social search',false,true,true,false,true,'small',true,true,false),
@@ -42,6 +43,7 @@ class SourceRegistry {
 
     public static function source_enabled(string $key): bool {
         $map = [
+            'public_incident_news' => 'lo_public_incident_news_enabled',
             'public_chatter_bluesky' => 'lousy_outages_public_chatter_bluesky_enabled',
             'public_chatter_mastodon' => 'lousy_outages_public_chatter_mastodon_enabled',
             'public_chatter_gdelt' => 'lousy_outages_public_chatter_gdelt_enabled',
