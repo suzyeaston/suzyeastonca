@@ -1670,6 +1670,20 @@ function lousy_outages_settings_page() {
         </form>
         <?php $external = ExternalSignals::get_recent_signals(['windowMinutes'=>60,'limit'=>8]); $fused = SignalEngine::summarize_fused_signals(60); $collector = SignalCollector::get_last_collection_result(); ?>
         <h2>External Signal Diagnostics</h2>
+        <?php
+        $newsScan = (array) get_option('lo_public_incident_news_scan_result', []);
+        $newsDiag = (array) get_option('lo_diag_public_incident_news', []);
+        $newsNext = wp_next_scheduled(\SuzyEaston\LousyOutages\SignalCollector::PUBLIC_NEWS_HOOK);
+        ?>
+        <h3>Public incident radar (Canada / NSA / CSIS)</h3>
+        <p><strong>Next scheduled scan:</strong> <?php echo esc_html($newsNext ? gmdate('c', (int)$newsNext) : 'NOT SCHEDULED'); ?>
+        | <strong>Last scan:</strong> <?php echo esc_html((string)($newsScan['finished_at'] ?? 'Never')); ?>
+        | <strong>Source status:</strong> <?php echo esc_html(!empty($newsScan['failed']) ? 'Failed, check cron' : (!$newsScan ? 'Not yet checked' : 'Attempted')); ?></p>
+        <p><strong>Groups last attempted:</strong> <?php echo esc_html(implode(', ', (array)($newsDiag['groups_checked'] ?? [])) ?: 'none'); ?>
+        | <strong>Candidate reports:</strong> <?php echo esc_html((string)($newsDiag['stored_candidates'] ?? 0)); ?>
+        | <strong>Stored:</strong> <?php echo esc_html((string)($newsScan['stored_count'] ?? 0)); ?>
+        | <strong>Feed errors:</strong> <?php echo esc_html(implode(', ', (array)($newsDiag['errors'] ?? [])) ?: 'none'); ?></p>
+        <p class="description">Public news reports only; these are not live probes, official agency uptime readings, or evidence that an unmentioned service is healthy.</p>
         <p><strong>Last external collection:</strong> <?php echo esc_html((string)($collector['finished_at'] ?? 'Never')); ?></p>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_collect_signals_now'); ?><input type="hidden" name="action" value="lousy_outages_collect_signals_now"><?php submit_button('Collect External Signals Now','secondary','submit',false); ?></form>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_seed_demo_external_signals'); ?><input type="hidden" name="action" value="lousy_outages_seed_demo_external_signals"><?php submit_button('Seed Demo External Signals','secondary','submit',false); ?></form>
