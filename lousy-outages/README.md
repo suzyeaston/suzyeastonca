@@ -1,5 +1,24 @@
 # Lousy Outages
 
+## 0.5.12: Canada + government public-incident radar
+
+**Coverage:** A separate scheduled public-news lane adds NSA, CSIS, Communications Security Establishment (CSE), Interac/e-Transfer, Moneris, major Canadian banks and credit unions, Rogers/Shaw/Bell/TELUS and regional carriers, CRA/Service Canada/BC Services Card, E-Comm 911, BC Hydro, Hydro-Québec and NAV CANADA. The previous Canadian infrastructure watchlist was a set of public-chatter search terms, not an official-provider uptime check or guaranteed scheduled collector.
+
+**Trust and privacy:** This is public news monitoring, not intelligence-agency infrastructure monitoring. The server requests Google News RSS search results; visitors never contact the feeds. No pinging/scanning agency or bank infrastructure, accounts, logins, cookies, visitor location, or private feeds. Stories are PUBLIC REPORT / UNCONFIRMED in RSS, linked to the source, and never upgrade a bank/agency to official outage or operational status. A green website cannot prove a bank app or internal agency network is healthy.
+
+**Collection:** WordPress cron schedules 10-minute scans, rotates three of nine topic feeds per invocation (roughly 30 minutes for full coverage IF WordPress cron runs on schedule), uses a 6-second HTTP budget per request, 48-hour article freshness, and 12-hour evidence retention. Headlines must name an organization and contain explicit service impact language. Old articles, outage drills and investment-price "down" headlines are excluded. Duplicate stories are deduplicated by entity, headline and publication time. No requests occur during public page rendering. WordPress option lo_public_incident_news_enabled='0' disables the source. WordPress filter lo_public_incident_news_batch_size can reduce per-invocation load.
+
+**Diagnostics:** Check lo_public_incident_news_scan_result, lo_diag_public_incident_news, lo_public_incident_news_cursor and the schedule lo_public_incident_news_scan from WordPress admin/CLI. Feed collection failures do not imply health. If DISABLE_WP_CRON is set, an external cron runner is required.
+
+**QA after merge and production deployment:**
+1. Confirm plugin 0.5.12 is installed and the 10-minute cron is scheduled and running. A GitHub merge alone is not proof of production deployment.
+2. Inspect all nine topic groups across three successful scheduled runs; confirm groups_checked, errors and stored_count in diagnostics.
+3. Compare recent NSA/CSIS public reporting with the external signal and RSS feed. Confirm unconfirmed labels and source links, without inventing an official agency health API.
+4. Exercise Interac, RBC/TD/BMO, Rogers/TELUS/Bell fixtures. Empty feeds, expired items, and nonincident titles must not create false operational or outage states.
+5. Check RSS/dashboard display, cache invalidation, mobile layout and page load time.
+
+
+
 ## Shared-dependency early warning (November 2026)
 
 **The Microsoft 365 access boundary:** Microsoft Graph's `GET /v1.0/admin/serviceAnnouncement/issues` provides tenant-scoped service health, requires the application permission `ServiceHealth.Read.All` and administrator consent. There is no equivalent anonymous, global Microsoft 365 incident API in this plugin. No paywall, login gate or security control is bypassed. Microsoft Azure service health is different from Microsoft 365.
