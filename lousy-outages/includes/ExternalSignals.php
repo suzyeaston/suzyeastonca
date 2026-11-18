@@ -168,7 +168,22 @@ class ExternalSignals {
         }
         return $out;
     }
-    public static function get_recent_signals(array $args=[]): array { global $wpdb; if (!self::table_exists()) { return []; } $limit=max(1,min(200,(int)($args['limit']??50))); return $wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table_name().' WHERE observed_at >= %s ORDER BY observed_at DESC LIMIT %d', gmdate('Y-m-d H:i:s', time()-((int)($args['windowMinutes']??60))*60), $limit), ARRAY_A) ?: []; }
+    public static function get_recent_signals(array $args=[]): array {
+        global $wpdb;
+        if (!self::table_exists()) return [];
+        $limit=max(1,min(200,(int)($args['limit']??50)));
+        $window=max(5,min(1440,(int)($args['windowMinutes']??60)));
+        // Public news is a report, not an instantaneous sensor reading. Keep
+        // it visible for at most 12h without declaring the service down.
+        return $wpdb->get_results($wpdb->prepare(
+            'SELECT * FROM '.self::table_name().' WHERE (observed_at >= %s OR (source_type = %s AND observed_at >= %s)) AND (expires_at IS NULL OR expires_at >= %s) ORDER BY observed_at DESC LIMIT %d',
+            gmdate('Y-m-d H:i:s',time()-$window*60),
+            'public_news',
+            gmdate('Y-m-d H:i:s',time()-12*3600),
+            gmdate('Y-m-d H:i:s'),
+            $limit
+        ),ARRAY_A) ?: [];
+    }
     public static function recent(int $windowMinutes = 60, int $limit = 100): array {
         if (!method_exists(__CLASS__, 'get_recent_signals') || !method_exists(__CLASS__, 'table_exists') || !self::table_exists()) {
             return [];
