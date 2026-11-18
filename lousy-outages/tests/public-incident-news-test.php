@@ -32,6 +32,7 @@ foreach($positive as [$group,$headline,$expected]){
 $negative=[
 ['ca_banks_major','RBC shares down amid Canadian stock market selloff','Tue, 17 Nov 2026 20:30:00 GMT'],
 ['us_intelligence','NASA network outage causes disruption','Tue, 17 Nov 2026 20:30:00 GMT'],
+['ca_intelligence','US think tank CSIS network outage in Washington','Tue, 17 Nov 2026 20:30:00 GMT'],
 ['ca_telecom_major','Rogers wins award for network reliability','Tue, 17 Nov 2026 20:30:00 GMT'],
 ['ca_payments','Interac outage drill scheduled for staff','Tue, 17 Nov 2026 20:30:00 GMT'],
 ['ca_banks_major','RBC online banking outage yesterday','Tue, 10 Nov 2026 20:30:00 GMT'],
