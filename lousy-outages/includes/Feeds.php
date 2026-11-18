@@ -63,7 +63,7 @@ class Feeds {
         if (array_key_exists('external_signals',$options)) {
             $external=(array)$options['external_signals'];
         } else {
-            $external=ExternalSignals::get_recent_signals(['windowMinutes'=>120,'limit'=>20]);
+            $external=ExternalSignals::get_recent_signals(['windowMinutes'=>120,'limit'=>120]);
             // A Microsoft signal should not be buried by 20 newer non-Microsoft rows.
             if (method_exists(ExternalSignals::class,'get_recent_for_provider')) {
                 $external=array_merge($external,ExternalSignals::get_recent_for_provider('microsoft365',120,10));
@@ -181,7 +181,21 @@ class Feeds {
         foreach((array)$external as $row){if(!is_array($row))continue;$pid=sanitize_key((string)($row['provider_id']??''));if($pid==='microsoft365'&&($graphIssues||$relatedReports))continue;if(isset($fusedProviders[$pid])){$build['excluded']['cross_source_duplicates']++;continue;}$sev=strtolower((string)($row['severity']??'watch'));if($sev==='quiet'){$build['excluded']['quiet_signals']++;continue;}$row['_kind']='external';$signalRows[]=$row;}
         $seenSignals=[];
         foreach($signalRows as $row){$pid=sanitize_key((string)($row['provider_id']??''));$key=self::signal_logical_key($row,$pid);if(isset($seenSignals[$key])){$build['excluded']['cross_source_duplicates']++;continue;}$seenSignals[$key]=true;$observed=self::parse_time((string)($row['last_seen_at']??$row['observed_at']??''))?:$now;$first=self::parse_time((string)($row['first_seen_at']??$row['started_at']??''))?:$observed;$entry=$identity['signals'][$key]??null;
-            if(!is_array($entry)||$first-(int)($entry['last_seen']??0)>=self::SIGNAL_RESET_SECONDS){$entry=['guid'=>sha1('signal-episode|'.$key.'|'.$first),'started_at'=>$first,'last_seen'=>$observed,'touched_at'=>$now];$build['new_logical_items']++;}else{$entry['last_seen']=max((int)$entry['last_seen'],$observed);$entry['touched_at']=$now;$build['stable_identities_reused']++;}$identity['signals'][$key]=$entry;$p=(string)($row['provider_name']??$pid?:'Provider');$kind=(string)$row['_kind'];self::put_item($items,['__selection_priority'=>$pid==='microsoft365'?1:0,'title'=>'[UNCONFIRMED] '.$p.' signal','link'=>home_url('/lousy-outages/'),'guid'=>(string)$entry['guid'],'pubDate'=>self::format_rss_date(gmdate('c',(int)$entry['started_at'])),'description'=>'This is an unconfirmed signal. Official incident not confirmed.','timestamp'=>(int)$entry['started_at'],'categories'=>['unconfirmed','signal',$kind.'-signal']],$build);}
+            if(!is_array($entry)||$first-(int)($entry['last_seen']??0)>=self::SIGNAL_RESET_SECONDS){$entry=['guid'=>sha1('signal-episode|'.$key.'|'.$first),'started_at'=>$first,'last_seen'=>$observed,'touched_at'=>$now];$build['new_logical_items']++;}else{$entry['last_seen']=max((int)$entry['last_seen'],$observed);$entry['touched_at']=$now;$build['stable_identities_reused']++;}$identity['signals'][$key]=$entry;$p=(string)($row['provider_name']??$pid?:'Provider');$kind=(string)$row['_kind'];
+            $isPublicNews=(string)($row['source_type']??'')==='public_news' || (string)($row['source']??'')==='public_incident_news';
+            $newsHeadline=trim((string)($row['snippets'][0]??$row['title']??'Reported disruption'));
+            $newsUrl=(string)($row['evidence_url']??$row['url']??home_url('/lousy-outages/'));
+            if ($isPublicNews && !preg_match('#^https://news\\.google\\.com/#i',$newsUrl)) $newsUrl=home_url('/lousy-outages/');
+            self::put_item($items,[
+                '__selection_priority'=>$isPublicNews||$pid==='microsoft365'?1:0,
+                'title'=>$isPublicNews?'[PUBLIC REPORT / UNCONFIRMED] '.$p.' – '.self::truncate_text($newsHeadline,120):'[UNCONFIRMED] '.$p.' signal',
+                'link'=>$isPublicNews?$newsUrl:home_url('/lousy-outages/'),
+                'guid'=>(string)$entry['guid'],
+                'pubDate'=>self::format_rss_date(gmdate('c',(int)$entry['started_at'])),
+                'description'=>$isPublicNews?'Public news reporting only; this does not verify current agency or provider operational health. '.self::truncate_text($newsHeadline,150):'This is an unconfirmed signal. Official incident not confirmed.',
+                'timestamp'=>(int)$entry['started_at'],
+                'categories'=>$isPublicNews?['unconfirmed','public_news','reported_disruption',$kind.'-signal']:['unconfirmed','signal',$kind.'-signal'],
+            ],$build);}
         $build['sources_included'][]='fused_signals';$build['sources_included'][]='external_signals';
 
         foreach(['official','providers','signals'] as $type){foreach((array)$identity[$type] as $key=>$entry){if((int)($entry['touched_at']??0)<$now-self::IDENTITY_RETENTION_SECONDS)unset($identity[$type][$key]);}}
