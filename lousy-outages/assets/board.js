@@ -234,15 +234,19 @@
   function signalCard(provider) {
     var correlated = String(provider.source_type || provider.sourceType || '') === 'cross_provider_corroboration';
     var relatedWatch = correlated && String(provider.correlation_tier || '') === 'related_reports';
+    var publicNews = String(provider.source_type || provider.sourceType || '') === 'public_news';
     var name = firstString(provider.name, provider.provider, provider.id);
     var count = Number(provider.correlation_count || 0);
     var sources = Array.isArray(provider.correlation_sources) ? provider.correlation_sources : [];
     var card = el('article', 'lox-card lox-card--warn' + (correlated ? ' lox-card--correlated' : ''));
     var head = el('header', 'lox-card__head');
     head.appendChild(el('h3', 'lox-card__provider', firstString(provider.name, provider.provider, provider.id)));
-    head.appendChild(el('span', 'lox-chip lox-chip--warn', relatedWatch ? 'RELATED' : (correlated ? 'CORRELATED' : 'DEGRADED')));
+    head.appendChild(el('span', 'lox-chip lox-chip--warn', publicNews ? 'PUBLIC REPORT' : (relatedWatch ? 'RELATED' : (correlated ? 'CORRELATED' : 'DEGRADED'))));
     card.appendChild(head);
-    if (correlated) {
+    if (publicNews) {
+      card.appendChild(el('p', 'lox-card__title', tidy(firstString(provider.headline, provider.title, 'Public news report'), 180)));
+      card.appendChild(el('p', 'lox-card__context', "Unconfirmed public reporting. We have not verified the agency or provider's operational status."));
+    } else if (correlated) {
       card.appendChild(el('p', 'lox-card__title', (relatedWatch ? 'Related active ' + name + ' integration incidents' : 'Likely ' + name + '-related disruption') + (count > 0 ? ' · ' + count + ' provider reports' : '')));
       card.appendChild(el('p', 'lox-card__context', relatedWatch
         ? 'Independent providers have active issues involving the same ecosystem, but their incident starts are hours apart. This is a related-impact watch, not evidence that the upstream provider caused both failures.'
@@ -280,14 +284,14 @@
     if (summary) { card.appendChild(el('p', 'lox-card__body', summary)); }
 
     var facts = [
-      [correlated ? 'Latest provider report' : 'Provider page updated',
+      [publicNews ? 'Report noticed' : (correlated ? 'Latest provider report' : 'Provider page updated'),
         timeNode(firstTimestamp(provider, ['data_observed_at', 'updatedAt', 'updated_at']))]
     ];
-    if (!correlated) { facts.push(['We last checked', timeNode(firstTimestamp(provider, ['checked_at', 'checkedAt', 'last_successful_at']))]); }
+    if (!correlated && !publicNews) { facts.push(['We last checked', timeNode(firstTimestamp(provider, ['checked_at', 'checkedAt', 'last_successful_at']))]); }
     card.appendChild(factsNode(facts));
 
     var url = firstString(provider.url);
-    if (url) { card.appendChild(outLink(url, 'Open status page ↗')); }
+    if (url) { card.appendChild(outLink(url, publicNews ? 'Read public report ↗' : 'Open status page ↗')); }
     return card;
   }
 
@@ -440,10 +444,14 @@
       };
     } else if ((state.signals || []).length > 0) {
       var signalCount = state.signals.length;
+      var reportCount = Number(meta.public_report_count || 0);
+      var onlyNews = reportCount === signalCount;
       verdict = {
         tone: 'warn',
-        line: 'DEGRADED',
-        sub: signalCount + ' ' + (signalCount === 1 ? 'provider' : 'providers') + ' showing degraded or correlated signals; confirmation varies by source.'
+        line: onlyNews ? 'PUBLIC REPORTS' : 'DEGRADED + REPORTS',
+        sub: onlyNews
+          ? reportCount + ' unconfirmed public ' + (reportCount === 1 ? 'report' : 'reports') + '. No agency or provider outage verified by these reports.'
+          : signalCount + ' provider signals, correlations or public reports; confirmation varies by source.'
       };
     } else if ((state.unverified || []).length > 0) {
       var unverifiedCount = state.unverified.length;

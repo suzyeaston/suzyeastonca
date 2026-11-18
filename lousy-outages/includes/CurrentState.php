@@ -23,6 +23,43 @@ function lousy_outages_current_state_incident_ids(array $incidents): array {
     return $ids;
 }
 
+
+/** Public news cards are read-only and NEVER overwrite official provider state. */
+function lousy_outages_public_news_cards(): array {
+    $class = '\SuzyEaston\LousyOutages\ExternalSignals';
+    if (!class_exists($class) || !method_exists($class, 'get_recent_signals')) return [];
+    // Snapshot-only tests and recovery bootstraps may not have a WordPress DB.
+    global $wpdb;
+    if (!is_object($wpdb) || !method_exists($wpdb, 'esc_like') || !method_exists($wpdb, 'get_var')) return [];
+    $rows = $class::get_recent_signals(['windowMinutes'=>120,'limit'=>200]);
+    $out = [];
+    $seen = [];
+    foreach ((array)$rows as $row) {
+        if (!is_array($row) || (string)($row['source_type'] ?? '') !== 'public_news' || !empty($row['official_confirmed'])) continue;
+        $id = sanitize_key((string)($row['provider_id'] ?? ''));
+        if ($id === '' || isset($seen[$id])) continue;
+        $observed = strtotime((string)($row['observed_at'] ?? ''));
+        $expires = strtotime((string)($row['expires_at'] ?? ''));
+        if (!$observed || $observed < time() - 12*3600 || ($expires && $expires < time())) continue;
+        $link = esc_url_raw((string)($row['url'] ?? ''));
+        if (strtolower((string)wp_parse_url($link, PHP_URL_HOST)) !== 'news.google.com') continue;
+        $headline = sanitize_text_field((string)($row['title'] ?? 'Public news report'));
+        $seen[$id] = true;
+        $out[] = [
+            'id'=>$id, 'provider_id'=>$id, 'name'=>sanitize_text_field((string)($row['provider_name'] ?? $id)),
+            'source_type'=>'public_news', 'signal_lane'=>'open_web',
+            'headline'=>$headline, 'title'=>$headline,
+            'summary'=>'Public news reporting only. This does not confirm a current outage or the health of internal systems.',
+            'url'=>$link, 'data_observed_at'=>(string)$row['observed_at'], 'checked_at'=>(string)$row['observed_at'],
+            'category'=>sanitize_key((string)($row['category'] ?? 'government')),
+            'region'=>sanitize_text_field((string)($row['region'] ?? 'CA')),
+            'official_confirmed'=>false,
+        ];
+        if (count($out) >= 8) break;
+    }
+    return $out;
+}
+
 function lousy_outages_get_current_state(): array {
     $snapshot = get_option('lousy_outages_snapshot', []);
     $schema = defined('LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION') ? (int) LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION : 0;
@@ -76,6 +113,17 @@ function lousy_outages_get_current_state(): array {
     $base['meta']['affected_service_count'] = count(array_unique($affected_services));
     $base['meta']['affected_provider_count'] = count($affected_provider_ids);
     $base['meta']['current_official_provider_ids'] = $affected_provider_ids;
+    // Merge attributed public reporting into the view, not the official snapshot.
+    // No HTTP calls or writes on this read path. Never mark these as DOWN.
+    $seenSignalIds=[];
+    foreach ($base['signals'] as $signal) {
+        $seenSignalIds[sanitize_key((string)($signal['provider_id'] ?? $signal['id'] ?? ''))]=true;
+    }
+    foreach (lousy_outages_public_news_cards() as $news) {
+        if (isset($seenSignalIds[$news['provider_id']])) continue;
+        $base['signals'][]=$news;
+    }
+    $base['meta']['public_report_count']=count(array_filter($base['signals'],static fn($row): bool => (string)($row['source_type']??'')==='public_news'));
     $base['meta']['signal_count'] = count($base['signals']);
     $base['meta']['unverified_count'] = count($base['unverified']);
     $base['meta']['operational_count'] = count($base['operational']);

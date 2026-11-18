@@ -268,10 +268,14 @@ function verdict(array $state): array
         ];
     }
     if ($signals > 0) {
+        $reports = (int)($meta['public_report_count'] ?? 0);
+        $onlyNews = $reports === $signals;
         return [
             'tone' => 'warn',
-            'line' => 'DEGRADED',
-            'sub'  => sprintf('%d %s showing degraded or correlated signals; confirmation varies by source.', $signals, 1 === $signals ? 'provider' : 'providers'),
+            'line' => $onlyNews ? 'PUBLIC REPORTS' : 'DEGRADED + REPORTS',
+            'sub'  => $onlyNews
+                ? sprintf('%d unconfirmed public %s. No agency or provider outage verified by these reports.', $reports, $reports === 1 ? 'report' : 'reports')
+                : sprintf('%d provider signals, correlations or public reports; confirmation varies by source.', $signals),
         ];
     }
     if ($unverified > 0) {
@@ -350,6 +354,7 @@ function render_signal_card(array $provider): void
     $observed = first_timestamp($provider, ['data_observed_at', 'updatedAt', 'updated_at']);
     $url = (string) ($provider['url'] ?? '');
     $correlated = 'cross_provider_corroboration' === (string) ($provider['source_type'] ?? '');
+    $publicNews = 'public_news' === (string) ($provider['source_type'] ?? '');
     $relatedWatch = $correlated && 'related_reports' === (string) ($provider['correlation_tier'] ?? '');
     $sourceCount = (int) ($provider['correlation_count'] ?? 0);
     $sources = array_values(array_filter((array) ($provider['correlation_sources'] ?? []), 'is_array'));
@@ -357,9 +362,12 @@ function render_signal_card(array $provider): void
     <article class="lox-card lox-card--warn<?php echo $correlated ? ' lox-card--correlated' : ''; ?>" id="provider-<?php echo esc_attr($id); ?>">
         <header class="lox-card__head">
             <h3 class="lox-card__provider"><?php echo esc_html($name); ?></h3>
-            <span class="lox-chip lox-chip--warn"><?php echo $relatedWatch ? 'RELATED' : ($correlated ? 'CORRELATED' : 'DEGRADED'); ?></span>
+            <span class="lox-chip lox-chip--warn"><?php echo $publicNews ? 'PUBLIC REPORT' : ($relatedWatch ? 'RELATED' : ($correlated ? 'CORRELATED' : 'DEGRADED')); ?></span>
         </header>
-        <?php if ($correlated) : ?>
+        <?php if ($publicNews) : ?>
+            <p class="lox-card__title"><?php echo esc_html(tidy((string)($provider['headline'] ?? $provider['title'] ?? 'Public news report'),180)); ?></p>
+            <p class="lox-card__context">Unconfirmed public reporting. We have not verified the agency or provider's operational status.</p>
+        <?php elseif ($correlated) : ?>
             <p class="lox-card__title"><?php echo $relatedWatch ? 'Related active ' . esc_html($name) . ' integration incidents' : 'Likely ' . esc_html($name) . '-related disruption'; ?><?php echo $sourceCount > 0 ? ' · ' . esc_html((string) $sourceCount) . ' provider reports' : ''; ?></p>
             <?php if ($relatedWatch) : ?>
                 <p class="lox-card__context">Independent providers have active issues involving the same ecosystem, but their incident starts are hours apart. This is a related-impact watch, not evidence that the upstream provider caused both failures.</p>
@@ -393,13 +401,13 @@ function render_signal_card(array $provider): void
             <p class="lox-card__body"><?php echo esc_html($summary); ?></p>
         <?php endif; ?>
         <dl class="lox-facts">
-            <div><dt><?php echo $correlated ? 'Latest provider report' : 'Provider page updated'; ?></dt><dd><?php print_time($observed); ?></dd></div>
-            <?php if (!$correlated) : ?>
+            <div><dt><?php echo $publicNews ? 'Report noticed' : ($correlated ? 'Latest provider report' : 'Provider page updated'); ?></dt><dd><?php print_time($observed); ?></dd></div>
+            <?php if (!$correlated && !$publicNews) : ?>
                 <div><dt>We last checked</dt><dd><?php print_time($checked); ?></dd></div>
             <?php endif; ?>
         </dl>
         <?php if ('' !== $url) : ?>
-            <a class="lox-out" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener">Open status page <span aria-hidden="true">↗</span></a>
+            <a class="lox-out" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener" ><?php echo $publicNews ? 'Read public report' : 'Open status page'; ?> <span aria-hidden="true">↗</span></a>
         <?php endif; ?>
     </article>
     <?php
@@ -538,7 +546,7 @@ function render(array $state, array $config): string
             </div>
             <?php render_section_close(); ?>
 
-            <?php render_section_open('degraded', 'DEGRADED + CORRELATED SIGNALS', 'Degradation without a linked notice, or cross-provider evidence of a shared disruption.', count($signals), $signals ? 'warn' : 'dim'); ?>
+            <?php render_section_open('degraded', 'DEGRADED + PUBLIC REPORTS', 'Provider degradation, shared-dependency correlations, or unconfirmed public reporting.', count($signals), $signals ? 'warn' : 'dim'); ?>
             <div class="lox-cards" data-lox-grid="degraded">
                 <?php if ($signals) : ?>
                     <?php foreach ($signals as $provider) { render_signal_card($provider); } ?>

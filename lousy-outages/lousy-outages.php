@@ -3,7 +3,7 @@ declare( strict_types=1 );
 /**
  * Plugin Name: Lousy Outages
  * Description: WordPress-native outage intelligence, community reporting, and early-warning signals for third-party service dependencies.
- * Version: 0.5.11
+ * Version: 0.5.12
  * Author: Suzy Easton
  * Text Domain: lousy-outages
  */
@@ -24,7 +24,7 @@ if ( defined( 'LOUSY_OUTAGES_DISABLE' ) && LOUSY_OUTAGES_DISABLE ) {
 }
 
 if ( ! defined( 'LOUSY_OUTAGES_VERSION' ) ) {
-    define( 'LOUSY_OUTAGES_VERSION', '0.5.11' );
+    define( 'LOUSY_OUTAGES_VERSION', '0.5.12' );
 }
 if ( ! defined( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION' ) ) {
     define( 'LOUSY_OUTAGES_SNAPSHOT_SCHEMA_VERSION', 5 );
@@ -103,6 +103,7 @@ lousy_outages_require( 'includes/SignalSourceInterface.php' );
 lousy_outages_require( 'includes/ExternalSignals.php' );
 lousy_outages_require( 'includes/Sources/SourcePack.php' );
 lousy_outages_require( 'includes/Sources/ProviderFeedSource.php' );
+lousy_outages_require( 'includes/Sources/PublicIncidentNewsSource.php' );
 lousy_outages_require( 'includes/Sources/SourceBudgetManager.php' );
 lousy_outages_require( 'includes/Sources/ChatterRejectionReasons.php' );
 lousy_outages_require( 'includes/Sources/StatuspageIntelSource.php' );
@@ -113,6 +114,7 @@ lousy_outages_require( 'includes/Sources/HackerNewsChatterSource.php', false );
 lousy_outages_require( 'includes/Sources/RedditFieldReportsSource.php', false );
 lousy_outages_require( 'includes/Sources/SyntheticCanarySource.php', false );
 lousy_outages_require( 'includes/SignalCollector.php' );
+\SuzyEaston\LousyOutages\SignalCollector::bootstrap_public_news();
 lousy_outages_require( 'includes/Microsoft365ServiceHealth.php' );
 lousy_outages_require( 'includes/DependencyCorrelations.php' );
 lousy_outages_require( 'includes/Microsoft365Signals.php' );
@@ -365,6 +367,7 @@ add_action( 'init', static function (): void {
  */
 function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_refresh_official_providers' );
+    wp_clear_scheduled_hook( \SuzyEaston\LousyOutages\SignalCollector::PUBLIC_NEWS_HOOK );
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
     wp_clear_scheduled_hook( 'lousy_outages_cron_refresh' );
     wp_clear_scheduled_hook( 'lousy_outages_refresh' );
@@ -1668,6 +1671,20 @@ function lousy_outages_settings_page() {
         </form>
         <?php $external = ExternalSignals::get_recent_signals(['windowMinutes'=>60,'limit'=>8]); $fused = SignalEngine::summarize_fused_signals(60); $collector = SignalCollector::get_last_collection_result(); ?>
         <h2>External Signal Diagnostics</h2>
+        <?php
+        $newsScan = (array) get_option('lo_public_incident_news_scan_result', []);
+        $newsDiag = (array) get_option('lo_diag_public_incident_news', []);
+        $newsNext = wp_next_scheduled(\SuzyEaston\LousyOutages\SignalCollector::PUBLIC_NEWS_HOOK);
+        ?>
+        <h3>Public incident radar (Canada / NSA / CSIS)</h3>
+        <p><strong>Next scheduled scan:</strong> <?php echo esc_html($newsNext ? gmdate('c', (int)$newsNext) : 'NOT SCHEDULED'); ?>
+        | <strong>Last scan:</strong> <?php echo esc_html((string)($newsScan['finished_at'] ?? 'Never')); ?>
+        | <strong>Source status:</strong> <?php echo esc_html(!empty($newsScan['failed']) ? 'Failed, check cron' : (!$newsScan ? 'Not yet checked' : 'Attempted')); ?></p>
+        <p><strong>Groups last attempted:</strong> <?php echo esc_html(implode(', ', (array)($newsDiag['groups_checked'] ?? [])) ?: 'none'); ?>
+        | <strong>Candidate reports:</strong> <?php echo esc_html((string)($newsDiag['stored_candidates'] ?? 0)); ?>
+        | <strong>Stored:</strong> <?php echo esc_html((string)($newsScan['stored_count'] ?? 0)); ?>
+        | <strong>Feed errors:</strong> <?php echo esc_html(implode(', ', (array)($newsDiag['errors'] ?? [])) ?: 'none'); ?></p>
+        <p class="description">Public news reports only; these are not live probes, official agency uptime readings, or evidence that an unmentioned service is healthy.</p>
         <p><strong>Last external collection:</strong> <?php echo esc_html((string)($collector['finished_at'] ?? 'Never')); ?></p>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_collect_signals_now'); ?><input type="hidden" name="action" value="lousy_outages_collect_signals_now"><?php submit_button('Collect External Signals Now','secondary','submit',false); ?></form>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-right:8px;"><?php wp_nonce_field('lousy_outages_seed_demo_external_signals'); ?><input type="hidden" name="action" value="lousy_outages_seed_demo_external_signals"><?php submit_button('Seed Demo External Signals','secondary','submit',false); ?></form>
