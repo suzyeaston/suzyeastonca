@@ -28,6 +28,9 @@ function lousy_outages_current_state_incident_ids(array $incidents): array {
 function lousy_outages_public_news_cards(): array {
     $class = '\SuzyEaston\LousyOutages\ExternalSignals';
     if (!class_exists($class) || !method_exists($class, 'get_recent_signals')) return [];
+    // Snapshot-only tests and recovery bootstraps may not have a WordPress DB.
+    global $wpdb;
+    if (!is_object($wpdb) || !method_exists($wpdb, 'esc_like') || !method_exists($wpdb, 'get_var')) return [];
     $rows = $class::get_recent_signals(['windowMinutes'=>120,'limit'=>200]);
     $out = [];
     $seen = [];
