@@ -8,7 +8,7 @@ foreach (Source::groups() as $group) $groups[$group['id']]=$group;
 $now=strtotime('2026-11-17T22:00:00Z');
 $positive=[
 ['us_intelligence','Classified NSA communications network goes down during maintenance','nsa'],
-['ca_intelligence','CSIS systems down during service disruption','csis'],
+['ca_intelligence','Canadian CSIS systems down during service disruption','csis'],
 ['ca_intelligence','Communications Security Establishment network outage reported','cse'],
 ['ca_payments','Interac e-Transfer down for customers across Canada','interac'],
 ['ca_payments','Moneris payments outage affects Canada','moneris'],
