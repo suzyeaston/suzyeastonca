@@ -24,7 +24,7 @@ final class PublicIncidentNewsSource implements SignalSourceInterface {
             ['id'=>'us_intelligence','region'=>'US','category'=>'government','query'=>'("National Security Agency" OR "NSA" OR "NSA Net") (outage OR disruption OR "network down" OR "systems down" OR "technical issue") when:2d','entities'=>[
                 'nsa'=>['name'=>'NSA','pattern'=>'/\b(?:NSA(?:\s+Net)?|National Security Agency)\b/i']]],
             ['id'=>'ca_intelligence','region'=>'CA','category'=>'government','query'=>'("CSIS" OR "Canadian Security Intelligence Service" OR "Communications Security Establishment" OR "CSE Canada") (outage OR disruption OR "systems down" OR "network down" OR "technical issue") when:2d','entities'=>[
-                'csis'=>['name'=>'CSIS','pattern'=>'/\b(?:CSIS|Canadian Security Intelligence Service)\b/i'],
+                'csis'=>['name'=>'CSIS','pattern'=>'/\b(?:CSIS|Canadian Security Intelligence Service)\b/i','context'=>'/\b(?:Canada|Canadian|Ottawa|intelligence|security service|spy agency)\b/i'],
                 'cse'=>['name'=>'Communications Security Establishment','pattern'=>'/\b(?:Communications Security Establishment|CSE Canada)\b/i']]],
             ['id'=>'ca_payments','region'=>'CA','category'=>'payments','query'=>'("Interac" OR "e-Transfer" OR "Moneris" OR "Global Payments Canada") (outage OR down OR disruption OR failure OR unavailable) when:2d','entities'=>[
                 'interac'=>['name'=>'Interac / e-Transfer / Debit','pattern'=>'/\b(?:Interac|e[\s-]?Transfer)\b/i'],
