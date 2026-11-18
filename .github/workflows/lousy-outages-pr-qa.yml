@@ -27,6 +27,7 @@ jobs:
         run: python3 -m py_compile scripts/deploy-lousy-outages-ssh.py
       - name: Run targeted and existing regressions
         run: |
+          php lousy-outages/tests/public-incident-news-test.php
           php lousy-outages/tests/microsoft365-signal-test.php
           php lousy-outages/tests/microsoft365-graph-test.php
           php lousy-outages/tests/dependency-correlations-test.php
