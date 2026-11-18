@@ -167,7 +167,7 @@ $correlatedState['signals'] = [$related];
 $correlatedState['providers'] = [$related, $providers[3]];
 $correlatedState['meta']['signal_count'] = 1;
 $correlatedHtml = render($correlatedState, $config);
-ok(str_contains($correlatedHtml, 'DEGRADED + CORRELATED SIGNALS'), 'section title does not claim no incident exists');
+ok(str_contains($correlatedHtml, 'DEGRADED + PUBLIC REPORTS'), 'section title does not claim no incident exists');
 ok(str_contains($correlatedHtml, 'Likely Microsoft 365-related disruption'), 'correlated signal title is prominent');
 ok(str_contains($correlatedHtml, '3 provider reports'), 'corroborating provider count is visible');
 ok(str_contains($correlatedHtml, 'aria-label="Corroborating provider notices"'), 'source evidence is accessible');
@@ -190,5 +190,25 @@ ok(str_contains($relatedHtml, 'Related active Microsoft 365 integration incident
 ok(str_contains($relatedHtml, 'incident starts are hours apart'), 'watch explains its weaker timing evidence');
 ok(str_contains($relatedHtml, 'Netlify: Delayed mail to Outlook'), 'related watch retains source details');
 ok(!str_contains($relatedHtml, 'within a 90-minute window'), 'related watch must not claim simultaneous onsets');
+
+
+// News must never be presented as an official provider outage.
+$publicReport = [
+    'id'=>'nsa','provider_id'=>'nsa','name'=>'NSA','source_type'=>'public_news',
+    'headline'=>'NSA internal network outage reported','title'=>'NSA internal network outage reported',
+    'summary'=>'Public news reporting only. Internal health not verified.',
+    'data_observed_at'=>$iso(600),'checked_at'=>$iso(600),
+    'url'=>'https://news.google.com/rss/articles/example',
+];
+$newsState = $quiet;
+$newsState['signals'] = [$publicReport];
+$newsState['meta']['signal_count'] = 1;
+$newsState['meta']['public_report_count'] = 1;
+$newsHtml = render($newsState, $config);
+ok(str_contains($newsHtml, 'PUBLIC REPORT'), 'news uses a public-report badge');
+ok(str_contains($newsHtml, 'NSA internal network outage reported'), 'news headline is visible');
+ok(str_contains($newsHtml, 'Read public report'), 'news links to public source, not agency internals');
+ok(str_contains($newsHtml, 'PUBLIC REPORTS'), 'news-only verdict is not degraded or down');
+ok(!str_contains($newsHtml, '1 PROVIDER IS DOWN'), 'news never fabricates official outage');
 
 echo "board render tests passed\n";
