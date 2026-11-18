@@ -114,7 +114,9 @@ final class PublicIncidentNewsSource implements SignalSourceInterface {
             if (!function_exists('simplexml_load_string')) { $diag['errors'][] = 'simplexml_missing'; break; }
             $xml = @simplexml_load_string($body, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
             if ($xml === false || !isset($xml->channel->item)) { $diag['errors'][] = $group['id'].':invalid_rss'; continue; }
-            foreach (array_slice(iterator_to_array($xml->channel->item), 0, 20) as $entry) {
+            $itemsInFeed = 0;
+            foreach ($xml->channel->item as $entry) {
+                if (++$itemsInFeed > 20) break;
                 $diag['feed_items_seen']++;
                 $item = ['title'=>(string)$entry->title,'description'=>(string)$entry->description,'published_at'=>(string)$entry->pubDate,'url'=>(string)$entry->link];
                 $entities = self::match_item($item, $group, time());
