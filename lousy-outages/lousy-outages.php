@@ -367,6 +367,7 @@ add_action( 'init', static function (): void {
  */
 function lousy_outages_deactivate() {
     wp_clear_scheduled_hook( 'lousy_outages_refresh_official_providers' );
+    wp_clear_scheduled_hook( \SuzyEaston\LousyOutages\SignalCollector::PUBLIC_NEWS_HOOK );
     wp_clear_scheduled_hook( 'lousy_outages_poll' );
     wp_clear_scheduled_hook( 'lousy_outages_cron_refresh' );
     wp_clear_scheduled_hook( 'lousy_outages_refresh' );
